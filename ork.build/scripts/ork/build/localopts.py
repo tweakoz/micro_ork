@@ -13,9 +13,10 @@
 import os
 import imp
 import ConfigParser
+import ork.build.common as common
 
-def IsDarwin():
-	return os.name == "darwin"
+def IsOsx():
+	return common.IsOsx
 
 def IsWindows():
 	return os.name == "nt"
@@ -24,7 +25,7 @@ if IsWindows():
 	import win32api
 
 def IsIx():
-	return os.name == "posix"
+	return common.IsIx
 
 print "os.name<%s>" % os.name
 
@@ -57,20 +58,18 @@ if os.path.isfile( ConfigFileName() ):
 	ConfigData.read( ConfigFileName() )
 	print ConfigData
 else:
-	print "LOCALOPTS: Cannot find %s : using default options" % ConfigFileName()
-	ConfigData.add_section( "PATHS" )
-	if IsDarwin():
-	  ConfigData.set( "PATHS", "XCODEDIR", GetDefault("XCODEDIR", "/Applications/Xcode.app") )
-	ConfigData.add_section( "CONFIG" )
-	if IsDarwin():
-	  ConfigData.set( "CONFIG", "ARCH", GetDefault("ARCH", "x86_64") )
-	  ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
-        elif IsIx():
-          ConfigData.set( "CONFIG", "CXX", "g++" )
-
-	cfgfile = open(ConfigFileName(),'w')
-	ConfigData.write(cfgfile)
-	cfgfile.close()
+ print "LOCALOPTS: Cannot find %s : using default options" % ConfigFileName()
+ ConfigData.add_section( "PATHS" )
+ ConfigData.add_section( "CONFIG" )
+ if IsOsx():
+   ConfigData.set( "PATHS", "XCODEDIR", GetDefault("XCODEDIR", "/Applications/Xcode.app") )
+   ConfigData.set( "CONFIG", "ARCH", GetDefault("ARCH", "x86_64") )
+   ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
+ elif IsIx():
+   ConfigData.set( "CONFIG", "CXX", "g++" )
+ cfgfile = open(ConfigFileName(),'w')
+ ConfigData.write(cfgfile)
+ cfgfile.close()
 
 print ConfigData.sections()
 

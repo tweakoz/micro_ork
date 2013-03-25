@@ -46,7 +46,7 @@ class ClangToolChain:
 	env.Replace( LINK = cpp_compiler )
 	prj.AddLibs( ' m c c++' )
 	prj.CompilerType = 'gcc'
-	prj.XCFLG += "-arch %s " % Arch
+	prj.XCFLG += "-DOSX -arch %s " % Arch
 	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
 	prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
 	prj.XCXXFLG += '-F%s/Contents/Resources/include ' % AqsisDir
