@@ -1,0 +1,7 @@
+stage
+ork.build.ini
+*.dblite
+*.os
+*.so
+obj
+
