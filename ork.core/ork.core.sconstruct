@@ -19,41 +19,38 @@ obu.install_headers("inc/*")
 # basics #################################
 
 class core:
-  def __init__(self):
-	ARGS = cmn.BuildArgs
-	##########################################
+ def __init__(self):
+  ARGS = cmn.BuildArgs
+  suffix = sln.BuildSuffix(ARGS)
+  ##########################################
+  SRC_FOLDERS  = " . "
+  LIBS = ''
+  ##########################################
+  prj_lib = sln.Project(ARGS,BasicEnv,"ork.core")
+  prj_lib.SetSrcBase( "src" )
+  prj_lib.AddFolders( SRC_FOLDERS, "*.cpp" )
+  prj_lib.AddLibs( LIBS )
+  prj_lib.Configure()
+  self.lib = prj_lib.SharedLibrary( )
+  ##########################################
+  prj_test = sln.Project(ARGS,BasicEnv,"ork.core.test")
+  prj_test.SetSrcBase( "src" )
+  prj_test.AddFolders( "test", "*.cpp" )
+  prj_test.AddLibs( LIBS )
+  prj_test.AddLibs( "ork.unittestpp.%s"%suffix )
+  prj_test.AddProjectDep( prj_lib )
+  prj_test.AddIncludePaths("../ork.core/inc")
+  prj_test.Configure()
+  self.test_prg = prj_test.Program( )
+  prj_test.AddProjectDep( prj_lib )
+  Depends(self.test_prg,self.lib)
+  #prj_test.AddProjectDep( upp_lib )
+  self.test = prj_test.Program()
 
-	SRC_FOLDERS  = " . "
-
-	LIBS = ''
-
-	##########################################
-
-	prj_lib = sln.Project(ARGS,BasicEnv,"ork.core")
-	prj_lib.SetSrcBase( "src" )
-	prj_lib.AddFolders( SRC_FOLDERS, "*.cpp" )
-	prj_lib.AddLibs( LIBS )
-	prj_lib.Configure()
-	self.lib = prj_lib.SharedLibrary( )
-
-	##########################################
-
-	#prj_test = sln.Project(ARGS,BasicEnv,"ork.core.test")
-	#prj_test.SetSrcBase( "src" )
-	#prj_test.AddIncludePaths( "%s/include"%sln.stage_dir )
-	#prj_test.AddLibPaths( "./lib" )
-	#prj_test.AddLibPaths( "%s/lib"%sln.stage_dir )
-	#prj_test.AddFolders( "test", "*.cpp" )
-	##prj_test.AddLibs( LIBS + " unittest++" )
-	#prj_test.AddProjectDep( prj_core_lib )
-	#prj_test.Configure()
-	#self.test_prg = prj_test.Program( )
-	#Depends( self.test_prg, self.core_lib )
-
-###########################
 
 a = core()
 ret = list()
 ret += a.lib
+ret += a.test
 Return("ret")
 
