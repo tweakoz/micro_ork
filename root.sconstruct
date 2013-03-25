@@ -9,6 +9,7 @@ Decider('MD5-timestamp')
 VariantDir( 'obj', 'src' )
 SetOption('num_jobs', obu.num_cores) 
 sln.optset.add("ork.core")
+sln.optset.add("ork.core.test")
 BasicEnv = Environment( ENV=os.environ )
 
 #####################################################

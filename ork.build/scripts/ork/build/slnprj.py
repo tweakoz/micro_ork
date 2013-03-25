@@ -239,7 +239,11 @@ class Project:
 
 		############################
 
-		if name in optset:
+		do_opt = (name in optset)
+
+		print "name<%s> do_opt<%s>" % (name,do_opt)
+
+		if do_opt:
 			self.XCCFLG += '-O3 '
 			self.XCXXFLG += '-O3 '
 		else:
