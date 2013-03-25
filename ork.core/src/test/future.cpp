@@ -1,6 +1,6 @@
 #include <unittest++/UnitTest++.h>
-#include <ork/kernel/opq.h>
-#include <ork/kernel/future.hpp>
+#include <ork/opq.h>
+#include <ork/future.hpp>
 
 using namespace ork;
 

@@ -1,28 +1,7 @@
-#include <ork/pch.h>
-#include <ork/application/application.h>
-#include <ork/object/Object.h>
-#include <ork/rtti/downcast.h>
-#include <ork/reflect/RegisterProperty.h>
 #include <unittest++/UnitTest++.h>
-
-class TestApplication : public ork::Application
-{
-	RttiDeclareConcrete(TestApplication, ork::Application );
-};
-void TestApplication::Describe()
-{
-}
-
-INSTANTIATE_TRANSPARENT_RTTI(TestApplication, "TestApplication");
 
 int main(int argc, char** argv)
 {
-	TestApplication the_app;
-    ApplicationStack::Push(&the_app);
-
-	ork::rtti::Class::InitializeClasses();
-	printf("yo\n" );
-	
 	int rval = 0;
     /////////////////////////////////////////////
     // default Run All Tests
