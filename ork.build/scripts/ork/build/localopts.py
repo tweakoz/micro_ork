@@ -67,6 +67,7 @@ else:
    ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
  elif IsIx():
    ConfigData.set( "CONFIG", "CXX", "g++" )
+   ConfigData.set( "CONFIG", "STD", "c++0x" )
  cfgfile = open(ConfigFileName(),'w')
  ConfigData.write(cfgfile)
  cfgfile.close()
@@ -102,6 +103,8 @@ def ARCH():
  return GetEnv( "CONFIG", "ARCH" )
 def CXX():
  return GetEnv("CONFIG","CXX")
+def STD():
+ return GetEnv("CONFIG","STD")
 ################################################################
 
 def dump():

@@ -19,6 +19,7 @@ from SCons.Script.SConscript import SConsEnvironment
 print "Using Ix Build Env"
 
 cxx_comp = localopts.CXX()
+cxx_std = localopts.STD()
 c_comp = localopts.CXX()
 
 ###############################################################################
@@ -58,9 +59,9 @@ def DefaultBuildEnv( env, prj ):
 	env.Replace( LIBS=string.split(LIBS) )
 	env.Replace( LIBPATH=string.split(LIBPATH) )
 
-	CxFLG = '-fPIE -fno-common -fno-strict-aliasing -g -Wno-switch-enum '
+	CxFLG = '-fPIC -fno-common -fno-strict-aliasing -g -Wno-switch-enum '
 	prj.XCCFLG += CxFLG
-	prj.XCXXFLG += CxFLG + " --std=c++11 -fexceptions "
+	prj.XCXXFLG += CxFLG + " --std=%s -fexceptions " % cxx_std
 
 	prj.CompilerType = 'gcc'
 

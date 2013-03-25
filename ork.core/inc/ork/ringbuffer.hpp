@@ -26,6 +26,8 @@
 #define MemRelease std::memory_order_seq_cst
 #endif
 
+namespace ork {
+
 ///////////////////////////////////////////////////////////////////////////////
 
 template<typename Element, size_t Size> 
@@ -141,10 +143,10 @@ size_t SpScRingBuf<Element, Size>::increment(size_t idx) const
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-template<typename T,size_t max_items> class MpMcRingBuf
+template<typename T,size_t max_items> struct MpMcRingBuf
 {
 
-public:
+	typedef T value_type;
 
 	MpMcRingBuf(); // buffer_size must be power of two
 	~MpMcRingBuf();
@@ -312,3 +314,5 @@ bool MpMcRingBuf<T,max_items>::try_pop(T& data)
 	return true;
 
 }
+
+} // namespace ork

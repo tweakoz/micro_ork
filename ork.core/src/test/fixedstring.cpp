@@ -1,10 +1,17 @@
-#include <ork/fixedstring.h>
 #include <unittest++/UnitTest++.h>
+#include <ork/fixedstring.h>
 #include <string.h>
 #include <unordered_set>
 #include <set>
 
 using namespace ork;
+
+TEST(fixedstringassignentfromcharstar)
+{
+	fixedstring<4096> the_string;
+	the_string = "what<0>up<1>yo";
+	CHECK(0==strcmp(the_string.c_str(),"what<0>up<1>yo"));
+}
 
 TEST(fixedstringTestFormat)
 {
@@ -59,7 +66,7 @@ TEST(fixedstringTestSize2)
 
 TEST(fixedstringHashSetCompare1)
 {
-	std::unordered_set<fixedstring<256u>> the_set;
+	std::unordered_set<fixedstring<256>> the_set;
 	the_set.insert("yo");
 	the_set.insert("what");
 	the_set.insert("up");

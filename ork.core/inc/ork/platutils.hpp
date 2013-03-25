@@ -57,6 +57,8 @@ static const size_t cacheline_size = 64;
 
 #define CompilerMemBarrier() __asm __volatile ("" ::: "memory"); // prevent a compiler from reordering instructions
 
+namespace platutils {
+
 INLINE void* aligned_malloc(size_t sz)
 {
     void*               mem;
@@ -134,3 +136,5 @@ INLINE void thread_setup_prio()
     //if (pthread_setschedparam(pthread_self(), SCHED_OTHER, &param))
     //    printf("failed to set thread prio\n");
 }
+
+} // namespace platutils

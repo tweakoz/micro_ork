@@ -1,20 +1,19 @@
 #include <unittest++/UnitTest++.h>
 #include <cmath>
 #include <limits>
-#include <ork/math/cvector2.h>
-#include <ork/math/misc_math.h>
+#include <ork/cvector2.h>
+#include <ork/math_misc.h>
 #include <string.h>
 #include <Block.h>
 
-#include <ork/kernel/ringbuffer.hpp>
-#include <ork/kernel/svariant.h>
-#include <ork/kernel/timer.h>
-#include <ork/kernel/fixedstring.h>
+#include <ork/ringbuffer.hpp>
+#include <ork/svariant.h>
+#include <ork/timer.h>
+#include <ork/fixedstring.h>
 
 using namespace ork;
 
 typedef pthread_t thread_t;
-typedef ork::FixedString<256> extstring_t;
 
 void thread_start(thread_t* th, void*(*func)(void*), void* arg)
 {
