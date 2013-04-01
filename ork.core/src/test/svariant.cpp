@@ -14,15 +14,17 @@ struct my_yo
 	std::string mSix;
 };
 
-TEST(sv64_non_pod)
+typedef ork::svar256_t svar_t;
+
+TEST(svar_non_pod)
 {
 	my_yo the_yo;
-	ork::svar64_t v64(the_yo);
-	ork::svar64_t v64b;
+	svar_t v(the_yo);
+	svar_t vb;
 
 	printf( "sizeof<my_yo:%d>\n", int(sizeof(my_yo)));
 
-	v64b = v64;
+	vb = v;
 }
 
 
