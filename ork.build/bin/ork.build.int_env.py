@@ -7,6 +7,9 @@ as_main = (__name__ == '__main__')
 
 ###########################################
 
+curwd = os.getcwd()
+print "CURWD<%s>" % curwd
+
 file_dir = os.path.realpath(__file__)
 par1_dir = os.path.dirname(file_dir)
 par2_dir = os.path.dirname(par1_dir)
@@ -19,7 +22,7 @@ scripts_dir = "%s/scripts" % root_dir
 bin_dir = "%s/bin" % root_dir
 print "ROOTDIR<%s>" % root_dir
 
-stg_dir = "%s/stage"%par3_dir
+stg_dir = "%s/stage"%curwd
 os.system( "mkdir -p %s" % stg_dir)
 
 if os.path.exists(stg_dir):
