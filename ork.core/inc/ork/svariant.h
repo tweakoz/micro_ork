@@ -199,6 +199,7 @@ public:
 	bool IsSet() const { return (mtinfo!=0); }
 	
 	//////////////////////////////////////////////////////////////
+	const std::type_info* GetTypeInfo() const { return mtinfo; }
 private:
 	char					 mbuffer[ksize];
 	std::atomic<destroyer_t> mDestroyer;
