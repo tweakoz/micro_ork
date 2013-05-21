@@ -18,6 +18,7 @@
 namespace ork{
 ///////////////////////////////////////////////////////////////////////////////
 
+//! templatized 3D plane manipulation class
 template <typename T> class TPlane
 {
 	static T Abs( T in );

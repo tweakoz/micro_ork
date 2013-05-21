@@ -13,23 +13,14 @@
 #include <ork/fixedstring.h>
 #include <errno.h>
 
-static const int kmaxmsgsiz = sizeof(net::NetworkMessage);
+static const int kmaxmsgsiz = sizeof(ork::NetworkMessage);
 
 //static const uin32_t kmapaddrflags = MAP_SHARED|MAP_LOCKED;
 static const uint32_t kmapaddrflags = MAP_SHARED;
 
 //#define __MSGQ_DEBUG__
 
-namespace net {
-
-///////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////
-
-NetworkMessageIterator::NetworkMessageIterator( const NetworkMessage& msg )
-	: mMessage(msg)
-	, miReadIndex(0)
-{
-}
+namespace ork {
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -93,7 +84,7 @@ void IpcMsgQSender::Create( const std::string& nam )
 	assert(mShmAddr!=(void*)0xffffffffffffffff);
 	new(mOutbox) msq_impl_t;
 	SendSyncStart();
-	SetSenderState(net::EMQEPS_RUNNING);
+	SetSenderState(ork::EMQEPS_RUNNING);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -129,7 +120,7 @@ void IpcMsgQSender::SendSyncStart()
 #ifdef __MSGQ_DEBUG__ 	
 	printf( "IpcMsgQSender<%p> sending  start/sync\n", this );
 #endif
-    net::NetworkMessage msg;
+    ork::NetworkMessage msg;
     msg.WriteString("start/sync");
 	uint32_t msg_priority = 0;
 	mOutbox->mMsgQ.push(msg);
@@ -309,7 +300,7 @@ void IpcMsgQReciever::Create( const std::string& nam )
 	new(mShmAddr) msq_impl_t;
 	mInbox = (msq_impl_t*) mShmAddr;
 	close(shm_id);
-	SetRecieverState(net::EMQEPS_RUNNING);
+	SetRecieverState(ork::EMQEPS_RUNNING);
 #ifdef __MSGQ_DEBUG__ 
     printf( "IpcMsgQReciever<%p> created msgQ<%s>\n", this, nam.c_str() );
 #endif
@@ -321,14 +312,14 @@ void IpcMsgQReciever::WaitSyncStart()
 {
 	SetRecieverState(EMQEPS_WAIT);
     // wait for sender to send start/sync message
-    net::NetworkMessage msg;
+    ork::NetworkMessage msg;
 
 	bool bpopped = false;
 	while(false==bpopped)
 	{
 		bpopped = mInbox->mMsgQ.try_pop(msg);
 	}	
-    net::NetworkMessageIterator syncit(msg);
+    ork::NetworkMessageIterator syncit(msg);
     std::string sync_content = msg.ReadString(syncit);
     assert(sync_content=="start/sync");
 }

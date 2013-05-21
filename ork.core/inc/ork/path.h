@@ -13,9 +13,11 @@ namespace ork {
 
 //////////////////////////////////////////////////////////
 
+//! convert DOS filesystem path node delimiters to UNIX
 struct dos2unixpathsep
 { inline char operator() (char c) { return (c=='\\') ? '/' : c; }
 };
+//! convert UNIX filesystem path node delimiters to DOS
 struct unix2dospathsep
 { inline char operator() (char c) { return (c=='/') ? '\\' : c; }
 };
@@ -24,6 +26,7 @@ struct unix2dospathsep
 
 class Path;
 
+//! set of markers on a filesystem path delimiting various sections of that path
 class PathMarkers
 {
     friend class Path;
@@ -62,6 +65,7 @@ public:
 
 //////////////////////////////////////////////////////////
 
+//! filesystem path decomposed into its various comoponents
 struct DecomposedPath
 {
     typedef fixedstring<256> string_t;
@@ -79,6 +83,7 @@ struct DecomposedPath
 
 //////////////////////////////////////////////////////////
 
+//! filesystem path manipulation class
 class Path
 {
         public:

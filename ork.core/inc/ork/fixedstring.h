@@ -39,6 +39,7 @@ public:
 	size_t size() const { return length(); }
 	virtual size_t get_maxlen() const = 0;
 	virtual const char* c_str() const = 0;
+	virtual void set(const char* pfrom) = 0;
 
 protected:
 
@@ -47,6 +48,10 @@ protected:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//! Tweaks fixedstring.
+//! Basically like a std::std::string.
+//!	explicit allocation policy, so it is instantiable on the stack
+//! has a format method for a sprintf like feel 
 template <size_t kmaxlen>
 class fixedstring : public fixedstring_base
 {
@@ -132,7 +137,7 @@ public:
 	const char* c_str() const { return buffer; } // virtual
 	void SetChar( size_t index, char val );
 	//////////////////////////////////////////////////////////
-	void set(const char* pstr);
+	void set(const char* pstr) override;
 	void set( const char* pstr, size_t len );
 
 	void format( const char*fmt, ... );
@@ -320,16 +325,18 @@ class Char8 // run time low overhead std::string (max 4 characters)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-typedef fixedstring<16> fxstring16;
-typedef fixedstring<32> fxstring32;
-typedef fixedstring<64> fxstring64;
-typedef fixedstring<128> fxstring128;
-typedef fixedstring<256> fxstring256;
+template<int tsize> using fxstring = fixedstring<tsize>;
 
-typedef fixedstring<1024> PropTypeString;
-typedef fixedstring<1024> SerAnnoTypeString;
-typedef fixedstring<256> uristring_t;
-typedef fixedstring<16> extstring_t;
+typedef fxstring<16> fxstring16;
+typedef fxstring<32> fxstring32;
+typedef fxstring<64> fxstring64;
+typedef fxstring<128> fxstring128;
+typedef fxstring<256> fxstring256;
+
+typedef fxstring<1024> PropTypeString;
+typedef fxstring<1024> SerAnnoTypeString;
+typedef fxstring<256> uristring_t;
+typedef fxstring<16> extstring_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////

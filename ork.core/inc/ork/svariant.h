@@ -32,7 +32,7 @@
 #include <type_traits>
 #include <new>
 
-#include <atomic>
+#include <ork/atomic.h>
 
 namespace ork {
 
@@ -74,8 +74,8 @@ public:
 	static_variant()
 		: mtinfo(nullptr)
 	{
-		mDestroyer.exchange(nullptr);
-		mCopier.exchange(nullptr);
+		mDestroyer.fetch_and_store(nullptr);
+		mCopier.fetch_and_store(nullptr);
 	}
 	//////////////////////////////////////////////////////////////
 	// copy constuctor
@@ -126,7 +126,7 @@ public:
 	//////////////////////////////////////////////////////////////
 	void Destroy() 
 	{
-		destroyer_t pdestr = mDestroyer.exchange(nullptr);
+		destroyer_t pdestr = mDestroyer.fetch_and_store(nullptr);
 		if( pdestr ) pdestr( *this );
 	}
 	//////////////////////////////////////////////////////////////
@@ -134,14 +134,14 @@ public:
 	//////////////////////////////////////////////////////////////
 	template <typename T> void AssignDestroyer()
 	{
-		mDestroyer.exchange(& static_variant_destroyer_t<tsize,T>::destroy);
+		mDestroyer.fetch_and_store(& static_variant_destroyer_t<tsize,T>::destroy);
 	}
 	//////////////////////////////////////////////////////////////
 	//	assign a copier
 	//////////////////////////////////////////////////////////////
 	template <typename T> void AssignCopier()
 	{
-		mCopier.exchange(& static_variant_copier_t<tsize,T>::copy);
+		mCopier.fetch_and_store(& static_variant_copier_t<tsize,T>::copy);
 	}
 	//////////////////////////////////////////////////////////////
 	// return true if the contained object is a T
@@ -202,8 +202,8 @@ public:
 	const std::type_info* GetTypeInfo() const { return mtinfo; }
 private:
 	char					 mbuffer[ksize];
-	std::atomic<destroyer_t> mDestroyer;
-	std::atomic<copier_t>    mCopier;
+	ork::atomic<destroyer_t> mDestroyer;
+	ork::atomic<copier_t>    mCopier;
 	const std::type_info*	 mtinfo;
 	//////////////////////////////////////////////////////////////
 };

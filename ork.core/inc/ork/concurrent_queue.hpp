@@ -12,6 +12,7 @@ namespace ork {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//! single producer single consumer thread safe bounded queue 
 template <typename T,size_t max_items=256> 
 struct spsc_bounded_queue
 {
@@ -46,6 +47,7 @@ struct spsc_bounded_queue
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//! multiple producer multiple consumer thread safe bounded queue 
 template <typename T,size_t max_items=256> 
 struct mpmc_bounded_queue
 {

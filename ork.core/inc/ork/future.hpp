@@ -11,27 +11,26 @@
 
 namespace ork {
 
-//////////////////////////////////////////////////////////////////////////
-// Future 
-//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
+/// *Future* : see http://en.wikipedia.org/wiki/Futures_and_promises
+///////////////////////////////////////////////////////////////////
 
 struct Future
 {
-	typedef svar160_t var_t;
+	typedef svar160_t var_t; //!< result container type, you will get an assert if the result overflows this
+	typedef std::function<void(const Future& fut)> fut_blk_cb_t; //!< callback lambda typedef
 
 	Future();
 	bool IsSignaled() const { return mState>0; }
 	template <typename T> void Signal( const T& result );
 	void Clear();
-	void WaitForSignal() const;
-	const var_t& GetResult() const;
-	////////////////////
-
-	typedef std::function<void(const Future& fut)> fut_blk_cb_t;
+	void WaitForSignal() const; //!< Block until signaled
+	const var_t& GetResult() const; //!< Get the result of the future, block if necessary
+	void SetCallback( const fut_blk_cb_t& cb );  //!< Set callback for asynch execution
 
 	////////////////////
 
-	std::atomic<int> mState;
+	ork::atomic<int> mState;
 	var_t 	mResult;
 	var_t 	mCallback;
 

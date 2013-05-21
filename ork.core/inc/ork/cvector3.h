@@ -22,6 +22,7 @@ template <typename T> class TVector2;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+//! templatized 3D vector
 template <typename T> class  TVector3
 {
 

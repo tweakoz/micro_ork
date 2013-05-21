@@ -10,7 +10,7 @@
 #include <ork/timer.h>
 #include <assert.h>
 #include <ork/future.hpp>
-#include <atomic>
+#include <ork/atomic.h>
 
 #if ! defined(OSX)
 #include <sys/prctl.h>
@@ -163,12 +163,12 @@ void* OpqThreadImpl( void* arg_opaq )
 	// main opq loop
 	////////////////////////////////////////////////
 
-	popq->mThreadsRunning.fetch_add(1);
+	popq->mThreadsRunning.fetch_and_increment();
 	while(false==popq->mbOkToExit)
 	{
 		popq->BlockingIterate(thid);
 	}
-	popq->mThreadsRunning.fetch_sub(1);
+	popq->mThreadsRunning.fetch_and_decrement();
 
 	////////////////////////////////////////////////
 
@@ -189,7 +189,7 @@ void OpMultiQ::notify_one()
 	//lock_t lock(mOpWaitMtx);
 	//mOpWaitCV.notify_one();
 	//mOpsPendingCounter.fetch_and_increment();
-	mOpsPendingCounter2.fetch_add(1);
+	mOpsPendingCounter2.fetch_and_increment();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -203,8 +203,8 @@ void OpMultiQ::BlockingIterate(int thid)
 	if( mbOkToExit )
 		return;
 
-	static std::atomic<int> gopctr;
-	int iopctr = gopctr.fetch_add(1);
+	static ork::atomic<int> gopctr;
+	int iopctr = gopctr.fetch_and_increment();
 	
 	/////////////////////////////////////////////////
 	// find a group with an op on it
@@ -268,8 +268,8 @@ void OpMultiQ::BlockingIterate(int thid)
 
 		/////////////////////////////////////////
 
-		int inumopsalreadyinflight = test_grp->mOpsInFlightCounter.fetch_add(1);
-		int igrpnumopspending = test_grp->mOpsPendingCounter.fetch_sub(1);
+		int inumopsalreadyinflight = test_grp->mOpsInFlightCounter.fetch_and_increment();
+		int igrpnumopspending = test_grp->mOpsPendingCounter.fetch_and_decrement();
 
 		bool exceeded_max_concurrent = ((imax!=0) && (inumopsalreadyinflight >= imax));
 		bool reached_max_concurrent = ((imax!=0) && ((inumopsalreadyinflight+1) >= imax));
@@ -320,8 +320,8 @@ void OpMultiQ::BlockingIterate(int thid)
 		//  and move on to next group 
 		/////////////////////////////////////////
 
-		test_grp->mOpsInFlightCounter.fetch_sub(1);
-		test_grp->mOpsPendingCounter.fetch_add(1);
+		test_grp->mOpsInFlightCounter.fetch_and_decrement();
+		test_grp->mOpsPendingCounter.fetch_and_increment();
 
 
 		mOpGroupRing.push(test_grp);
@@ -363,19 +363,19 @@ ok_to_go:
 
 		while( bkeepgoing )
 		{
-			int igrpnumopspending = exec_grp->mOpsPendingCounter.fetch_sub(1);
+			int igrpnumopspending = exec_grp->mOpsPendingCounter.fetch_and_decrement();
 			if( igrpnumopspending>0 )
 			{
 				bool bgotone = exec_grp->try_pop(the_op);
 				assert(bgotone); 
-				exec_grp->mOpsInFlightCounter.fetch_add(1);
+				exec_grp->mOpsInFlightCounter.fetch_and_increment();
 				ProcessOne(exec_grp,the_op);
 				inumthisquanta++;
 				bkeepgoing = (inumthisquanta<kmaxperquanta) && (quanta_timer.SecsSinceStart()<0.001);
 			}
 			else
 			{	bkeepgoing = false;
-				exec_grp->mOpsPendingCounter.fetch_add(1);
+				exec_grp->mOpsPendingCounter.fetch_and_increment();
 			}
 		}
 
@@ -415,8 +415,8 @@ void OpMultiQ::ProcessOne(OpGroup*pexecgrp,const Op& the_op)
 		assert(false);
 	}
 	/////////////////////////////////////////////////
-	pexecgrp->mOpsInFlightCounter.fetch_sub(1);
-	this->mOpsPendingCounter2.fetch_sub(1);
+	pexecgrp->mOpsInFlightCounter.fetch_and_decrement();
+	this->mOpsPendingCounter2.fetch_and_decrement();
 }
 
 ///////////////////////////////////////////////////////////////////////////

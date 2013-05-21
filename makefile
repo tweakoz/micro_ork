@@ -7,8 +7,8 @@ env:
 .PHONY: docs
 
 docs: .
-	rm -rf docs/ork.*
-	doxygen ork.core/doc/doxyfile
+	rm -rf docs/html_doxygen
+	doxygen docs/ork.doxygen
 
 clean:
 	scons -c -f root.sconstruct 

@@ -8,7 +8,7 @@
 
 #include <ork/concurrent_queue.hpp>
 #include <ork/svariant.h>
-#include <atomic>
+#include <ork/atomic.h>
 #include <semaphore.h>
 #include <functional>
 #include <string>
@@ -40,6 +40,7 @@ struct NOP {};
 
 //////////////////////////////////////////////////////////////////////
 
+//! operation for an OpQ
 struct Op
 {
 	op_wrap_t mWrapped;	
@@ -60,6 +61,8 @@ struct Op
 
 //////////////////////////////////////////////////////////////////////
 
+//! collection of operations under a named group
+//! also has a set of policies governing execution of said operations (such as max concurrency, etc..)
 struct OpGroup
 {
 
@@ -79,9 +82,9 @@ struct OpGroup
 	////////////////////////////////
 
 	ork::mpmc_bounded_queue<Op,4096> 	mOps;
-	std::atomic<int>			 		mOpsInFlightCounter;
-	std::atomic<int>			 		mOpSerialIndex;
-	std::atomic<int> 					mOpsPendingCounter;
+	ork::atomic<int>			 		mOpsInFlightCounter;
+	ork::atomic<int>			 		mOpSerialIndex;
+	ork::atomic<int> 					mOpsPendingCounter;
 
 	bool 								mEnabled;
 
@@ -93,6 +96,7 @@ struct OpGroup
 
 //////////////////////////////////////////////////////////////////////
 
+//! collection of operation groups  and a thread pool with which to run them
 struct OpMultiQ
 {
 	OpMultiQ(int inumthreads, const char* name = "DefOpQ");
@@ -112,10 +116,10 @@ struct OpMultiQ
 	void BlockingIterate(int thid);
 
 	OpGroup* mDefaultGroup;
-	std::atomic<int> mGroupCounter;
+	ork::atomic<int> mGroupCounter;
 	std::set<OpGroup*> mOpGroups;
 	bool mbOkToExit;
-	std::atomic<int> mThreadsRunning;
+	ork::atomic<int> mThreadsRunning;
 	std::string mName;
 
 private:
@@ -125,7 +129,7 @@ private:
 
 	ork::mpmc_bounded_queue<OpGroup*,32> 	mOpGroupRing;
 
-	std::atomic<int> mOpsPendingCounter2;
+	ork::atomic<int> mOpsPendingCounter2;
 	//std::condition_variable mOpWaitCV;
 	//mtx_t mOpWaitMtx;
 

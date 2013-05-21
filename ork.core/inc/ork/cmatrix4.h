@@ -18,6 +18,7 @@ template <typename T> class TVector4;
 template <typename T> class TVector3;
 template <typename T> class TQuaternion;
 
+//! templatized 4x4 Matrix 
 template <typename T> class  TMatrix4
 {
 	friend class TVector4<T>;

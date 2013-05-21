@@ -19,6 +19,7 @@ namespace ork{
 template <typename T> class TMatrix4;
 template <typename T> class TVector3;
 
+//! templatized 4D vector
 template <typename T> class  TVector4
 {
 	

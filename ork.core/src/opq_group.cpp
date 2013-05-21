@@ -45,7 +45,7 @@ void OpGroup::push(const Op& the_op)
 
 		mOps.push(the_op);
 
-		mOpsPendingCounter.fetch_add(1);
+		mOpsPendingCounter.fetch_and_increment();
 
 		mOpSerialIndex++;
 

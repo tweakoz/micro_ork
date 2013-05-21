@@ -30,11 +30,11 @@ TEST(opq_serialized_ops)
 	    l2grp->mLimitMaxOpsInFlight = 1;
 	    l3grp->mLimitMaxOpsInFlight = 1;
 
-	    std::atomic<int> ops_in_flight;
-	    std::atomic<int> level0_counter;
-	    std::atomic<int> level1_counter;
-	    std::atomic<int> level2_counter;
-	    std::atomic<int> level3_counter;
+	    ork::atomic<int> ops_in_flight;
+	    ork::atomic<int> level0_counter;
+	    ork::atomic<int> level1_counter;
+	    ork::atomic<int> level2_counter;
+	    ork::atomic<int> level3_counter;
 
 	    ops_in_flight = 0;
 	    level0_counter = 0;
@@ -201,8 +201,8 @@ TEST(opq_maxinflight2)
 
 	    //printf( "OpLimit::2 <%d>\n", kopqconcurr );
 
-	    std::atomic<int> ops_in_flight;
-	    std::atomic<int> counter;
+	    ork::atomic<int> ops_in_flight;
+	    ork::atomic<int> counter;
 
 	    ops_in_flight = 0;
 	    counter = 0;

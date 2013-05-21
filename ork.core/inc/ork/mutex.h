@@ -32,9 +32,9 @@ private:
 };
 
 ///////////////////////////////////////////////////////////////////////////////
-// A locked resource is just a mutex wrapped resource which must be locked to access
-//  dont forget to unlock it when done....
-///////////////////////////////////////////////////////////////////////////////
+
+//! A locked resource is just a mutex wrapped resource which must be locked to access
+//!  dont forget to unlock it when done.... (TODO: RAII based auto-unlock)
 
 template <typename T> class LockedResource
 {

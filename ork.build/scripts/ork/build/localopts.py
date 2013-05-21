@@ -66,8 +66,8 @@ else:
    ConfigData.set( "CONFIG", "ARCH", GetDefault("ARCH", "x86_64") )
    ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
  elif IsIx():
-   ConfigData.set( "CONFIG", "CXX", "g++" )
-   ConfigData.set( "CONFIG", "STD", "c++0x" )
+   ConfigData.set( "CONFIG", "CXX", "clang++" )
+   ConfigData.set( "CONFIG", "STD", "c++11" )
  cfgfile = open(ConfigFileName(),'w')
  ConfigData.write(cfgfile)
  cfgfile.close()

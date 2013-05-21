@@ -53,4 +53,11 @@ std::vector<std::string> SplitString(const std::string& instr, char delim)
 
 ///////////////////////////////////////////////////////////////////////////////
 
+bool IsSubStringPresent(const std::string& needle, const std::string& haystack)
+{
+	return haystack.find(needle)!=std::string::npos;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 } // namespace ork

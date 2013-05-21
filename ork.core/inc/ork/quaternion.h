@@ -10,6 +10,7 @@
 namespace ork{
 ///////////////////////////////////////////////////////////////////////////////
 
+//! Quaternion compressor/decompressor (for joint-based animation compression)
 struct QuatCodec
 {
 	unsigned int	milargest : 2;

@@ -32,5 +32,10 @@ const Future::var_t& Future::GetResult() const
     return mResult;
 }//
 
+void Future::SetCallback( const Future::fut_blk_cb_t& cb )
+{
+	mCallback.Set<Future::fut_blk_cb_t>(cb);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 } // namespace ork

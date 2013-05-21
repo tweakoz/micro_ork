@@ -16,6 +16,7 @@ namespace ork{
 
 template <typename T> class TVector3;
 
+//! templatized 2D vector
 template <typename T> class  TVector2
 {
 
