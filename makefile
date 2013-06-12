@@ -1,5 +1,5 @@
 all:
-	scons -f root.sconstruct 
+	scons -f root.sconstruct --site-dir ./ork.build/site_scons
 
 env:
 	./ork.build/bin/ork.build.int_env.py
@@ -11,8 +11,8 @@ docs: .
 	doxygen docs/ork.doxygen
 
 clean:
-	scons -c -f root.sconstruct 
+	scons -c -f root.sconstruct --site-dir ./ork.build/site_scons
 	rm -rf stage/include/ork
 
 install:
-	scons -f root.sconstruct install
+	scons -f root.sconstruct --site-dir ./ork.build/site_scons install

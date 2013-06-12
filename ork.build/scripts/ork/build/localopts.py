@@ -30,7 +30,7 @@ def IsIx():
 print "os.name<%s>" % os.name
 
 ################################################################
-__all__ = [ "XCODEDIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
+__all__ = [ "XCODEDIR", "VST_INST_DIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
 ################################################################
 
 ################################################################
@@ -62,6 +62,7 @@ else:
  ConfigData.add_section( "PATHS" )
  ConfigData.add_section( "CONFIG" )
  if IsOsx():
+   ConfigData.set( "PATHS", "VST_INST_DIR", GetDefault("VST_INST_DIR", "~/.vst") )
    ConfigData.set( "PATHS", "XCODEDIR", GetDefault("XCODEDIR", "/Applications/Xcode.app") )
    ConfigData.set( "CONFIG", "ARCH", GetDefault("ARCH", "x86_64") )
    ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
@@ -95,8 +96,10 @@ def GetEnv( sect, varname ):
 
 ################################################################
 
-def XCODEDIR(): # qt base dir
+def XCODEDIR():
  return GetEnv( "PATHS", "XCODEDIR" )
+def VST_INST_DIR(): 
+ return GetEnv( "PATHS", "VST_INST_DIR" )
 def AQSISDIR():
  return GetEnv( "PATHS", "AQSISDIR" )
 def ARCH():

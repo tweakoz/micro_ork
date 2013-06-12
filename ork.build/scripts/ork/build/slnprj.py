@@ -12,6 +12,7 @@ from sets import Set
 
 import ork.build.utils as utils
 import ork.build.common as common
+import ork.build.localopts as localopts
 
 HostIsOsx = common.IsOsx
 HostIsIx = common.IsIx
@@ -419,6 +420,27 @@ class Project:
 		self.BaseEnv.Append( LIBS=self.Libraries, LIBPATH=self.LibraryPaths )
 		self.BaseEnv.Append( LINK=string.split(XLINK) )
 		self.BaseEnv['FRAMEWORKS'] = self.Frameworks
+
+	############################################
+
+	def Plugin(self,dest,subd):
+		self.IsLibrary = True
+		lib_dir = '%s/lib' % stage_dir
+		libname = '#stage/lib/%s'%self.OutputName
+		self.TargetName = self.OutputName
+		lib = self.CompileEnv.LoadableModule(libname, self.GetSources() )
+
+		basenam = "#stage/plugin/%s"%os.path.basename(dest)
+		destdir = os.path.dirname(dest)
+
+		if self.IsOsx:
+			subd["%BUNDLE_EXECUTABLE%"] = os.path.basename(str(lib[0]))
+			self.CompileEnv.MakeBundle(basenam,lib,"Info.plist",subst_dict=subd)
+			self.CompileEnv.Alias('install', self.CompileEnv.Install(destdir, basenam))
+		else:
+			self.CompileEnv.Alias('install', self.CompileEnv.Install(destdir, lib))
+
+		return lib
 
 	############################################
 

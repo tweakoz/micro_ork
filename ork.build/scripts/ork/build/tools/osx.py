@@ -121,6 +121,9 @@ def DefaultBuildEnv( env, prj ):
 	env.Replace( ARFLAGS="-static -c -v -arch_only %s" % Arch )
 	env.Replace( ARCOM="$AR $ARFLAGS -o $TARGET $SOURCES" )
 	env.Replace( RANLIBCOM="" )
+
+	env.Tool('osxbundle')
+
 	prj.AddLibs( ' bz2' )
 
 	prj.PostIncludePaths += string.split('/opt/local/include')
