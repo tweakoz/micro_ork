@@ -308,7 +308,7 @@ class Project:
 		self.BaseEnv.Append( CPPPATH=[self.basefolder] )
 		self.BaseEnv.VariantDir( self.BUILD_DIR, self.basefolder, duplicate=0 )
 		self.enumerator = SourceEnumerator(self.basefolder,self.BUILD_DIR);
-		
+
 	############################################
 
 	def GetSources(self):

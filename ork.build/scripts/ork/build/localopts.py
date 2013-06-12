@@ -30,7 +30,7 @@ def IsIx():
 print "os.name<%s>" % os.name
 
 ################################################################
-__all__ = [ "XCODEDIR", "VST_INST_DIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
+__all__ = [ "XCODEDIR", "VST_SDK_DIR", "VST_INST_DIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
 ################################################################
 
 ################################################################
@@ -69,6 +69,7 @@ else:
  elif IsIx():
    ConfigData.set( "CONFIG", "CXX", "clang++" )
    ConfigData.set( "CONFIG", "STD", "c++11" )
+ ConfigData.set( "PATHS", "VST_SDK_DIR", GetDefault("VST_SDK_DIR", "/sdk/vstsdk2.4") )
  cfgfile = open(ConfigFileName(),'w')
  ConfigData.write(cfgfile)
  cfgfile.close()
@@ -100,6 +101,8 @@ def XCODEDIR():
  return GetEnv( "PATHS", "XCODEDIR" )
 def VST_INST_DIR(): 
  return GetEnv( "PATHS", "VST_INST_DIR" )
+def VST_SDK_DIR(): 
+ return GetEnv( "PATHS", "VST_SDK_DIR" )
 def AQSISDIR():
  return GetEnv( "PATHS", "AQSISDIR" )
 def ARCH():

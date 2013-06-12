@@ -49,7 +49,7 @@ class ClangToolChain:
 	prj.XCFLG += "-DOSX -arch %s " % Arch
 	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
 	prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
-	prj.XCXXFLG += '-F%s/Contents/Resources/include ' % AqsisDir
+	prj.XCXXFLG += '-F%s/Contents/Resources/include -Wno-c++11-narrowing ' % AqsisDir
 	prj.XLINK = '-stdlib=libc++ -v -g -F/Library/Frameworks -arch %s '%Arch
 	prj.XLINK += '-F/System/Library/Frameworks/Quartz.framework/Frameworks '
 #############################################
@@ -63,7 +63,7 @@ class MacPortsToolChain:
 	prj.CompilerType = 'gcc'
 	prj.XCFLG += "-arch %s " % Arch
 	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
-	prj.XCXXFLG += '-std=c++0x -fexceptions ' + prj.XCFLG
+	prj.XCXXFLG += '-std=c++0x -fexceptions' + prj.XCFLG
 	prj.XCXXFLG += '-F%s/Contents/Resources/include ' % AqsisDir
 	prj.XLINK = '-v -g '
 	prj.XLINK += "-arch %s " % Arch
