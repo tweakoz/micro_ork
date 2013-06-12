@@ -437,6 +437,7 @@ class Project:
 			subd["%BUNDLE_EXECUTABLE%"] = os.path.basename(str(lib[0]))
 			self.CompileEnv.MakeBundle(basenam,lib,"Info.plist",subst_dict=subd)
 			self.CompileEnv.Alias('install', self.CompileEnv.Install(destdir, basenam))
+			#self.CompileEnv.Depends(target, env['GchSh'])	
 		else:
 			self.CompileEnv.Alias('install', self.CompileEnv.Install(destdir, lib))
 
