@@ -1,0 +1,7 @@
+src/audioeffect.cpp
+src/audioeffectx.cpp
+src/vstplugmain.cpp
+src/aeffeditor.h
+src/audioeffect.h
+src/audioeffectx.h
+

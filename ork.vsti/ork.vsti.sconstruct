@@ -1,0 +1,54 @@
+import os, glob, string
+import ork.build.utils as obu
+import ork.build.common as cmn
+import ork.build.slnprj as sln
+import ork.build.localopts as localopts
+
+# set scons options ######################
+
+SetOption('implicit_cache',1)
+Decider('MD5-timestamp')
+VariantDir( 'obj', 'src',duplicate=0 )
+SetOption('num_jobs', obu.num_cores) 
+sln.optset.add("ork.upp")
+BasicEnv = Environment( ENV=os.environ )
+#bundle.TOOL_BUNDLE(BasicEnv)
+#obu.install_headers("inc/*")
+
+VST_SDK_DIR = localopts.VST_SDK_DIR()
+VST_SDK_SRC = "%s/public.sdk/source/vst2.x/*"%VST_SDK_DIR
+os.system("cp %s src/"%VST_SDK_SRC)
+
+# basics #################################
+
+
+class vsti:
+ def __init__(self):
+  ARGS = cmn.BuildArgs
+  suffix = sln.BuildSuffix(ARGS)
+  ##########################################
+  SRC_FOLDERS  = " . "
+  LIBS = ''
+  ##########################################
+  prj_lib = sln.Project(ARGS,BasicEnv,"ork.vsti")
+  prj_lib.SetSrcBase( "src" )
+  prj_lib.AddFolders( SRC_FOLDERS, "*.cpp" )
+  prj_lib.AddLibs( LIBS )
+  prj_lib.AddIncludePaths(VST_SDK_DIR)
+  prj_lib.Configure()
+  #prj_lib.EnablePlugin();
+  #self.lib = prj_lib.SharedLibrary( )
+  subsd = dict()
+  subsd["%BUNDLE_NAME%"] = "Yo"
+  subsd["%BUNDLE_ID%"] = "com.tweakoz.tozsynth.vsti"
+  dest_name = os.path.relpath(os.path.expanduser("%s/yo.vst"%localopts.VST_INST_DIR()))
+  print dest_name
+  self.lib = prj_lib.Plugin(dest_name,subsd)
+  ##########################################
+
+
+a = vsti()
+ret = list()
+ret += a.lib
+Return("ret")
+
