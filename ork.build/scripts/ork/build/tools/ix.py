@@ -59,7 +59,7 @@ def DefaultBuildEnv( env, prj ):
 	env.Replace( LIBS=string.split(LIBS) )
 	env.Replace( LIBPATH=string.split(LIBPATH) )
 
-	CxFLG = '-fPIC -fno-common -fno-strict-aliasing -g -Wno-switch-enum '
+	CxFLG = '-fPIC -fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-c++11-narrowing'
 	prj.XCCFLG += CxFLG
 	prj.XCXXFLG += CxFLG + " --std=%s -fexceptions " % cxx_std
 
