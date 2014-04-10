@@ -14,9 +14,18 @@ import os
 import errno
 import time
 import sys
-import multiprocessing
 import xml.etree.ElementTree as xml
 import hashlib
+
+num_cores = 1
+try:
+  import multiprocessing
+  num_cores = multiprocessing.cpu_count()
+except ImportError:
+  print "No MultiProcessing module - building with 1 core"
+  
+
+
 from ork.build.manifest import *
 from ork.build.pathtools import *
 
@@ -28,7 +37,7 @@ else:
     import select
     import fcntl
 
-num_cores = multiprocessing.cpu_count()
+
 stage_dir = os.environ["ORKDOTBUILD_STAGE_DIR"]
 
 ###############################################################################

@@ -74,8 +74,8 @@ public:
 	static_variant()
 		: mtinfo(nullptr)
 	{
-		mDestroyer.fetch_and_store(nullptr);
-		mCopier.fetch_and_store(nullptr);
+		mDestroyer.template fetch_and_store<MemFullFence>(nullptr);
+		mCopier.template fetch_and_store<MemFullFence>(nullptr);
 	}
 	//////////////////////////////////////////////////////////////
 	// copy constuctor
@@ -83,8 +83,8 @@ public:
 	static_variant( const static_variant& oth )
 		: mtinfo(nullptr)
 	{
-        mDestroyer.fetch_and_store(nullptr);
-        mCopier.fetch_and_store(nullptr);
+        mDestroyer.template fetch_and_store<MemFullFence>(nullptr);
+        mCopier.template fetch_and_store<MemFullFence>(nullptr);
        	
        	if( oth.mCopier )
 			oth.mCopier( *this, oth );
@@ -94,7 +94,7 @@ public:
 	{
 		if( oth.mCopier )
 		{
-			auto cop = oth.mCopier.load();
+			auto cop = oth.mCopier.template load<MemFullFence>();
 			cop( *this, oth );
 		}
 		return *this;
@@ -126,7 +126,7 @@ public:
 	//////////////////////////////////////////////////////////////
 	void Destroy() 
 	{
-		destroyer_t pdestr = mDestroyer.fetch_and_store(nullptr);
+		destroyer_t pdestr = mDestroyer.template fetch_and_store<MemFullFence>(nullptr);
 		if( pdestr ) pdestr( *this );
 	}
 	//////////////////////////////////////////////////////////////
@@ -134,14 +134,14 @@ public:
 	//////////////////////////////////////////////////////////////
 	template <typename T> void AssignDestroyer()
 	{
-		mDestroyer.fetch_and_store(& static_variant_destroyer_t<tsize,T>::destroy);
+		mDestroyer.template fetch_and_store<MemFullFence>(& static_variant_destroyer_t<tsize,T>::destroy);
 	}
 	//////////////////////////////////////////////////////////////
 	//	assign a copier
 	//////////////////////////////////////////////////////////////
 	template <typename T> void AssignCopier()
 	{
-		mCopier.fetch_and_store(& static_variant_copier_t<tsize,T>::copy);
+		mCopier.template fetch_and_store<MemFullFence>(& static_variant_copier_t<tsize,T>::copy);
 	}
 	//////////////////////////////////////////////////////////////
 	// return true if the contained object is a T

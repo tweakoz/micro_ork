@@ -15,14 +15,11 @@ import ork.build.common as common
 import ork.build.localopts as localopts
 
 HostIsOsx = common.IsOsx
+HostIsIrix = common.IsIrix
+HostIsLinux = common.IsLinux
 HostIsIx = common.IsIx
 SYSTEM = platform.system()
 #print SYSTEM
-###############################################################################
-#IsOsx = (SYSTEM=="Darwin")
-###############################################################################
-# OSX is for the most part an IX
-#IsIx = (SYSTEM=="Linux") or IsOsx
 ###############################################################################
 if HostIsIx!=True:
 	import win32pipe
@@ -101,12 +98,23 @@ def DumpBuildEnv( BuildEnv ):
 		print "construction variable = '%s', value = '%s'" % (key, dict[key])
 
 ###############################################################################
+def GetPlat():
+	PLAT = "IX"
+	if HostIsIrix:
+		PLAT = "IRIX"
+	elif HostIsOsx:
+		PLAT = "OSX"
+	return PLAT
 
 def GetProcessor(args):
 
 	PROCESSOR = "cpu"
 	PLAT = sys.platform.lower().replace( " ", "_" )
 	TARGETPLAT = args['PLATFORM']
+	print "PLAT<%s> TARGETPLAT<%s>" % (PLAT,TARGETPLAT)
+	if PLAT == 'irix6':
+		PROCESSOR='mips4'
+		TARGETPLAT='sgi'
 	if PLAT == 'darwin':
 		PROCESSOR='universal'
 		if TARGETPLAT=='ios':
@@ -131,7 +139,7 @@ def CommandPrinter(s, target, src, env):
 ###############################################################################
 
 def BuildSuffix(ARGUMENTS):
-	PLATFORM = ARGUMENTS['PLATFORM']
+	PLATFORM = GetPlat()
 	BUILD = ARGUMENTS['BUILD']
 	BUILDNAME = "%s.%s" % (PLATFORM,BUILD)
 	return BUILDNAME
@@ -147,7 +155,7 @@ class Project:
 		self.PrjDir=os.getcwd()
 
 		self.LogConfig = False
-		self.PLATFORM = ARGUMENTS['PLATFORM']
+		self.PLATFORM = GetPlat()
 		self.BUILD = ARGUMENTS['BUILD']
 		self.HOSTPLAT = sys.platform.lower().replace( " ", "_" )
 		self.TARGETPLAT = ""
@@ -161,9 +169,9 @@ class Project:
 		#print "\nBUILDDIR<%s>\n"%self.BUILD_DIR
 		##################################
 		self.BaseEnv = Environment.Clone()
-		self.BaseEnv.Replace( CCCOMSTR = "\x1b[35m Compiling \x1b[33m $SOURCE \x1b[32m" ) #% (name,self.BUILD,self.PLATFORM) )
-		self.BaseEnv.Replace( CXXCOMSTR = self.BaseEnv['CCCOMSTR'])
-		self.BaseEnv.Replace( SHCXXCOMSTR = self.BaseEnv['CCCOMSTR'])
+		#self.BaseEnv.Replace( CCCOMSTR = "\x1b[35m Compiling \x1b[33m $SOURCE \x1b[32m" ) #% (name,self.BUILD,self.PLATFORM) )
+		#self.BaseEnv.Replace( CXXCOMSTR = self.BaseEnv['CCCOMSTR'])
+		#self.BaseEnv.Replace( SHCXXCOMSTR = self.BaseEnv['CCCOMSTR'])
 		self.BaseEnv.Replace( ARCOMSTR = '\x1b[36m Archiving \x1b[37m $TARGET \x1b[32m' )
 		self.BaseEnv.Replace( LINKCOMSTR = '\x1b[36m Linking \x1b[37m $TARGET \x1b[32m' )
 		self.BaseEnv.Replace( SHLINKCOMSTR = "\x1b[35m Linking LIB \x1b[33m $TARGET \x1b[32m" )
@@ -172,11 +180,11 @@ class Project:
 		self.CustomDefines = []
 		##################################
 		self.IsLinux = (SYSTEM=="Linux")
-		self.IsIx = (self.PLATFORM=='ix')
-		self.IsOsx = (self.PLATFORM=='osx')
-		self.IsIos = (self.PLATFORM=='ios')
-		self.IsMsVc = (self.PLATFORM=='msvc')
-		self.IsDistVc = (self.PLATFORM=='distvc')
+		self.IsIx = (self.PLATFORM=='IX')
+		self.IsIrix = (self.PLATFORM=='IRIX')
+		self.IsOsx = (self.PLATFORM=='OSX')
+		self.IsIos = (self.PLATFORM=='IOS')
+		self.IsMsVc = (self.PLATFORM=='MSVC')
 		self.IsCygwin = (self.HOSTPLAT=='cygwin')
 		self.IsDbg = (self.BUILD=='dbg')
 		self.IsOpt = (self.BUILD=='opt')
@@ -205,7 +213,7 @@ class Project:
 		# common stuff
 		##############
 
-		self.XDEFS = 'ORKPLAT_%s ORKHOSTPLAT_%s ORKPROC_%s ' %(self.PLATFORM,self.HOSTPLAT,self.PROCESSOR)
+		self.XDEFS = 'PLAT_%s HOST_%s PROC_%s ' %(self.PLATFORM,self.HOSTPLAT,self.PROCESSOR)
 		self.XDEFS += '_PLATFORM=%s_%s_%s ' %(self.PLATFORM,self.HOSTPLAT,self.PROCESSOR)
 		if os.environ.has_key("ORK_OPT_BUILD"):
 			self.XDEFS += 'NDEBUG '
@@ -215,11 +223,17 @@ class Project:
 		self.XCCFLG = ''
 		self.XCXXFLG = ''
 		
+
+		print "XDEFS<%s>" % self.XDEFS
+
 		############################
 		# Build Tools/Env Selection
 		############################
 
-		if self.IsOsx:
+		if self.IsIrix:
+			import ork.build.tools.irix as build_tools
+			build_tools.DefaultBuildEnv( self.BaseEnv, self )
+		elif self.IsOsx:
 			import ork.build.tools.osx as build_tools
 			build_tools.DefaultBuildEnv( self.BaseEnv, self )
 		elif self.IsIos:

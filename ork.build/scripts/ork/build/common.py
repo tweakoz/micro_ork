@@ -16,14 +16,22 @@ import shutil
 import fnmatch
 import platform
 SYSTEM = platform.system()
+print "SYSTEM<%s>" % SYSTEM
 ###############################################################################
 IsOsx = (SYSTEM=="Darwin")
-IsIx = (SYSTEM=="Linux") or IsOsx
-print "IsIx<%s>" % IsIx
+IsIrix = (SYSTEM=="IRIX64") 
+IsLinux = (SYSTEM=="Linux")
+IsIx = IsLinux or IsOsx or IsIrix
+
+print "IsLinux<%s>" % IsLinux
+print "IsIrix<%s>" % IsIrix
 print "IsOsx<%s>" % IsOsx
+print "IsIx<%s>" % IsIx
+
 TargetPlatform = "ix"
 if IsOsx:
   TargetPlatform = "osx"
+
 ###############################################################################
 BuildArgs = dict()
 BuildArgs["PLATFORM"] = TargetPlatform

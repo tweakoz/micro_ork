@@ -47,8 +47,8 @@ private:
 template<typename Element, size_t Size>
 SpScRingBuf<Element,Size>::SpScRingBuf()
 {
-	mHeadIndex.store(0,MemFullFence);
-	mTailIndex.store(0,MemFullFence);
+	mHeadIndex.template store<MemFullFence>(Element(0));
+	mTailIndex.template store<MemFullFence>(Element(0));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -56,12 +56,12 @@ SpScRingBuf<Element,Size>::SpScRingBuf()
 template<typename Element, size_t Size>
 bool SpScRingBuf<Element, Size>::try_push(const Element& item)
 {       
-	const auto current_tail = mTailIndex.load(MemRelaxed); 
-	const auto next_tail = increment(current_tail); 
-	if(next_tail != mHeadIndex.load(MemAcquire) )
+	size_t current_tail = mTailIndex.template load<MemRelaxed>(); 
+	const size_t next_tail = increment(current_tail); 
+	if(next_tail != mHeadIndex.template load<MemAcquire>() )
 	{     
 		_array[current_tail] = item;
-		mTailIndex.store(next_tail,MemRelease);
+		mTailIndex.store<MemRelease>(next_tail);
 		return true;
 	}
   
@@ -90,12 +90,12 @@ void SpScRingBuf<Element, Size>::push(const Element& item)
 template<typename Element, size_t Size>
 bool SpScRingBuf<Element, Size>::try_pop(Element& item)
 {
-	const auto current_head = mHeadIndex.load(MemRelaxed);  
-	if(current_head == mTailIndex.load(MemAcquire) ) 
+	const auto current_head = mHeadIndex.load<MemRelaxed>();  
+	if(current_head == mTailIndex.load<MemAcquire>() ) 
 		return false; // empty queue
 
 	item = _array[current_head]; 
-	mHeadIndex.store(increment(current_head),MemRelease);
+	mHeadIndex.store<MemRelease>(increment(current_head));
 
 	return true;
 
@@ -184,11 +184,11 @@ MpMcRingBuf<T,max_items>::MpMcRingBuf()
 	for (size_t i=0; i<max_items; i++ )
 	{
 		cell_t& the_cell = mCellBuffer[i];
-		the_cell.mSequence.template store<MemRelaxed>(i);
+		the_cell.mSequence.template store<MemRelaxed>(size_t(i));
 	}
 
-	mEnqueuePos.store<MemRelaxed>(0);
-	mDequeuePos.store<MemRelaxed>(0);
+	mEnqueuePos.template store<MemRelaxed>(size_t(0));
+	mDequeuePos.template store<MemRelaxed>(size_t(0));
 }
 
 template<typename T,size_t max_items>

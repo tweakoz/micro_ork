@@ -62,8 +62,14 @@ namespace platutils {
 INLINE void* aligned_malloc(size_t sz)
 {
     void*               mem;
+#if defined(IRIX)
+    mem = memalign(CACHE_LINE_SIZE, sz);
+    return mem;
+#else
     if (posix_memalign(&mem, CACHE_LINE_SIZE, sz))
         return 0;
+
+#endif
     return mem;
 }
 
@@ -74,7 +80,11 @@ INLINE void aligned_free(void* mem)
 
 INLINE int get_proc_count()
 {
+#if defined(IRIX)
+    return (int)sysconf(_MIPS_CS_NUM_PROCESSORS);
+#else
     return (int)sysconf(_SC_NPROCESSORS_ONLN);
+#endif
 }
 
 INLINE void atomic_addr_store_release(void* volatile* addr, void* val)

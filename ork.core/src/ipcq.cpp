@@ -147,7 +147,7 @@ void IpcMsgQSender::SetSenderState(msgq_ep_state est)
 {
 	assert(mOutbox!=nullptr);
 	assert(mOutbox!=nullptr);
-	mOutbox->mSenderState.store((uint64_t)est);
+	mOutbox->mSenderState = (uint64_t) est;
 }
 msgq_ep_state IpcMsgQSender::GetRecieverState() const
 {
