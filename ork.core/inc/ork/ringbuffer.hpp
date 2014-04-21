@@ -229,6 +229,22 @@ void MpMcRingBuf<T,max_items>::push(const T& item)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/*
+pos<0>
+seq<0> dif<0> pos<0>
+CAS ref<0> new<1> old<0> changed<1> rval<1>
+eq_read<1> pos<0>
+seq<0> dif<0> pos<0>
+CAS ref<0> new<1> old<1> changed<0> rval<1>
+eq_read<1> pos<0>
+seq<0> dif<0> pos<0>
+CAS ref<0> new<1> old<1> changed<0> rval<1>
+eq_read<1> pos<0>
+seq<0> dif<0> pos<0>
+CAS ref<0> new<1> old<1> changed<0> rval<1>
+eq_read<1> pos<0>
+seq<0> dif<0> pos<0>
+*/
 
 template<typename T,size_t max_items>
 bool MpMcRingBuf<T,max_items>::try_push(const T& data)
@@ -242,6 +258,7 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 		//////////////////////////////////////
 		size_t seq = cell->mSequence.template load<MemAcquire>();
 		intptr_t dif = intptr_t(seq) - intptr_t(pos);
+		//printf( "seq<%u> dif<%d> pos<%u>\n", seq,dif,pos );
 		//////////////////////////////////////
 		if (dif == 0)
 		{	
@@ -251,7 +268,7 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 			if( bchg )
 				break;*/
 			size_t eq_read = mEnqueuePos.compare_and_swap<MemRelaxed>(pos+1,pos);
-			//printf( "eq_read<%u>\n", eq_read);
+			//printf( "eq_read<%u> pos<%u>\n", eq_read, pos);
 			if( eq_read==pos )
 				break;
 		}
@@ -262,7 +279,6 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 		else
 			pos = mEnqueuePos.load<MemRelaxed>();
 
-		//printf( "seq<%u> dif<%d> pos<%u>\n", seq,dif,pos );
 		//assert(false);
 	}
 

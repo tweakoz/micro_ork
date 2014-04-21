@@ -1,39 +1,6 @@
 #pragma once
 
 #include <stdio.h>
-
-#if ! defined(IRIX) // TBB atomics
-
-#include <tbb/tbb.h>
-
-namespace ork {
-
-///////////////////////////////////////////////
-#if 1 // relaxed mem consistency model (~50% faster than MSC)
-#define MemFullFence tbb::full_fence
-#define MemRelaxed tbb::relaxed
-#define MemAcquire tbb::acquire
-#define MemRelease tbb::release
-#else // memory sequential consistent 
-#define MemFullFence tbb::full_fence
-#define MemRelaxed tbb::full_fence
-#define MemAcquire tbb::full_fence
-#define MemRelease tbb::full_fence
-#endif
-///////////////////////////////////////////////
-
-template<typename T> using atomic = tbb::atomic<T>;
-
-/*template <typename T> struct atomic : public tbb::atomic<T>
-{
-
-};*/
-
-}
-
-
-#else // STD atomics
-
 #include <atomic>
 
 struct MemFullFence
@@ -72,9 +39,10 @@ template <typename T> struct atomic //: public std::atomic<T>
     template <typename A=MemRelaxed> T compare_and_swap( T new_val, T ref_val )
     {
     	T old_val = ref_val;
-    	bool changed = mData.compare_exchange_strong(old_val,new_val,A::GetOrder());
-    	printf( "CAS ref<%d> new<%d> old<%d> changed<%d>\n", ref_val, new_val, old_val, int(changed));
-    	return changed ? new_val : old_val;
+    	bool changed = mData.compare_exchange_weak(old_val,new_val,A::GetOrder());
+    	//T rval = changed ? new_val : old_val;
+        //printf( "CAS ref<%d> new<%d> old<%d> changed<%d> rval<%d>\n", ref_val, new_val, old_val, int(changed), rval );
+        return old_val;
     }
 
     template <typename A=MemRelaxed> T fetch_and_store( T new_val )
@@ -117,7 +85,7 @@ template <typename T> struct atomic //: public std::atomic<T>
     }
 
 
-    operator bool() const { return bool(load<MemFullFence>()); }
+    operator bool() const { return bool(load<MemRelaxed>()); }
 
     std::atomic<T> mData;
 
@@ -125,7 +93,3 @@ template <typename T> struct atomic //: public std::atomic<T>
 
 
 }
-
-///////////////////////////////////////////////
-
-#endif

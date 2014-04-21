@@ -39,7 +39,8 @@ def DefaultBuildEnv( env, prj ):
 	DEFS = ' IRIX IX GCC '
 	if USE_DEBUG_CXX:
 		DEFS += ' _GLIBCXX_DEBUG '
-	CCFLG = ' -mllsc -mabi=64'
+	CCFLG = ' -mllsc -mabi=64 -march=r10k -mtune=r10k'
+	#CCFLG = ' -mno-llsc -mabi=64 -march=r10k -mtune=r10k'
 	CXXFLG = ''
 	LIBS = "m rt pthread"
 	LIBPATH = ' . '

@@ -259,11 +259,11 @@ class Project:
 		print "name<%s> do_opt<%s>" % (name,do_opt)
 
 		if do_opt:
-			self.XCCFLG += '-O0 '
-			self.XCXXFLG += '-O0 '
+			self.XCCFLG += '-O4 '
+			self.XCXXFLG += '-O4 '
 		else:
-			self.XCCFLG += '-O0 '
-			self.XCXXFLG += '-O0 '
+			self.XCCFLG += '-O4 '
+			self.XCXXFLG += '-O4 '
 				
 	############################################
 

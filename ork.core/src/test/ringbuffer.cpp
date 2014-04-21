@@ -31,7 +31,7 @@ struct EOTEST
 
 };
 
-static const int knummsgs = 4<<10;
+static const int knummsgs = 1<<20;
 
 template <typename queue_type>
 	struct yo 
