@@ -169,11 +169,11 @@ class Project:
 		#print "\nBUILDDIR<%s>\n"%self.BUILD_DIR
 		##################################
 		self.BaseEnv = Environment.Clone()
-		#self.BaseEnv.Replace( CCCOMSTR = "\x1b[35m Compiling \x1b[33m $SOURCE \x1b[32m" ) #% (name,self.BUILD,self.PLATFORM) )
-		#self.BaseEnv.Replace( CXXCOMSTR = self.BaseEnv['CCCOMSTR'])
-		#self.BaseEnv.Replace( SHCXXCOMSTR = self.BaseEnv['CCCOMSTR'])
-		self.BaseEnv.Replace( ARCOMSTR = '\x1b[36m Archiving \x1b[37m $TARGET \x1b[32m' )
-		self.BaseEnv.Replace( LINKCOMSTR = '\x1b[36m Linking \x1b[37m $TARGET \x1b[32m' )
+		self.BaseEnv.Replace( CCCOMSTR = "\x1b[35m Compiling \x1b[33m $SOURCE \x1b[0m" ) #% (name,self.BUILD,self.PLATFORM) )
+		self.BaseEnv.Replace( CXXCOMSTR = self.BaseEnv['CCCOMSTR'])
+		self.BaseEnv.Replace( SHCXXCOMSTR = self.BaseEnv['CCCOMSTR'])
+		self.BaseEnv.Replace( ARCOMSTR = '\x1b[36m Archiving \x1b[37m $TARGET \x1b[0m' )
+		self.BaseEnv.Replace( LINKCOMSTR = '\x1b[36m Linking \x1b[37m $TARGET \x1b[0m' )
 		self.BaseEnv.Replace( SHLINKCOMSTR = "\x1b[35m Linking LIB \x1b[33m $TARGET \x1b[32m" )
   		#self.BaseEnv['PRINT_CMD_LINE_FUNC'] = CommandPrinter
 		##################################
@@ -259,8 +259,8 @@ class Project:
 		print "name<%s> do_opt<%s>" % (name,do_opt)
 
 		if do_opt:
-			self.XCCFLG += '-O3 '
-			self.XCXXFLG += '-O3 '
+			self.XCCFLG += '-O0 '
+			self.XCXXFLG += '-O0 '
 		else:
 			self.XCCFLG += '-O0 '
 			self.XCXXFLG += '-O0 '

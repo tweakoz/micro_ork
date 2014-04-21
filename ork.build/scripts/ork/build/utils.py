@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 
-import os, sys
+import os, sys, string
 import shutil, glob
 import platform
 import subprocess
@@ -17,12 +17,26 @@ import sys
 import xml.etree.ElementTree as xml
 import hashlib
 
+def is_irix():
+	return sys.platform.find("irix")!=-1
+
+def pexec(args):
+    return subprocess.Popen(string.split(args), stdout=subprocess.PIPE, shell=True).communicate()[0]
+
 num_cores = 1
-try:
-  import multiprocessing
-  num_cores = multiprocessing.cpu_count()
-except ImportError:
-  print "No MultiProcessing module - building with 1 core"
+
+print "is_irix<%s>" % is_irix()
+if is_irix():
+	num_cores_str = pexec( 'hinv -c processor' )
+	f = string.split(num_cores_str)[0]
+	num_cores = int(float(f))
+	print "IRIX num_cores<%d>" % num_cores
+else:
+   try:
+     import multiprocessing
+     num_cores = multiprocessing.cpu_count()
+   except ImportError:
+     print "No MultiProcessing module - building with 1 core"
   
 
 

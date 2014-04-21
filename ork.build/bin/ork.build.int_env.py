@@ -66,5 +66,6 @@ print
 
 if as_main:
 	shell = os.environ["SHELL"] # get previous shell
+	print "SHELL<%s>" % shell
 	os.system(shell) # call shell with new vars (just "exit" to exit)
 

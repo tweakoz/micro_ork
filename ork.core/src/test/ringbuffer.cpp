@@ -63,18 +63,21 @@ template <typename queue_type>
 		{
 			yo* pyo = (yo*) ctx;
 			queue_type& the_queue = pyo->mQueue;
+			printf( "STARTED PRODUCER knummsgs<%d>\n", knummsgs);
 			for( int i=0; i<knummsgs; i++ )
 			{
+				//printf( " prod pushing<%d>\n", i );
 				the_queue.push(i);
 				extstring_t str;
 				str.format("to<%d>", i);
 				the_queue.push(str);
-			}
+			}			
 			the_queue.push(EOTEST());
 			return 0;
 		}
 		static void* consumer_thread(void* ctx)
 		{
+			printf( "STARTED CONSUMER\n");
 			yo* pyo = (yo*) ctx;
 			queue_type& the_queue = pyo->mQueue;
 			value_type popped;
@@ -86,6 +89,8 @@ template <typename queue_type>
 			{
 				while( the_queue.try_pop(popped) )
 				{
+					//printf( " cons pulling ictr1<%d> ictr2<%d>\n", ictr1, ictr2 );
+
 					if( popped.template IsA<int>() )
 					{
 						int iget = popped.template Get<int>();

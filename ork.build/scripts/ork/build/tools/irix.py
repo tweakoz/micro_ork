@@ -18,9 +18,9 @@ from SCons.Script.SConscript import SConsEnvironment
 
 print "Using Irix Build Env"
 
+c_comp = "gcc"
 cxx_comp = "g++"
 cxx_std = localopts.STD()
-c_comp = localopts.CXX()
 
 ###############################################################################
 # Python Module Export Declaration
@@ -39,8 +39,8 @@ def DefaultBuildEnv( env, prj ):
 	DEFS = ' IRIX IX GCC '
 	if USE_DEBUG_CXX:
 		DEFS += ' _GLIBCXX_DEBUG '
-	CCFLG = ' -mllsc'
-	CXXFLG = ' -mllsc'
+	CCFLG = ' -mllsc -mabi=64'
+	CXXFLG = ''
 	LIBS = "m rt pthread"
 	LIBPATH = ' . '
 	#if USE_DEBUG_CXX:
@@ -63,6 +63,6 @@ def DefaultBuildEnv( env, prj ):
 
 	prj.CompilerType = 'gcc'
 
-	prj.XLINK = '-v -g -Wl,-rpath,/projects/redux/stage/lib'
+	prj.XLINK = '-v -g -mabi=64 -Wl,-rpath,/projects/redux/stage/lib'
 
 

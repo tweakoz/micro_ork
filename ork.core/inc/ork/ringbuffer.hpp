@@ -13,6 +13,7 @@
 
 #include <ork/atomic.h>
 #include "platutils.hpp"
+#include <assert.h>
 
 namespace ork {
 
@@ -187,8 +188,8 @@ MpMcRingBuf<T,max_items>::MpMcRingBuf()
 		the_cell.mSequence.template store<MemRelaxed>(size_t(i));
 	}
 
-	mEnqueuePos.template store<MemRelaxed>(size_t(0));
-	mDequeuePos.template store<MemRelaxed>(size_t(0));
+	mEnqueuePos.template store<MemRelaxed>(0U);
+	mDequeuePos.template store<MemRelaxed>(0U);
 }
 
 template<typename T,size_t max_items>
@@ -234,6 +235,7 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 {
 	cell_t* cell = nullptr;
 	size_t pos = mEnqueuePos.load<MemRelaxed>();
+	//printf( "pos<%u>\n", pos );
 	for (;;)
 	{
 		cell = mCellBuffer + (pos & kBufferMask);
@@ -249,6 +251,7 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 			if( bchg )
 				break;*/
 			size_t eq_read = mEnqueuePos.compare_and_swap<MemRelaxed>(pos+1,pos);
+			//printf( "eq_read<%u>\n", eq_read);
 			if( eq_read==pos )
 				break;
 		}
@@ -258,6 +261,9 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 		//////////////////////////////////////
 		else
 			pos = mEnqueuePos.load<MemRelaxed>();
+
+		//printf( "seq<%u> dif<%d> pos<%u>\n", seq,dif,pos );
+		//assert(false);
 	}
 
 	cell->mData = data;

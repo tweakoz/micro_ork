@@ -20,7 +20,7 @@
 
 void SetCurrentThreadName(const char* threadName)
 {
-#if ! defined(OSX)
+#if defined(LINUX)
 	static const int  kMAX_NAME_LEN = 15;
 	char name[kMAX_NAME_LEN+1];
 	for( int i=0; i<kMAX_NAME_LEN; i++ ) name[i]=0;

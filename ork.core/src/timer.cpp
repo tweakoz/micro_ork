@@ -53,12 +53,14 @@ double get_sync_time(clockType type)
     case clockRealTime:
         clock = CLOCK_REALTIME;
         break;
+#if defined(LINUX)
     case clockProcessTime:
         clock = CLOCK_PROCESS_CPUTIME_ID;
         break;
     case clockThreadTime:
         clock = CLOCK_THREAD_CPUTIME_ID;
         break;
+#endif
     }
 #endif
     if( b1sttime )
