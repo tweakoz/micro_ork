@@ -1028,5 +1028,15 @@ bool Path::IsSymLink() const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+size_t Path::SizeOfFile() const
+{
+    struct stat file_stat;
+    int ist = stat( c_str(), & file_stat );
+    size_t rval = (ist==0)
+        ? size_t(file_stat.st_size)
+        : false;
+    //printf( "sizeof<%s> : %d\n", c_str(), int(rval) );
+    return rval;
+}
 
 } // namespace

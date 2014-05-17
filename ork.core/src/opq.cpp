@@ -12,8 +12,58 @@
 #include <ork/future.hpp>
 #include <ork/atomic.h>
 
+
+
 #if ! defined(OSX)
 #include <sys/prctl.h>
+#endif
+
+namespace ork {
+
+void dispersed_sleep(int idx, int iquantausec )
+{
+	static const int ktabsize = 16;
+	static const int ktab[ktabsize] = 
+	{
+		0, 1, 3, 5, 
+		17, 19, 21, 23,
+		35, 37, 39, 41,
+		53, 55, 57, 59,
+	};
+	usleep(ktab[idx&0xf]*iquantausec);
+}
+
+atomic_counter::atomic_counter(const atomic_counter&oth)
+{
+    set(oth.get());
+}
+atomic_counter::atomic_counter(int ival)
+{
+#if defined(USE_FETCHOP)
+    mVar = atomic_alloc_variable(gatomres, 0);
+    set(ival);
+#else
+    set(ival);
+#endif
+}
+
+atomic_counter::~atomic_counter()
+{
+#if defined(USE_FETCHOP)
+    atomic_free_variable(gatomres,mVar);
+#endif
+}
+
+
+void atomic_counter::init()
+{
+#if defined(USE_FETCHOP)
+	gatomres = atomic_alloc_reservoir(USE_DEFAULT_PM,1024, 0);
+#endif
+}
+
+#if defined(USE_FETCHOP)
+atomic_reservoir_t atomic_counter::gatomres;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
@@ -59,10 +109,6 @@ Op::Op(const Op& oth)
 	{
 		SetOp(oth.mWrapped.Get<void_lambda_t>());
 	}
-	//else if( oth.mWrapped.IsA<void_block_t>() )
-	//{
-	//	SetOp(oth.mWrapped.Get<void_block_t>());
-	//}
 	else if( oth.mWrapped.IsA<BarrierSyncReq>() )
 	{
 		SetOp(oth.mWrapped.Get<BarrierSyncReq>());
@@ -91,10 +137,6 @@ void Op::SetOp(const op_wrap_t& op)
 	{
 		mWrapped = op;
 	}
-	//else if( op.IsA<void_block_t>() )
-	//{
-	//	mWrapped = op;
-	//}
 	else if( op.IsA<BarrierSyncReq>() )
 	{
 		mWrapped = op;
@@ -182,14 +224,12 @@ void* OpqThreadImpl( void* arg_opaq )
 
 void OpMultiQ::notify_all()
 {
-	//mOpsPendingCounter.fetch_and_increment();
 }
 void OpMultiQ::notify_one()
 {
 	//lock_t lock(mOpWaitMtx);
 	//mOpWaitCV.notify_one();
-	//mOpsPendingCounter.fetch_and_increment();
-	mOpsPendingCounter2.fetch_and_increment();
+	mTotalOpsPendingCounter.fetch_and_increment();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -211,6 +251,7 @@ void OpMultiQ::BlockingIterate(int thid)
 	/////////////////////////////////////////////////
 
 	OpGroup* exec_grp = nullptr;
+	bool return_group_at_end = false;
 
 	bool have_exclusive_ownership_of_group = false;
 
@@ -219,13 +260,13 @@ void OpMultiQ::BlockingIterate(int thid)
 	ork::Timer tmr_grp_outer;
 	tmr_grp_outer.Start();
 
-	//const int ksleepar[9] = {10,21,43,87,175,351,701,1403,3001};
-	//const int ksleepar[9] = {10,17,23,27,35,151,301,603,1201};
 	const int ksleepar[9] = {10,17,23,27,35,151,301,603,1201};
+	//const int ksleepar[9] = {1,1,1,1,1,1,1,1,1};
 	static const int ksh = 0;
 
 	int iouterattempt = 0;
-	while( (exec_grp == nullptr) && (false==mbOkToExit) )
+	while( 		(false==mbOkToExit)
+			&& 	(exec_grp == nullptr) )
 	{
 		/////////////////////////////////////////
 		// get a group to test
@@ -233,156 +274,155 @@ void OpMultiQ::BlockingIterate(int thid)
 
 		OpGroup* test_grp = nullptr;
 		int iinnerattempt = 0;
-		ork::Timer tmr_grp_inner;
-		tmr_grp_inner.Start();
-		while( (false == mOpGroupRing.try_pop(test_grp)) && (false==mbOkToExit) )
-		{
-			/////////////////////////////////////////
-			// check for stall
-			/////////////////////////////////////////
-
-			if( tmr_grp_inner.SecsSinceStart() > 3.0f )
-			{
-				nf_assert(false,"OPQ stall detected (getting group:inner) thid<%d> gopctr<%d> iouterattempt<%d>\n", thid, iopctr, iouterattempt);
-				tmr_grp_inner.Start();
-			}
-			/////////////////////////////////////////
+		while(		(false==mbOkToExit)
+				&&	(false == mOpGroupRing.try_pop(test_grp)) 
+		){
 			// sleep semirandom amt of time for thread dispersion
-			/////////////////////////////////////////
-			usleep(ksleepar[(iinnerattempt>>ksh)%9]);
+			usleep(ksleepar[(iinnerattempt>>ksh)%9]*100);
 			iinnerattempt++;
 		}
+		mPerfCntInnerAttempts.fetch_and_add(iinnerattempt);
 
 		/////////////////////////////////////////
-
 		if( mbOkToExit ) return; // exiting ?
+		/////////////////////////////////////////
 
 		/////////////////////////////////////////
 		// we have a group to test
 		/////////////////////////////////////////
 
 		assert(test_grp!=nullptr);
-
-		int imax = test_grp->mLimitMaxOpsInFlight;
 		const char* grp_name = test_grp->mGroupName.c_str();
 
 		/////////////////////////////////////////
 
+		const int imax = test_grp->mLimitMaxOpsInFlight;
 		int inumopsalreadyinflight = test_grp->mOpsInFlightCounter.fetch_and_increment();
-		int igrpnumopspending = test_grp->mOpsPendingCounter.fetch_and_decrement();
+		bool exceeded_max_concurrent = ((imax!=0) && (inumopsalreadyinflight > imax));
+		bool reached_max_concurrent = ((imax!=0) && (inumopsalreadyinflight+1) == imax);
+		int igrpnumopspending = test_grp->mOpsPendingCounter.get();
 
-		bool exceeded_max_concurrent = ((imax!=0) && (inumopsalreadyinflight >= imax));
-		bool reached_max_concurrent = ((imax!=0) && ((inumopsalreadyinflight+1) >= imax));
+		/////////////////////////////////////////
 
-		if( (false==exceeded_max_concurrent) && (igrpnumopspending!=0) )
+		if( exceeded_max_concurrent || (0 == igrpnumopspending) )
 		{
-			exec_grp = test_grp;
-
-			if( reached_max_concurrent )
-				/////////////////////////////////////////
-				// defer group return until operation complete
-				//   (limit concurrent ops on this group)
-				/////////////////////////////////////////
-				have_exclusive_ownership_of_group = true; 
-			else
-				/////////////////////////////////////////
-				// return group now 
-				//   (allow more concurrent ops on this group)
-				/////////////////////////////////////////
-				mOpGroupRing.push(exec_grp);
-
-			ork::Timer tmr_op;
-			tmr_op.Start();
-
-			int iiiattempt = 0;
-
-			while( (false==exec_grp->try_pop(the_op)) && (false==mbOkToExit) )
-			{	if( tmr_op.SecsSinceStart() > 3.0f )
-				{	nf_assert(false,"OPQ stall detected (getting op) thid<%d> grp<%s> goif<%d> gopspend<%d> gopctr<%d> iouterattempt<%d> iiiattempt<%d>\n", thid, grp_name, inumopsalreadyinflight, igrpnumopspending, iopctr, iouterattempt, iiiattempt);
-					tmr_op.Start();
-				}
-				/////////////////////////////////////////
-				// sleep semirandom amt of time for thread dispersion
-				/////////////////////////////////////////
-				usleep(ksleepar[(iiiattempt>>ksh)%9]);
-				iiiattempt++;
-			}
-			////////////////////////////////
-			if( mbOkToExit ) return; // early exit ?
-			////////////////////////////////
-
-			goto ok_to_go;
+			test_grp->mOpsInFlightCounter.fetch_and_decrement();
+			mOpGroupRing.push(test_grp);
+			int iter = mPerfCntNumIters.get();
+			usleep(ksleepar[iter%9]*3);
+			continue;
 		}
 
-		/////////////////////////////////////////
-		// not processing an op this time,
-		//  undo and atomic modifications
-		//  and move on to next group 
-		/////////////////////////////////////////
+		exec_grp = test_grp;
 
-		test_grp->mOpsInFlightCounter.fetch_and_decrement();
-		test_grp->mOpsPendingCounter.fetch_and_increment();
-
-
-		mOpGroupRing.push(test_grp);
+		if( reached_max_concurrent )
+			return_group_at_end = true;
+		else
+			mOpGroupRing.push(test_grp);
 
 		/////////////////////////////////////////
-		// sleep semirandom amt of time for thread dispersion
-		/////////////////////////////////////////
+	}   // while we dont have a group (or we are exiting)
 
-		usleep(ksleepar[(iouterattempt>>ksh)%9]);
-		iouterattempt++;
+	if(mbOkToExit)
+		return;
 
-		/////////////////////////////////////////
-		// check for idle
-		/////////////////////////////////////////
-
-		if( tmr_grp_outer.SecsSinceStart() > 10.0f )
-		{
-			nf_assert(false,"OPQTHR::IDLE thid<%d> gopctr<%d> iouterattempt<%d>\n", thid, iopctr, iouterattempt);
-			tmr_grp_outer.Start();
-		}
-		/////////////////////////////////////////
-	}
-ok_to_go:
-	if(mbOkToExit) return;
 	assert(exec_grp!=nullptr);
 	
-	const int kmaxperquanta = 64;
+	const int kmaxperquanta = 1024;
 
-	ProcessOne(exec_grp,the_op);
+	float outer_wait_ms = 1000.0f * tmr_grp_outer.SecsSinceStart();
+	mPerfCntGroupWaitMs.fetch_and_add( int(outer_wait_ms) );
 
-	int inumthisquanta = 1;
+	//ProcessOne(exec_grp,the_op);
 
-	if( have_exclusive_ownership_of_group ) // we exclusively own this group, milk it
+	int inumthisquanta = 0;
+
+	if( 1 ) // we exclusively own this group, milk it
 	{
+		mPerfCntExclusive.fetch_and_increment();
 		ork::Timer quanta_timer;
 		quanta_timer.Start();
 
 		bool bkeepgoing = true;
 
+		int inumunderrun = 0;
+
 		while( bkeepgoing )
 		{
-			int igrpnumopspending = exec_grp->mOpsPendingCounter.fetch_and_decrement();
-			if( igrpnumopspending>0 )
+			bool bgotone = exec_grp->try_pop(the_op);
+			if( bgotone )
 			{
-				bool bgotone = exec_grp->try_pop(the_op);
-				assert(bgotone); 
-				exec_grp->mOpsInFlightCounter.fetch_and_increment();
 				ProcessOne(exec_grp,the_op);
+				exec_grp->notify_op_complete();
+				mTotalOpsPendingCounter.fetch_and_decrement();
 				inumthisquanta++;
-				bkeepgoing = (inumthisquanta<kmaxperquanta) && (quanta_timer.SecsSinceStart()<0.001);
 			}
 			else
-			{	bkeepgoing = false;
-				exec_grp->mOpsPendingCounter.fetch_and_increment();
+			{	
+				mPerfCntOutOfOps.fetch_and_increment();
+				//usleep(100);
+				inumunderrun++;
 			}
+			bool count_exceeded = (inumthisquanta>=kmaxperquanta);
+			bool timeq_exceeded = (quanta_timer.SecsSinceStart()>=0.05);
+			bool under_exceeded = (inumunderrun>=1);
+
+			bool either_exceeded = count_exceeded||timeq_exceeded||under_exceeded;
+
+			if( count_exceeded )
+				mPerfCntNumOpsExceeded.fetch_and_increment();
+			if( timeq_exceeded )
+			{
+				mPerfCntTimeExceeded.fetch_and_increment();
+				usleep(10000);
+			}
+
+			bkeepgoing = (!either_exceeded);
 		}
 
-		mOpGroupRing.push(exec_grp); // release the group
 	}
+
+
+	exec_grp->mOpsInFlightCounter.fetch_and_decrement();
+	mPerfCntNumOpsAccum.fetch_and_add(inumthisquanta);
+	mPerfCntNumIters.fetch_and_increment();
+
+	if( return_group_at_end )
+		mOpGroupRing.push(exec_grp); // release the group
 }
 
+void OpMultiQ::PerfReport()
+{
+	if( 0 ) //mPerfReport.get() > 1000 )
+	{
+		printf( "////////////////////////////////////////\n" );
+		printf( "OpMultQ<%p> PerfReport mPerfCntNumIters<%d>\n", this, mPerfCntNumIters.get() );
+		printf( "OpMultQ<%p> mPerfCntOuterAttempts<%d>\n", this, mPerfCntOuterAttempts.get() );
+		printf( "OpMultQ<%p> mPerfCntInnerAttempts<%d>\n", this, mPerfCntInnerAttempts.get() );
+		printf( "OpMultQ<%p> mPerfCntInner2Attempts<%d>\n", this, mPerfCntInner2Attempts.get() );
+		printf( "OpMultQ<%p> mPerfCntGroupWaitMs<%d>\n", this, mPerfCntGroupWaitMs.get() );
+		printf( "OpMultQ<%p> mPerfCntGroupWaitMsPerThread<%f>\n", this, float(mPerfCntGroupWaitMs.get())/float(mNumThreads) );
+		printf( "OpMultQ<%p> mPerfCntExclusive<%d>\n", this, mPerfCntExclusive.get() );
+		printf( "OpMultQ<%p> mPerfCntNumOpsExceeded<%d>\n", this, mPerfCntNumOpsExceeded.get() );
+		printf( "OpMultQ<%p> mPerfCntTimeExceeded<%d>\n", this, mPerfCntTimeExceeded.get() );
+		printf( "OpMultQ<%p> mPerfCntOutOfOps<%d>\n", this, mPerfCntOutOfOps.get() );
+		printf( "OpMultQ<%p> mPerfCntNumOpsAccum<%d>\n", this, mPerfCntNumOpsAccum.get() );
+
+
+
+		mPerfCntExclusive.set(0);
+		mPerfCntNumOpsExceeded.set(0);
+		mPerfCntTimeExceeded.set(0);
+		mPerfCntOutOfOps.set(0);
+		mPerfCntNumOpsAccum.set(0);
+		mPerfCntNumIters.set(0);
+		mPerfCntOuterAttempts.set(0);
+		mPerfCntInnerAttempts.set(0);
+		mPerfCntInner2Attempts.set(0);
+		mPerfCntGroupWaitMs.set(0);
+	}
+
+}
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -415,8 +455,6 @@ void OpMultiQ::ProcessOne(OpGroup*pexecgrp,const Op& the_op)
 		assert(false);
 	}
 	/////////////////////////////////////////////////
-	pexecgrp->mOpsInFlightCounter.fetch_and_decrement();
-	this->mOpsPendingCounter2.fetch_and_decrement();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -441,9 +479,12 @@ void OpMultiQ::sync()
 
 void OpMultiQ::drain()
 {
-	while(int(mOpsPendingCounter2))
+	int index = 0;
+	while(int(mTotalOpsPendingCounter))
 	{
-		usleep(100);
+		//printf( "draining mOpsPendingCounter2<%d>\n", int(mOpsPendingCounter2) );
+		dispersed_sleep(index,100);
+		index++;
 	}
 	//printf( "Opq::drain count<%d>\n", int(mSynchro.mOpCounter));
 	//OpqDrained pred_is_drained;
@@ -467,9 +508,20 @@ OpGroup* OpMultiQ::CreateOpGroup(const char* pname)
 OpMultiQ::OpMultiQ(int inumthreads,const char* name)
 	: mbOkToExit(false)
 	, mName(name)
+	, mNumThreads(inumthreads)
 {
-	mOpsPendingCounter2 = 0;
-	//mOpsPendingCounter = 0;
+	mPerfCntExclusive.set(0);
+	mPerfCntNumOpsExceeded.set(0);
+	mPerfCntTimeExceeded.set(0);
+	mPerfCntOutOfOps.set(0);
+	mPerfCntNumOpsAccum.set(0);
+	mPerfCntNumIters.set(0);
+	mPerfCntOuterAttempts.set(0);
+	mPerfCntInnerAttempts.set(0);
+	mPerfCntInner2Attempts.set(0);
+	mPerfCntGroupWaitMs.set(0);
+
+	mTotalOpsPendingCounter = 0;
 	mGroupCounter = 0;
 	mThreadsRunning = 0;
 
@@ -483,15 +535,22 @@ OpMultiQ::OpMultiQ(int inumthreads,const char* name)
 		thd->miThreadID = i;
 
 		thd->mpOpQ = this;
-	    pthread_t thread_handle;  
-	    int rc = pthread_create(&thread_handle, NULL, OpqThreadImpl, (void*)thd);
+
+		auto l = [=](){
+			OpqThreadImpl((void*)thd);
+		};
+		auto pthread = new ork::thread;
+		pthread->start(l);
+		mThreadSet.insert(pthread);
 	}
+
 }
 
 ///////////////////////////////////////////////////////////////////////////
 
 OpMultiQ::~OpMultiQ()
 {
+
 	/////////////////////////////////
 	// dont accept any more ops
 	/////////////////////////////////
@@ -507,6 +566,8 @@ OpMultiQ::~OpMultiQ()
 
 	drain();
 
+	PerfReport();
+
 	/////////////////////////////////
 	// Signal to worker threads that we are ready to go down
 	// Spam the worker thread semaphore until it does go down
@@ -515,12 +576,19 @@ OpMultiQ::~OpMultiQ()
 
 	mbOkToExit = true;
 
+	int index = 0;
 	while(int(mThreadsRunning)!=0)
 	{
 		notify_all();
-		usleep(10);
+		dispersed_sleep(index++,100);
 	}
 
+	/////////////////////////////////
+
+	for( ork::thread* thr : mThreadSet )
+	{
+		delete thr;
+	}
 
 	/////////////////////////////////
 	// trash the groups
@@ -535,6 +603,12 @@ OpMultiQ::~OpMultiQ()
 
 	/////////////////////////////////
 
+
+
+	/////////////////////////////////
+
 }
 
 ///////////////////////////////////////////////////////////////////////////
+
+} // namespace ork

@@ -6,22 +6,27 @@
 
 #pragma once
 
+#include <ork/types.h>
 #include <ork/concurrent_queue.hpp>
 #include <ork/svariant.h>
 #include <ork/atomic.h>
+#include <ork/thread.h>
 #include <semaphore.h>
-#include <functional>
 #include <string>
 
 #include <set>
 
 typedef ork::svar128_t op_wrap_t;
-typedef std::function<void()> void_lambda_t;
 
-struct OpMultiQ;
 
 //////////////////////////////////////////////////////////////////////
-namespace ork { struct Future; };
+namespace ork {
+
+struct OpMultiQ;
+struct Future; 
+
+void dispersed_sleep(int idx, int iquantausec );
+
 //////////////////////////////////////////////////////////////////////
 
 void SetCurrentThreadName(const char* threadName);
@@ -72,8 +77,9 @@ struct OpGroup
 	void drain();
 	void MakeSerial() { mLimitMaxOpsInFlight=1; }
 	void Disable() { mEnabled=false; }
-	int NumOps() const { return int(mOpsPendingCounter); }
-
+	int NumOps() const { return mOpsPendingCounter.get(); }
+	void notify_op_complete();
+	
 	////////////////////////////////
 
 	std::string mGroupName;
@@ -81,10 +87,10 @@ struct OpGroup
 
 	////////////////////////////////
 
-	ork::mpmc_bounded_queue<Op,4096> 	mOps;
-	ork::atomic<int>			 		mOpsInFlightCounter;
-	ork::atomic<int>			 		mOpSerialIndex;
-	ork::atomic<int> 					mOpsPendingCounter;
+	ork::mpmc_bounded_queue<Op,65536> 	mOps;
+	ork::atomic_counter			 		mOpsInFlightCounter;
+	ork::atomic_counter			 		mOpSerialIndex;
+	ork::atomic_counter	 				mOpsPendingCounter;
 
 	bool 								mEnabled;
 
@@ -121,17 +127,34 @@ struct OpMultiQ
 	bool mbOkToExit;
 	ork::atomic<int> mThreadsRunning;
 	std::string mName;
+	int mNumThreads;
+
+	atomic_counter mPerfCntExclusive;
+	atomic_counter mPerfCntNumOpsExceeded;
+	atomic_counter mPerfCntTimeExceeded;
+	atomic_counter mPerfCntOutOfOps;
+	atomic_counter mPerfCntNumOpsAccum;
+	atomic_counter mPerfCntOuterAttempts;
+	atomic_counter mPerfCntInnerAttempts;
+	atomic_counter mPerfCntInner2Attempts;
+	atomic_counter mPerfCntNumIters;
+	atomic_counter mPerfCntGroupWaitMs;
+
 
 private:
 
 	void ProcessOne(OpGroup*pgrp,const Op& the_op);
 	void notify_all();
 
+	void PerfReport();
+
 	ork::mpmc_bounded_queue<OpGroup*,32> 	mOpGroupRing;
 
-	ork::atomic<int> mOpsPendingCounter2;
+	ork::atomic<int> mTotalOpsPendingCounter;
+	std::set<thread*> mThreadSet;
 	//std::condition_variable mOpWaitCV;
 	//mtx_t mOpWaitMtx;
 
 };	
 
+}; // namespace ork

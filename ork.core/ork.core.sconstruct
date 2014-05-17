@@ -23,7 +23,7 @@ class core:
   ARGS = cmn.BuildArgs
   suffix = sln.BuildSuffix(ARGS)
   ##########################################
-  SRC_FOLDERS  = " . "
+  SRC_FOLDERS  = " . meshutil math concurrency"
   LIBS = ''
   ##########################################
   prj_lib = sln.Project(ARGS,BasicEnv,"ork.core")

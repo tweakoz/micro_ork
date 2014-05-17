@@ -11,6 +11,8 @@
 #include <ork/future.hpp>
 //#include <sys/prctl.h>
 
+namespace ork {
+
 ///////////////////////////////////////////////////////////////////////////
 
 OpGroup::OpGroup(OpMultiQ*popq, const char* pname)
@@ -20,9 +22,9 @@ OpGroup::OpGroup(OpMultiQ*popq, const char* pname)
 	, mGroupName(pname)
 	, mEnabled(true)
 {
-	mOpsPendingCounter = 0;
-	mOpsInFlightCounter = 0;
-	mOpSerialIndex = 0;
+	mOpsPendingCounter.set(0);
+	mOpsInFlightCounter.set(0);
+	mOpSerialIndex.set(0);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -36,18 +38,19 @@ void OpGroup::push(const Op& the_op)
 		////////////////////////////////
 		if( mLimitMaxOpsQueued )
 		{
-			while( int(mOpsPendingCounter) > int(mLimitMaxOpsQueued) )
+			int index = 0;
+			while( mOpsPendingCounter.get() > mLimitMaxOpsQueued )
 			{
-				usleep(100);
+				//printf( "mOpsPendingCounter<%d> mLimitMaxOpsQueued<%d>\n", mOpsPendingCounter.get(), mLimitMaxOpsQueued );
+				dispersed_sleep(index++,30);
 			}
 		}
 		////////////////////////////////
 
-		mOps.push(the_op);
-
 		mOpsPendingCounter.fetch_and_increment();
+		mOpSerialIndex.fetch_and_increment();
 
-		mOpSerialIndex++;
+		mOps.push(the_op);
 
 		mpOpQ->notify_one();
 	}
@@ -57,14 +60,22 @@ void OpGroup::push(const Op& the_op)
 
 void OpGroup::drain()
 {
-	while(int(mOpsPendingCounter))
+	int index = 0;
+	while(mOpsPendingCounter.get()>0)
 	{
+		//dispersed_sleep(index++,10);
 		usleep(100);
 	}
 	//printf( "OpGroup::drain count<%d>\n", int(mSynchro.mOpCounter));
 	//OpqDrained pred_is_drained;
 	//mSynchro.WaitOnCondition(pred_is_drained);
 }
+
+void OpGroup::notify_op_complete()
+{
+	mOpsPendingCounter.fetch_and_decrement();
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -76,3 +87,5 @@ bool OpGroup::try_pop( Op& out_op )
 }
 
 ///////////////////////////////////////////////////////////////////////////
+} // namespace ork
+

@@ -1,9 +1,21 @@
 #pragma once
 
-#include <pthread.h>
+#include <ork/types.h>
 #include <ork/svariant.h>
-#include <ork/opq.h>
 #include <functional>
+#include <ork/atomic.h>
+
+
+#if 0 //defined(__sgi)
+#define USE_SPROC
+#include <sys/types.h>
+#include <sys/prctl.h>
+#include <sys/sysmp.h>
+#include <sys/wait.h>
+#else
+#define USE_PTHREAD
+#include <pthread.h>
+#endif
 
 namespace ork {
 
@@ -11,43 +23,43 @@ namespace ork {
 struct thread
 {
 
-	thread()
+	thread();
+	~thread();
+
+	void start( const ork::void_lambda_t& l );
+	void join();
+
+	atomic<int> mState;
+	#if defined(USE_PTHREAD)
+	pthread_t mThreadHandle;
+	#elif defined(USE_SPROC)
+	int mSprocPid;
+	#endif
+	ork::void_lambda_t mLambda;
+
+};
+
+struct autothread
+{
+	autothread()
 	{
-		mState = 0;
+		auto l = [&]()
+		{
+			this->run();
+		};
+		mThread.start(l);
 	}
-	~thread()
+	~autothread()
 	{
 		join();
 	}
-
-	inline static void* thread_impl(void* pdat)
+	void join()
 	{
-		thread* pthr = (thread*) pdat;
-		pthr->mLambda();
-		return nullptr;
+		mThread.join();
 	}
-	inline void start( const ork::void_lambda_t& l )
-	{
-		if( mState.fetch_and_increment()==0 )
-		{
-			mLambda = l;
-			pthread_create(&mThreadHandle, NULL, thread_impl, (void*) this );
+	virtual void run() = 0;
 
-		}
-	}
-
-	inline void join()
-	{
-		if( mState.fetch_and_decrement()==1 )
-		{
-			pthread_join(mThreadHandle,NULL);
-		}
-	}
-
-	tbb::atomic<int> mState;
-	pthread_t mThreadHandle;
-	ork::void_lambda_t mLambda;
-
+	thread mThread;
 };
 
 }

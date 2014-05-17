@@ -7,6 +7,7 @@
 #pragma once
 
 #include <pthread.h>
+#include <functional>
 
 namespace ork {
 ///////////////////////////////////////////////////////////////////////////////
@@ -36,9 +37,10 @@ private:
 //! A locked resource is just a mutex wrapped resource which must be locked to access
 //!  dont forget to unlock it when done.... (TODO: RAII based auto-unlock)
 
-template <typename T> class LockedResource
+template <typename T> struct LockedResource
 {
-public:
+    typedef std::function<void(T& ref)> ref_lambda_t;
+    typedef std::function<void(const T& ref)> const_ref_lambda_t;
 	//////////////////////////////////
 	LockedResource()
 	{
@@ -59,8 +61,36 @@ public:
 		return mResource;
 	}
 	//////////////////////////////////
-	void UnLock() const
+	void Unlock() const
 	{	mResourceMutex.Unlock();
+	}
+	//////////////////////////////////
+   void AtomicCopy( T& out_copy ) const // perhaps we can try out c++11 move semantics with this
+    {
+        mResourceMutex.Lock();
+        out_copy = mResource;
+        mResourceMutex.Unlock();
+    }
+	T AtomicCopy() const
+	{
+		mResourceMutex.Lock();
+		T rval = mResource;
+		mResourceMutex.Unlock();
+		return rval;
+	}
+	//////////////////////////////////
+	void AtomicOp( const ref_lambda_t& op )
+	{
+		mResourceMutex.Lock();
+		op(mResource);
+		mResourceMutex.Unlock();
+	}
+	//////////////////////////////////
+	void AtomicOp( const const_ref_lambda_t& op ) const
+	{
+		mResourceMutex.Lock();
+		op(mResource);
+		mResourceMutex.Unlock();
 	}
 	//////////////////////////////////
 private:

@@ -239,6 +239,8 @@ typedef static_variant<256> svar256_t;
 typedef static_variant<512> svar512_t;
 typedef static_variant<1024> svar1024_t;
 typedef static_variant<4096> svar4096_t;
+typedef static_variant<16384> svar16k_t;
+typedef static_variant<65536> svar64k_t;
 typedef static_variant<kptrsize> svarp_t;
 
 } // namespace ork

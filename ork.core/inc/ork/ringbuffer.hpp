@@ -22,6 +22,8 @@ namespace ork {
 template<typename Element, size_t Size> 
 class SpScRingBuf {
 public:
+	typedef Element value_type;
+
 	enum { Capacity = Size+1 };
 
 	SpScRingBuf();
@@ -48,8 +50,8 @@ private:
 template<typename Element, size_t Size>
 SpScRingBuf<Element,Size>::SpScRingBuf()
 {
-	mHeadIndex.template store<MemFullFence>(Element(0));
-	mTailIndex.template store<MemFullFence>(Element(0));
+	mHeadIndex.template store<MemFullFence>(size_t(0));
+	mTailIndex.template store<MemFullFence>(size_t(0));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -221,9 +223,21 @@ template<typename T,size_t max_items>
 void MpMcRingBuf<T,max_items>::push(const T& item)
 {
 	bool bpushed = try_push(item);
+	int icount = 0;
 	while(false==bpushed)
 	{
-		usleep(250);
+		static const int kquantausec = 150;
+		static const int ktabsize = 16;
+		static const int ktab[ktabsize] = 
+		{
+			1, 3, 5, 7, 
+			17, 19, 21, 23,
+			35, 37, 39, 41,
+			53, 55, 57, 59,
+		};
+		usleep(ktab[icount&0xf]*kquantausec);
+		//printf( "trying push again<%d>\n", icount );
+		icount++;
 		bpushed = try_push(item);
 	}
 }
@@ -262,13 +276,7 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 		//////////////////////////////////////
 		if (dif == 0)
 		{	
-			/*size_t oldpos = pos;
-			size_t newpos = pos+1;
-			bool bchg = mEnqueuePos.compare_and_swap<MemRelaxed>(newpos,oldpos);
-			if( bchg )
-				break;*/
 			size_t eq_read = mEnqueuePos.compare_and_swap<MemRelaxed>(pos+1,pos);
-			//printf( "eq_read<%u> pos<%u>\n", eq_read, pos);
 			if( eq_read==pos )
 				break;
 		}
@@ -304,11 +312,6 @@ bool MpMcRingBuf<T,max_items>::try_pop(T& data)
 		//////////////////////////////////////
 		if (dif == 0)
 		{
-/*			size_t oldpos = pos;
-			size_t newpos = pos+1;
-			bool bchg = mDequeuePos.compare_and_swap<MemRelaxed>(newpos,oldpos);
-			if( bchg )
-				break;*/
 			size_t dq_read = mDequeuePos.compare_and_swap<MemRelaxed>(pos+1,pos);
 			if( dq_read==pos )
 				break;

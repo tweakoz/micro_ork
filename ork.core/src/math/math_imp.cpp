@@ -8,6 +8,7 @@
 #include <ork/cmatrix3.hpp>
 #include <ork/cmatrix4.h>
 #include <ork/cmatrix4.hpp>
+#include <ork/matrix_inverseGEMS.hpp>
 #include <ork/cvector2.h>
 #include <ork/cvector2.hpp>
 #include <ork/cvector3.h>
@@ -18,10 +19,15 @@
 #include <ork/quaternion.hpp>
 #include <ork/plane.h>
 #include <ork/plane.hpp>
+#include <ork/perlin_noise.h>
 #include <stdlib.h>
 
+namespace ork {
 math_table_1d gsintab;
 math_table_1d gcostab;
+
+int* OldPerlin2D::p = 0;
+float* OldPerlin2D::g2 = 0;
 
 
 ///////////////////////////////////////////////////////////////
@@ -67,8 +73,6 @@ float math_table_1d::operator()(float fin) const
 
 ///////////////////////////////////////////////////////////////
 
-namespace ork
-{
 	bool UsingOpenGl()
 	{
 		return true;
@@ -151,4 +155,4 @@ namespace ork
 
 	template class ork::TPlane<float>;
 
-}
+};

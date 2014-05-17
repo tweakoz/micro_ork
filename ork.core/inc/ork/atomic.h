@@ -2,6 +2,15 @@
 
 #include <stdio.h>
 #include <atomic>
+#include <unistd.h>
+
+#if defined(__sgi)
+extern "C" {
+#include <sys/pmo.h>
+#include <fetchop.h>
+//#define USE_FETCHOP
+};
+#endif
 
 struct MemFullFence
 {
@@ -40,8 +49,6 @@ template <typename T> struct atomic //: public std::atomic<T>
     {
     	T old_val = ref_val;
     	bool changed = mData.compare_exchange_weak(old_val,new_val,A::GetOrder());
-    	//T rval = changed ? new_val : old_val;
-        //printf( "CAS ref<%d> new<%d> old<%d> changed<%d> rval<%d>\n", ref_val, new_val, old_val, int(changed), rval );
         return old_val;
     }
 
@@ -84,11 +91,66 @@ template <typename T> struct atomic //: public std::atomic<T>
     	return *this;
     }
 
-
-    operator bool() const { return bool(load<MemRelaxed>()); }
+    //operator bool() const { return bool(load<MemRelaxed>()); }
 
     std::atomic<T> mData;
 
+};
+
+
+struct atomic_counter
+{
+    atomic_counter(int ival=0);
+    atomic_counter(const atomic_counter&oth);
+    ~atomic_counter();
+
+    inline int fetch_and_add(int iv)
+    {
+        return mVal.fetch_add(iv);
+    }
+    inline int fetch_and_increment()
+    {
+    #if defined(USE_FETCHOP)
+        return atomic_fetch_and_increment(mVar);
+    #else
+        return mVal.fetch_add(1);
+    #endif
+    }
+    inline int fetch_and_decrement()
+    {
+    #if defined(USE_FETCHOP)
+        return atomic_fetch_and_decrement(mVar);
+    #else
+        return mVal.fetch_add(-1);
+    #endif
+    }
+    inline int get() const
+    {
+    #if defined(USE_FETCHOP)
+        return atomic_load(mVar);
+    #else
+        return mVal.load(MemRelaxed::GetOrder());
+    #endif
+    }
+    inline void set(int ival)
+    {
+    #if defined(USE_FETCHOP)
+        atomic_store(mVar,ival);
+    #else
+        mVal.store(ival,MemRelaxed::GetOrder());
+    #endif
+    }
+
+    static void init();
+
+    #if defined(USE_FETCHOP)
+
+    static atomic_reservoir_t gatomres;
+    atomic_var_t* mVar;
+
+    #else
+    std::atomic<int> mVal;
+    #endif
 };
 
 

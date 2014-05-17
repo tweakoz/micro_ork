@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <limits>
 #include <string>
+#include <functional>
 
 namespace ork {
 	
@@ -41,6 +42,19 @@ static const float KEPSILON = std::numeric_limits<float>::epsilon();
 
 std::string FormatString( const char* formatstring, ... );
 
+typedef std::function<void()> void_lambda_t;
+
 }
 
+#if defined(GCC)
+    #if defined(_IOS)
+    #define ThreadLocal 
+    #else
+    #define ThreadLocal __thread
+    #endif
+#elif defined(_MSVC)
+    #define ThreadLocal __declspec(thread)
+#endif
+
 #define OrkAssert(x) assert(x)
+#define OrkAssertNotImpl() assert(false);

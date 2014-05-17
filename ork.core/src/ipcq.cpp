@@ -209,7 +209,7 @@ ork::RpcFuture* IpcMsgQReciever::AllocFuture()
 	rval->Clear();
 	rval->SetId(mFutureCtr++);
 	mFutureMap.LockForWrite()[rval->GetId()]=rval;
-	mFutureMap.UnLock();
+	mFutureMap.Unlock();
 	return rval;
 }
 
@@ -223,7 +223,7 @@ ork::RpcFuture* IpcMsgQReciever::FindFuture(int fid) const
 	const future_map_t& fmap = mFutureMap.LockForRead();
 	future_map_t::const_iterator it=fmap.find(fid);
 	rval = (it==fmap.end()) ? nullptr : it->second;
-	mFutureMap.UnLock();
+	mFutureMap.Unlock();
 	return rval;
 }
 
@@ -238,7 +238,7 @@ void IpcMsgQReciever::ReturnFuture( ork::RpcFuture* pf)
 	future_map_t::iterator it=fmap.find(pf->GetId());
 	assert(it!=fmap.end());
 	fmap.erase(it);
-	mFutureMap.UnLock();
+	mFutureMap.Unlock();
 	mFuturePool.push(pf);
 }
 

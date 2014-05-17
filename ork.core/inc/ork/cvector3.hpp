@@ -179,7 +179,11 @@ template <typename T> u32 TVector3<T>::GetRGBAU32( void ) const
 
 	u32 rval = 0;
 
-	rval = ( (r<<24)|(g<<16)|(b<<8)|a );
+#if defined(__sgi)
+	rval = ( (b<<24)|(g<<16)|(r<<8)|a );
+#else
+	rval = ( (a<<24)|(r<<16)|(g<<8)|b );
+#endif
 
 	return rval;
 }

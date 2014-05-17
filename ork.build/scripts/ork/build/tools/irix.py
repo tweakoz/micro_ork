@@ -39,11 +39,11 @@ def DefaultBuildEnv( env, prj ):
 	DEFS = ' IRIX IX GCC '
 	if USE_DEBUG_CXX:
 		DEFS += ' _GLIBCXX_DEBUG '
-	CCFLG = ' -mllsc -mabi=64 -march=r10k -mtune=r10k'
-	#CCFLG = ' -mno-llsc -mabi=64 -march=r10k -mtune=r10k'
+	CCFLG = ' -mllsc -mabi=n32 -march=mips4 -mhard-float -mfused-madd'
+	#CCFLG = ' -g -mno-llsc -mabi=64 -march=r10k -mtune=r10k'
 	CXXFLG = ''
-	LIBS = "m rt pthread"
-	LIBPATH = ' . '
+	LIBS = "m rt fetchop pthread"
+	LIBPATH = ' . /usr/nekoware/lib '
 	#if USE_DEBUG_CXX:
 	#	LIBPATH += ' /usr/lib/x86_64-linux-gnu/debug '
 	LINK = ''
@@ -53,7 +53,7 @@ def DefaultBuildEnv( env, prj ):
 	env.Replace( CPPDEFINES = string.split(DEFS) )
 	env.Replace( CCFLAGS = string.split(CCFLG) )
 	env.Replace( CXXFLAGS = string.split(CXXFLG) )
-	env.Replace( CPPPATH  = [ '.' ] )
+	env.Replace( CPPPATH  = [ '.', "/usr/nekoware/include" ] )
 	env.Replace( LINKFLAGS=string.split(LINK) )
 	env.Replace( LIBS=string.split(LIBS) )
 	env.Replace( LIBPATH=string.split(LIBPATH) )
@@ -64,6 +64,6 @@ def DefaultBuildEnv( env, prj ):
 
 	prj.CompilerType = 'gcc'
 
-	prj.XLINK = '-v -g -mabi=64 -Wl,-rpath,/projects/redux/stage/lib'
+	prj.XLINK = '-v -g -mabi=n32 -Wl,-rpath,/projects/redux/stage/lib'
 
 

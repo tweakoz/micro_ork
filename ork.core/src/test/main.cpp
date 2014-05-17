@@ -2,9 +2,11 @@
 
 #include <unittest++/UnitTest++.h>
 #include <string.h>
+#include <ork/atomic.h>
 
 int main( int argc, char** argv, char** argp )
 {	int rval = 0;
+	ork::atomic_counter::init();
 	/////////////////////////////////////////////
 	// default Run All Tests
 	/////////////////////////////////////////////

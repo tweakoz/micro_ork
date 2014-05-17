@@ -259,11 +259,11 @@ class Project:
 		print "name<%s> do_opt<%s>" % (name,do_opt)
 
 		if do_opt:
-			self.XCCFLG += '-O4 '
-			self.XCXXFLG += '-O4 '
+			self.XCCFLG += '-O3 '
+			self.XCXXFLG += '-O3 '
 		else:
-			self.XCCFLG += '-O4 '
-			self.XCXXFLG += '-O4 '
+			self.XCCFLG += '-O3 '
+			self.XCXXFLG += '-O3 '
 				
 	############################################
 
@@ -496,3 +496,14 @@ def xflibnams(fmt,lis):
 	for i in string.split(lis):
 		a += fmt % i
 	return a
+
+def explibnam(bas):
+  ARGS = common.BuildArgs
+  suffix = BuildSuffix(ARGS)
+  return "%s.%s"%(bas,suffix) 
+
+def explibnams(str):
+  ret = ""
+  for item in string.split(str):
+    ret += "%s " % explibnam(item)
+  return ret

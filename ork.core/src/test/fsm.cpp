@@ -6,40 +6,45 @@
 
 using namespace ork;
 
+static void logstate(const char* pstr)
+{
+
+}
+
 struct S1 : public State 
 {	S1(State*p):State(p){}
-	void OnEnter() { printf( "s1.enter\n"); }
-	void OnExit() { printf( "s1.exit\n"); }
-	void OnUpdate() { printf( "s1.update\n"); }
+	void OnEnter() { logstate( "s1.enter\n"); }
+	void OnExit() { logstate( "s1.exit\n"); }
+	void OnUpdate() { logstate( "s1.update\n"); }
 };
 struct S2 : public State 
 {	S2(State*p):State(p){}
-	void OnEnter() { printf( "s2.enter\n"); }
-	void OnExit() { printf( "s2.exit\n"); }
-	void OnUpdate() { printf( "s2.update\n"); }
+	void OnEnter() { logstate( "s2.enter\n"); }
+	void OnExit() { logstate( "s2.exit\n"); }
+	void OnUpdate() { logstate( "s2.update\n"); }
 };
 struct S3 : public State 
 {	S3(State*p):State(p){}
-	void OnEnter() { printf( "s3.enter\n"); }
-	void OnExit() { printf( "s3.exit\n"); }
-	void OnUpdate() { printf( "s3.update\n"); }
+	void OnEnter() { logstate( "s3.enter\n"); }
+	void OnExit() { logstate( "s3.exit\n"); }
+	void OnUpdate() { logstate( "s3.update\n"); }
 };
 struct SA : public State 
 {	SA(State*p):State(p){}
-	void OnEnter() { printf( "sa.enter\n"); }
-	void OnExit() { printf( "sa.exit\n"); }
-	void OnUpdate() { printf( "sa.update\n"); }
+	void OnEnter() { logstate( "sa.enter\n"); }
+	void OnExit() { logstate( "sa.exit\n"); }
+	void OnUpdate() { logstate( "sa.update\n"); }
 };
 struct SB : public State 
 {	SB(State*p):State(p){}
-	void OnEnter() { printf( "sb.enter\n"); }
-	void OnExit() { printf( "sb.exit\n"); }
+	void OnEnter() { logstate( "sb.enter\n"); }
+	void OnExit() { logstate( "sb.exit\n"); }
 	void OnUpdate() { printf( "sb.update\n"); }
 };
 struct ROOT : public State 
-{	void OnEnter() { printf( "ROOT.enter\n"); }
-	void OnExit() { printf( "ROOT.exit\n"); }
-	void OnUpdate() { printf( "ROOT.update\n"); }
+{	void OnEnter() { logstate( "ROOT.enter\n"); }
+	void OnExit() { logstate( "ROOT.exit\n"); }
+	void OnUpdate() { logstate( "ROOT.update\n"); }
 };
 
 struct e1to2{};
@@ -53,7 +58,7 @@ TEST(hfsm_1)
 {
 	for( int i=0; i<3; i++ )
 	{
-		printf( "//hfsm_1/////////////////////////\n");
+		logstate( "//hfsm_1/////////////////////////\n");
 		StateMachine the_SM;
 
 		auto the_root = the_SM.NewState<ROOT>();
@@ -86,7 +91,7 @@ TEST(hfsm_probalistic_1)
 {
 	for( int i=0; i<10; i++ )
 	{
-		printf( "//hfsm_probalistic_1/////////////////////////\n");
+		logstate( "//hfsm_probalistic_1/////////////////////////\n");
 		StateMachine the_SM;
 
 		auto the_root = the_SM.NewState<ROOT>();
@@ -101,7 +106,7 @@ TEST(hfsm_probalistic_1)
 		{
 			int i = rand()&0xff;
 			bool bprob = i<0x7f;
-			printf( "bprob<%d>\n", int(bprob) );
+			//printf( "bprob<%d>\n", int(bprob) );
 			return bprob;
 		};
 

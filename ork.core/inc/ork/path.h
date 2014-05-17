@@ -158,11 +158,7 @@ class Path
         void SplitQuery( NameType& BeforeQuerySep, NameType& AfterQuerySep ) const;
 
         //////////////////////////////////////////////
-
-        //Path ToRelative( EPathType etype=EPATHTYPE_POSIX ) const;
-        //Path ToAbsolute( EPathType etype=EPATHTYPE_POSIX ) const;
-        //Path ToAbsoluteFolder( EPathType etype=EPATHTYPE_POSIX ) const;
-
+        size_t SizeOfFile() const;
         //////////////////////////////////////////////
 
         SmallNameType GetDrive() const;
