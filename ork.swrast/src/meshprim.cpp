@@ -95,12 +95,9 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 		const ork::CVector4& hd2 = sst.mScrPosC;
 		ork::CVector3 d0 = (hd1.GetXYZ()-hd0.GetXYZ());
 		ork::CVector3 d1 = (hd2.GetXYZ()-hd1.GetXYZ());
-
 		ork::CVector3 dX = d0.Cross(d1);
 
-		bool bFRONTFACE = (dX.z<=0.0f);
-
-		if( true == bFRONTFACE ) continue;
+		if( true == (dX.z<=0.0f) ) continue; // is it frontfacing ?
 
 		int inuminside = 0;
 
@@ -116,8 +113,9 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 						&&	((hd2.y>=0.0f) || (hd2.y<fiH))
 						&&	((hd2.z>=0.0f) || (hd2.z<=1.0f)) );
 
-		if( 0 == inuminside )
+		if( 0 == inuminside ) // is it in the screen bounds ?
 		{
+			// todo : this is probably better done by the subdivider
 			continue;
 		}
 
@@ -127,34 +125,20 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 		// the triangle passed the backface cull and trivial reject, queue it
 		//////////////////////////////////////
 
-		float fX0 = hd0.x;
-		float fY0 = hd0.y;
-		float fX1 = hd1.x;
-		float fY1 = hd1.y;
-		float fX2 = hd2.x;
-		float fY2 = hd2.y;
+		rtri->mMinX = sst.mMinX;
+		rtri->mMinY = sst.mMinY;
+		rtri->mMaxX = sst.mMaxX;
+		rtri->mMaxY = sst.mMaxY;
 
-		///////////////////////////////////////////////////
-
-		float MinX = sst.mMinX;
-		float MaxX = sst.mMaxX;
-		float MinY = sst.mMinY;
-		float MaxY = sst.mMaxY;
-
-		int iminbx = mRenderContext.GetTileX(MinX)-1;
-		int imaxbx = mRenderContext.GetTileX(MaxX)+1;
-		int iminby = mRenderContext.GetTileY(MinY)-1;
-		int imaxby = mRenderContext.GetTileY(MaxY)+1;
+		int iminbx = mRenderContext.GetTileX(sst.mMinX)-1;
+		int imaxbx = mRenderContext.GetTileX(sst.mMaxX)+1;
+		int iminby = mRenderContext.GetTileY(sst.mMinY)-1;
+		int imaxby = mRenderContext.GetTileY(sst.mMaxY)+1;
 
 		if( iminbx<0 ) iminbx = 0;
 		if( iminby<0 ) iminby = 0;
 		if( imaxbx>=mRenderContext.miNumTilesW ) imaxbx = mRenderContext.miNumTilesW-1;
 		if( imaxby>=mRenderContext.miNumTilesH ) imaxby = mRenderContext.miNumTilesH-1;
-
-		rtri->mMinX = MinX;
-		rtri->mMinY = MinY;
-		rtri->mMaxX = MaxX;
-		rtri->mMaxY = MaxY;
 
 		///////////////////////////////////////////////////
 		// bind to intersecting rastertiles
@@ -481,7 +465,18 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 
 	//////////////////////////////////////////
 
-	// displacement shading here ?
+	if( 0 ) // displacement shading here ?
+	{
+		RasterTri rastri1 = rastri;
+		RasterVtx ctr = (rastri.mVertex[0]+rastri.mVertex[1]+rastri.mVertex[2])*one_third;
+		auto nn = ctr.mObjNrm.Normal();
+		const auto& rst = ctr.mRST;
+		auto displacement = nn*sinf(rst.x)*cosf(rst.y)*1.1f;
+
+		rastri1.mVertex[0].mObjPos += displacement;
+		rastri1.mVertex[1].mObjPos += displacement;
+		rastri1.mVertex[2].mObjPos += displacement;
+	}
 
 	//////////////////////////////////////////
 
@@ -525,10 +520,6 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 						&&	v.y<fbucketY1 );
 		};
 
-		float fctrx = sst.mScrCenter.x;
-		float fctry = sst.mScrCenter.y;
-		float fctrz = sst.mScrCenter.z;
-
 		//////////////////////////////////////////
 
 
@@ -542,6 +533,9 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 
 			const CVector3 rstC = (rst0+rst1+rst2)*one_third;
 
+			float fctrx = sst.mScrCenter.x;
+			float fctry = sst.mScrCenter.y;
+			float fctrz = sst.mScrCenter.z;
 			int iax = int(fctrx);
 			int iay = int(fctry);
 

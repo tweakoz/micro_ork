@@ -83,6 +83,23 @@ struct RasterVtx
     ork::CVector4       mObjPos;
     ork::CVector4       mObjNrm;
     ork::CVector3       mRST;
+
+    RasterVtx operator+( const RasterVtx& o ) const
+    {
+        RasterVtx r;
+        r.mObjPos = mObjPos+o.mObjPos;
+        r.mObjNrm = mObjNrm+o.mObjNrm;
+        r.mRST = mRST+o.mRST;
+        return r;
+    }
+    RasterVtx operator*( float f ) const
+    {
+        RasterVtx r;
+        r.mObjPos = mObjPos*f;
+        r.mObjNrm = mObjNrm*f;
+        r.mRST = mRST*f;
+        return r;
+    }
 };
 
 struct RasterTri
