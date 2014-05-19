@@ -10,6 +10,7 @@
 #include "math_misc.h"
 //#include "kernel.h"
 #include "cvector3.h"
+#include "cvector2.h"
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -26,7 +27,7 @@ template <typename T> class  TVector4
 public:
 
 	TVector4();
-	explicit TVector4( T x, T y, T z, T w=T(1.0f));							// constructor from 3 floats
+	explicit TVector4( T _x, T _y, T _z, T _w=T(1.0f));							// constructor from 3 floats
 	TVector4( const TVector4 &vec);											// constructor from a vector
 	TVector4( const TVector3<T> &vec, T w=T(1.0f));							// constructor from a vector
 	TVector4( u32 uval ) { SetRGBAU32( uval ); }
@@ -51,142 +52,143 @@ public:
 	void				Lerp( const TVector4 &from, const TVector4 &to, T par );
 	void				Serp( const TVector4 & PA, const TVector4 & PB, const TVector4 & PC, const TVector4 & PD, T Par );
 
-	T					GetX(void) const { return (m_x); }
-	T					GetY(void) const { return (m_y); }
-	T					GetZ(void) const { return (m_z); }
-	T					GetW(void) const { return (m_w); }
+	T					GetX(void) const { return (x); }
+	T					GetY(void) const { return (y); }
+	T					GetZ(void) const { return (z); }
+	T					GetW(void) const { return (w); }
 
 	// sometimes 4-vectors are used for XYWH format
-	T					GetWidth(void)  const { return (m_z); }
-	T					GetHeight(void) const { return (m_w); }
+	T					GetWidth(void)  const { return (z); }
+	T					GetHeight(void) const { return (w); }
 
-	void			 	Set(T x,T y,T z,T w) { m_x = x; m_y = y; m_z = z; m_w = w;}
-	void			 	Set(T x,T y,T z) { m_x = x; m_y = y; m_z = z; m_w = (T)1.0f;}
-	void			 	SetX(T x) { m_x = x; }
-	void				SetY(T y) { m_y = y; }
-	void				SetZ(T z) { m_z = z; }
-	void				SetW(T w) { m_w = w; }
+	void			 	Set(T _x,T _y,T _z,T _w) { x = _x; y = _y; z = _z; w = _w;}
+	void			 	Set(T _x,T _y,T _z) { x = _x; y = _y; z = _z; w = (T)1.0f;}
+	void			 	SetX(T _x) { x = _x; }
+	void				SetY(T _y) { y = _y; }
+	void				SetZ(T _z) { z = _z; }
+	void				SetW(T _w) { w = _w; }
 
 	// sometimes 4-vectors are used for XYWH format
-	void				SetWidth(T width)   { m_z = width;  }
-	void				SetHeight(T height) { m_w = height; }
+	void				SetWidth(T width)   { z = width;  }
+	void				SetHeight(T height) { w = height; }
 
 	TVector3<T>			GetXYZ( void ) const { return TVector3<T>(*this); }
+	TVector2<T>			GetXY( void ) const { return TVector2<T>(x,y); }
 
 	static	TVector4	Zero(void) { return TVector4(T(0), T(0), T(0), T(0)); }
 	static T			CalcTriArea( const TVector4 &V0, const TVector4 &V1, const TVector4 &V2, const TVector4 & N );
 
-	void SetXYZ( T x, T y, T z )
+	void SetXYZ( T _x, T _y, T _z )
 	{
-		SetX(x);
-		SetY(y);
-		SetZ(z);
+		x=_x;
+		y=_y;
+		z=_z;
 	}
 
 	inline T &operator[]( u32 i )
 	{
-		T *v = & m_x;
+		T *v = & x;
 		assert( i<4 );
 		return v[i];
 	}
 
 	inline const T &operator[]( u32 i ) const
 	{
-		const T *v = & m_x;
+		const T *v = & x;
 		assert( i<4 );
 		return v[i];
 	}
 
 	inline TVector4 operator-() const
 	{
-		return TVector4( -m_x, -m_y, -m_z, -m_w );
+		return TVector4( -x, -y, -z, -w );
 	}
 
 	inline TVector4 operator+( const TVector4 &b ) const
 	{
-		return TVector4( (m_x+b.m_x), (m_y+b.m_y), (m_z+b.m_z), (m_w+b.m_w) );
+		return TVector4( (x+b.x), (y+b.y), (z+b.z), (w+b.w) );
 	}
 
 	inline TVector4 operator*( const TVector4 &b ) const
 	{
-		return TVector4( (m_x*b.m_x), (m_y*b.m_y), (m_z*b.m_z), (m_w*b.m_w) );
+		return TVector4( (x*b.x), (y*b.y), (z*b.z), (w*b.w) );
 	}
 
 	inline TVector4 operator*( T scalar ) const
 	{
-		return TVector4( (m_x*scalar), (m_y*scalar), (m_z*scalar), (m_w*scalar) );
+		return TVector4( (x*scalar), (y*scalar), (z*scalar), (w*scalar) );
 	}
 
 	inline TVector4 operator-( const TVector4 &b ) const
 	{
-		return TVector4( (m_x-b.m_x), (m_y-b.m_y), (m_z-b.m_z), (m_w-b.m_w) );
+		return TVector4( (x-b.x), (y-b.y), (z-b.z), (w-b.w) );
 	}
 
 	inline TVector4 operator/( const TVector4 &b ) const
 	{
-		return TVector4( (m_x/b.m_x), (m_y/b.m_y), (m_z/b.m_z), (m_w/b.m_w) );
+		return TVector4( (x/b.x), (y/b.y), (z/b.z), (w/b.w) );
 	}
 
 	inline TVector4 operator/( T scalar ) const
 	{
-		return TVector4( (m_x/scalar), (m_y/scalar), (m_z/scalar), (m_w/scalar) );
+		return TVector4( (x/scalar), (y/scalar), (z/scalar), (w/scalar) );
 	}
 
 	inline void operator+=( const TVector4 & b )
 	{
-		m_x+=b.m_x;
-		m_y+=b.m_y;
-		m_z+=b.m_z;
-		m_w+=b.m_w;
+		x+=b.x;
+		y+=b.y;
+		z+=b.z;
+		w+=b.w;
 	}
 
 	inline void operator-=( const TVector4 & b )
 	{
-		m_x-=b.m_x;
-		m_y-=b.m_y;
-		m_z-=b.m_z;
-		m_w-=b.m_w;
+		x-=b.x;
+		y-=b.y;
+		z-=b.z;
+		w-=b.w;
 	}
 
 	inline void operator*=( T scalar )
 	{
-		m_x*=scalar;
-		m_y*=scalar;
-		m_z*=scalar;
-		m_w*=scalar;
+		x*=scalar;
+		y*=scalar;
+		z*=scalar;
+		w*=scalar;
 	}
 
 	inline void operator*=( const TVector4 & b )
 	{
-		m_x*=b.m_x;
-		m_y*=b.m_y;
-		m_z*=b.m_z;
-		m_w*=b.m_w;
+		x*=b.x;
+		y*=b.y;
+		z*=b.z;
+		w*=b.w;
 	}
 
 	inline void operator/=( const TVector4 &b )
 	{
-		m_x/=b.m_x;
-		m_y/=b.m_y;
-		m_z/=b.m_z;
-		m_w/=b.m_w;
+		x/=b.x;
+		y/=b.y;
+		z/=b.z;
+		w/=b.w;
 	}
 
 	inline void operator/=( T scalar )
 	{
-		m_x/=scalar;
-		m_y/=scalar;
-		m_z/=scalar;
-		m_w/=scalar;
+		x/=scalar;
+		y/=scalar;
+		z/=scalar;
+		w/=scalar;
 	}
 
 	inline bool operator==( const TVector4 &b ) const
 	{
-		return ( m_x == b.m_x && m_y == b.m_y && m_z == b.m_z && m_w == b.m_w );
+		return ( x == b.x && y == b.y && z == b.z && w == b.w );
 	}
 	inline bool operator!=( const TVector4 &b ) const
 	{
-		return ( m_x != b.m_x || m_y != b.m_y || m_z != b.m_z || m_w != b.m_w );
+		return ( x != b.x || y != b.y || z != b.z || w != b.w );
 	}
 
 	void SetHSV( T h, T s, T v );
@@ -216,7 +218,7 @@ public:
 	static const TVector4 & Cyan( void );
 	static const TVector4 & Yellow( void );
 
-	T *GetArray( void ) const { return const_cast<T*>( & m_x ); }
+	T *GetArray( void ) const { return const_cast<T*>( & x ); }
 
 	template <typename U>
 	static TVector4 FromTVector4(TVector4<U> vec)
@@ -227,12 +229,10 @@ public:
 						T::FromFX(vec.GetW().FXCast()));
 	}
 
-protected:
-
-	T					m_x; // x component of this vector
-	T					m_y; // y component of this vector
-	T					m_z; // z component of this vector
-	T					m_w;
+	T					x; // x component of this vector
+	T					y; // y component of this vector
+	T					z; // z component of this vector
+	T					w;
 
 };
 

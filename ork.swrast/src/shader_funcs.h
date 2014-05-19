@@ -49,7 +49,7 @@ struct Shader1 : public rend_shader
 
 	eType GetType() const { return EShaderTypeSurface; } // virtual
 
-	void ShadeBlock( AABuffer* aabuf, int ifragbase, int icount, int inumtri ) const; // virtual
+	void ShadeBlock( AABuffer* aabuf, int ifragbase, int icount ) const; // virtual
 
 	Shader1(/*const CLengine& eng*/);
 };

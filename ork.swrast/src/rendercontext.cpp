@@ -31,6 +31,7 @@ RenderContext::RenderContext()
     , miFrame(0)
     , mSplitAndDice(*this)
     , mAADim(1)
+    , mAATileSize(mAADim*kTileDim)
 {
     for( int i=0; i<kAABUFTILES; i++ )
     {
@@ -70,7 +71,7 @@ void RenderContext::operator=( const RenderContext& oth )
 
 void RenderContext::Update(OpGroup& ogrp)
 {
-
+    //printf( "miImageWidth<%d> miImageHeight<%d>\n", miImageWidth, miImageHeight );
     float faspect = float(miImageWidth)/float(miImageHeight);
     mMatrixV = ork::CMatrix4::Identity;
     mMatrixP = ork::CMatrix4::Identity;
@@ -273,13 +274,13 @@ void RenderContext::Update(OpGroup& ogrp)
 int RenderContext::GetTileX( float fx ) const
 {
     int ix = int(std::floor(fx));
-    int ibx = ix/GetTileOvSize();
+    int ibx = ix/mAATileSize;
     return ibx;
 }
 int RenderContext::GetTileY( float fy ) const
 {
     int iy = int(std::floor(fy));
-    int iby = iy/GetTileOvSize();
+    int iby = iy/mAATileSize;
     return iby;
 }
 

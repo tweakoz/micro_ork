@@ -17,10 +17,10 @@ namespace ork {
 template <typename T> TVector4<T> TVector4<T>::Saturate( void ) const
 {
 	TVector4<T> rval = *this;
-	rval.m_x = (rval.m_x>1.0f) ? 1.0f : (rval.m_x<0.0f) ? 0.0f : rval.m_x;
-	rval.m_y = (rval.m_y>1.0f) ? 1.0f : (rval.m_y<0.0f) ? 0.0f : rval.m_y;
-	rval.m_z = (rval.m_z>1.0f) ? 1.0f : (rval.m_z<0.0f) ? 0.0f : rval.m_z;
-	rval.m_w = (rval.m_w>1.0f) ? 1.0f : (rval.m_w<0.0f) ? 0.0f : rval.m_w;
+	rval.x = (rval.x>1.0f) ? 1.0f : (rval.x<0.0f) ? 0.0f : rval.x;
+	rval.y = (rval.y>1.0f) ? 1.0f : (rval.y<0.0f) ? 0.0f : rval.y;
+	rval.z = (rval.z>1.0f) ? 1.0f : (rval.z<0.0f) ? 0.0f : rval.z;
+	rval.w = (rval.w>1.0f) ? 1.0f : (rval.w<0.0f) ? 0.0f : rval.w;
 	return rval;
 }
 
@@ -115,31 +115,31 @@ template <typename T> const TVector4<T> & TVector4<T>::Yellow( void )
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector4<T>::TVector4()
-	: m_x(T(0.0f))
-	, m_y(T(0.0f))
-	, m_z(T(0.0f))
-	, m_w(T(1.0f))
+	: x(T(0.0f))
+	, y(T(0.0f))
+	, z(T(0.0f))
+	, w(T(1.0f))
 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template <typename T> TVector4<T>::TVector4( T x, T y, T z, T w)
+template <typename T> TVector4<T>::TVector4( T _x, T _y, T _z, T _w)
 
-	: m_x(x)
-	, m_y(y)
-	, m_z(z)
-	, m_w(w)
+	: x(_x)
+	, y(_y)
+	, z(_z)
+	, w(_w)
 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector4<T>::TVector4( const TVector3<T> & in, T w )
-	: m_x(in.GetX())
-	, m_y(in.GetY())
-	, m_z(in.GetZ())
-	, m_w(w)
+	: x(in.GetX())
+	, y(in.GetY())
+	, z(in.GetZ())
+	, w(w)
 {
 }
 
@@ -367,37 +367,37 @@ template <typename T> void TVector4<T>::SetHSV( T h, T s, T v )
 
 template <typename T> void TVector4<T>::PerspectiveDivide( void )
 {
-	T iw = T(1.0f) / m_w;
-	m_x *= iw;
-	m_y *= iw;
-	m_z *= iw;
-	m_w = T(1.0f);
+	T iw = T(1.0f) / w;
+	x *= iw;
+	y *= iw;
+	z *= iw;
+	w = T(1.0f);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector4<T>::TVector4( const TVector4<T> &vec)
 {
-	m_x = vec.m_x;
-	m_y = vec.m_y;
-	m_z = vec.m_z;
-	m_w = vec.m_w;
+	x = vec.x;
+	y = vec.y;
+	z = vec.z;
+	w = vec.w;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> T TVector4<T>::Dot( const TVector4<T> &vec) const
 {
-	return ( (m_x * vec.m_x) + (m_y * vec.m_y) + (m_z * vec.m_z) );
+	return ( (x * vec.x) + (y * vec.y) + (z * vec.z) );
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector4<T> TVector4<T>::Cross( const TVector4<T> &vec) const // c = this X vec
 {
-	T vx = ((m_y * vec.GetZ()) - (m_z * vec.GetY()));
-	T vy = ((m_z * vec.GetX()) - (m_x * vec.GetZ()));
-	T vz = ((m_x * vec.GetY()) - (m_y * vec.GetX()));
+	T vx = ((y * vec.GetZ()) - (z * vec.GetY()));
+	T vy = ((z * vec.GetX()) - (x * vec.GetZ()));
+	T vz = ((x * vec.GetY()) - (y * vec.GetX()));
 
 	return ( TVector4<T>( vx, vy, vz ) );
 }
@@ -408,9 +408,9 @@ template <typename T> void TVector4<T>::Normalize(void)
 {
 	T	distance = (T) 1.0f / Mag() ;
 
-	m_x *= distance;
-	m_y *= distance;
-	m_z *= distance;
+	x *= distance;
+	y *= distance;
+	z *= distance;
 	
 }
 
@@ -421,21 +421,21 @@ template <typename T> TVector4<T> TVector4<T>::Normal() const
 	T fmag = Mag();
 	fmag = (fmag==(T)0.0f) ? (T)0.00001f : fmag;
 	T	s = (T) 1.0f / fmag;
-	return TVector4<T>(m_x * s, m_y * s, m_z * s, m_w);
+	return TVector4<T>(x * s, y * s, z * s, w);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> T TVector4<T>::Mag(void) const
 {
-	return sqrt(m_x * m_x + m_y * m_y + m_z * m_z);
+	return sqrt(x * x + y * y + z * z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> T TVector4<T>::MagSquared(void) const
 {
-	T mag = (m_x * m_x + m_y * m_y + m_z * m_z);
+	T mag = (x * x + y * y + z * z);
 	return mag;
 }
 
@@ -446,15 +446,15 @@ template <typename T> TVector4<T> TVector4<T>::Transform( const TMatrix4<T> &mat
 	T	tx,ty,tz,tw;
 
 	T *mp = (T *) matrix.elements;
-	T x = m_x;
-	T y = m_y;
-	T z = m_z;
-	T w = m_w;
+	T _x = x;
+	T _y = y;
+	T _z = z;
+	T _w = w;
 
-	tx = x*mp[0] + y*mp[4] + z*mp[8] + w*mp[12];
-	ty = x*mp[1] + y*mp[5] + z*mp[9] + w*mp[13];
-	tz = x*mp[2] + y*mp[6] + z*mp[10] + w*mp[14];
-	tw = x*mp[3] + y*mp[7] + z*mp[11] + w*mp[15];
+	tx = _x*mp[0] + _y*mp[4] + _z*mp[8] + _w*mp[12];
+	ty = _x*mp[1] + _y*mp[5] + _z*mp[9] + _w*mp[13];
+	tz = _x*mp[2] + _y*mp[6] + _z*mp[10] + _w*mp[14];
+	tw = _x*mp[3] + _y*mp[7] + _z*mp[11] + _w*mp[15];
 
 	return( TVector4<T>( tx,ty,tz, tw ) );
 }
@@ -473,32 +473,32 @@ template <typename T> void TVector4<T>::Serp( const TVector4<T> & PA, const TVec
 
 template <typename T> void TVector4<T>::RotateX(T rad)
 {
-	T	oldY = m_y;
-	T	oldZ = m_z;
-	m_y = (oldY * cos(rad) - oldZ * sin(rad));
-	m_z = (oldY * sin(rad) + oldZ * cos(rad));
+	T	oldY = y;
+	T	oldZ = z;
+	y = (oldY * cos(rad) - oldZ * sin(rad));
+	z = (oldY * sin(rad) + oldZ * cos(rad));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> void TVector4<T>::RotateY(T rad)
 {
-	T	oldX = m_x;
-	T	oldZ = m_z;
+	T	oldX = x;
+	T	oldZ = z;
 
-	m_x = (oldX * cos(rad) - oldZ * sin(rad));
-	m_z = (oldX * sin(rad) + oldZ * cos(rad));
+	x = (oldX * cos(rad) - oldZ * sin(rad));
+	z = (oldX * sin(rad) + oldZ * cos(rad));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> void TVector4<T>::RotateZ(T rad)
 {
-	T	oldX = m_x;
-	T	oldY = m_y;
+	T	oldX = x;
+	T	oldY = y;
 
-	m_x = (oldX * cos(rad) - oldY * sin(rad));
-	m_y = (oldX * sin(rad) + oldY * cos(rad));
+	x = (oldX * cos(rad) - oldY * sin(rad));
+	y = (oldX * sin(rad) + oldY * cos(rad));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -508,10 +508,10 @@ template <typename T> void TVector4<T>::Lerp( const TVector4<T> &from, const TVe
 	if( par < T(0.0f) ) par = T(0.0f);
 	if( par > T(1.0f) ) par = T(1.0f);
 	T ipar = T(1.0f) - par;
-	m_x = (from.m_x*ipar) + (to.m_x*par);
-	m_y = (from.m_y*ipar) + (to.m_y*par);
-	m_z = (from.m_z*ipar) + (to.m_z*par);
-	m_w = (from.m_w*ipar) + (to.m_w*par);
+	x = (from.x*ipar) + (to.x*par);
+	y = (from.y*ipar) + (to.y*par);
+	z = (from.z*ipar) + (to.z*par);
+	w = (from.w*ipar) + (to.w*par);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

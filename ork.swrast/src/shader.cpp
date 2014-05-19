@@ -27,7 +27,7 @@ Shader1::Shader1()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void Shader1::ShadeBlock( AABuffer* aabuf, int ifragbase, int icount, int inumtri ) const
+void Shader1::ShadeBlock( AABuffer* aabuf, int ifragbase, int icount ) const
 {	
 	PreShadedFragmentPool& PFRAGS = aabuf->mPreFrags;
 	if( 0 == icount ) return;

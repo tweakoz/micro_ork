@@ -56,7 +56,7 @@ struct rend_shader
 
     rend_shader() : mRenderContext(0), mpVolumeShader(0) {}
     virtual eType GetType() const = 0;
-    virtual void ShadeBlock( AABuffer* aabuf, int ifragbase, int icount, int inumtri ) const = 0;
+    virtual void ShadeBlock( AABuffer* aabuf, int ifragbase, int icount ) const = 0;
 
 };
 
@@ -64,9 +64,6 @@ struct rend_shader
 
 struct PreShadedFragment
 {
-    const rend_ivtx*        srcvtxR;
-    const rend_ivtx*        srcvtxS;
-    const rend_ivtx*        srcvtxT;
     float                   mfR;
     float                   mfS;
     float                   mfT;
@@ -94,13 +91,11 @@ struct rend_fragment
     ork::CVector3           mWorldPos;  // needed for volume shaders
     ork::CVector3           mWldSpaceNrm;
     float                   mZ;
-    const rend_triangle*    mpPrimitive;
     const rend_fragment*    mpNext;
     const rend_shader*      mpShader;
 
     rend_fragment()
-        : mpPrimitive(0)
-        , mpNext(0)
+        : mpNext(0)
         , mZ(0.0f)
         , mRGBA(0.0f,0.0f,0.0f,1.0f)
         , mpShader(0)
@@ -198,10 +193,12 @@ struct FragmentPool
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+// reyes style a-buffer
+///////////////////////////////////////////////////////////////////////////////
 
-struct FragmentCompositorREYES : public rend_fraglist_visitor
+struct FragmentCompositorABuffer : public rend_fraglist_visitor
 {
-    static const int kmaxfrags=256;
+    static const int kmaxfrags=256; // max depth complexity
     int miNumFragments;
     const rend_fragment*    mpFragments[kmaxfrags];
     const rend_fragment*    mpSortedFragments[kmaxfrags];
@@ -210,7 +207,7 @@ struct FragmentCompositorREYES : public rend_fraglist_visitor
     const rend_fragment*    mpOpaqueFragment;
     ork::RadixSort          mRadixSorter;
     int                     miThreadID;
-    FragmentCompositorREYES() : miThreadID(0), opaqueZ(1.0e30f), miNumFragments(0), mpOpaqueFragment(0) {}
+    FragmentCompositorABuffer() : miThreadID(0), opaqueZ(1.0e30f), miNumFragments(0), mpOpaqueFragment(0) {}
     void Visit( const rend_fragment* pfrag ); // virtual
     void SortAndHide(); // Sort and Hide occluded
     void Reset() override;
@@ -218,6 +215,8 @@ struct FragmentCompositorREYES : public rend_fraglist_visitor
     ////////////////////////////////////////////
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// std zbuffer
 ///////////////////////////////////////////////////////////////////////////////
 
 struct FragmentCompositorZBuffer : public rend_fraglist_visitor

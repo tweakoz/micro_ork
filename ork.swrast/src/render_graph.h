@@ -89,7 +89,7 @@ struct AABuffer
 
 	rend_fraglist*				mFragmentBuffer;
 	FragmentPool				mFragmentPool;
-	FragmentCompositorREYES		mCompositorREYES;
+	FragmentCompositorABuffer	mCompositorAB;
 	FragmentCompositorZBuffer	mCompositorZB;
 	NoCLFromHostBuffer*			mTriangleClBuffer;
 	NoCLFromHostBuffer*			mFragInpClBuffer;
@@ -146,6 +146,7 @@ public:
 	static const int 		kTileDim=32;
 	static const int		kAABUFTILES = 128;
 	int						mAADim;
+	int 					mAATileSize;
 	int						miNumTilesW;
 	int						miNumTilesH;
 	int						miImageWidth;
@@ -228,7 +229,7 @@ public:
 	const uint32_t* GetPixels() const;
 	
 	static const int ktrinringsize = 65536;
-	MpMcRingBuf<rend_triangle*,ktrinringsize> mTriRing;
+	MpMcRingBuf<Stage1Tri*,ktrinringsize> mTriRing;
 
 private:
 	RenderContext			mRenderContext;

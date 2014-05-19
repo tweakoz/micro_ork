@@ -44,9 +44,9 @@ void TileRenderer::ProcessTile( int iworkx, int iworky )
     // AA resolve
     /////////////////////////////////////////////////////////
 
-    //FragmentCompositorREYES& sorter = aabuf->mCompositorREYES;
-    FragmentCompositorZBuffer& sorter = aabuf->mCompositorZB;
-    aabuf->Resolve( mRenderContext, sorter );
+    //FragmentCompositorABuffer& sorter = aabuf->mCompositorAB; // reyes style a-buffer
+    FragmentCompositorZBuffer& fragger = aabuf->mCompositorZB;
+    aabuf->Resolve( mRenderContext, fragger );
 
     /////////////////////////////////////////////////////////
 

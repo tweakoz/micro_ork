@@ -78,60 +78,62 @@ struct rend_srcmesh
 
 ///////////////////////////////////////////////////////////////////////////////
 
-struct rend_ivtx
+struct RasterVtx
 {
-    float   mSX;
-    float   mSY;
-    float   mRoZ;
-    float   mSoZ;
-    float   mToZ;
-    float   mfDepth;
-    float   mfInvDepth;
-    ork::CVector3 mWldSpacePos;
-    ork::CVector3 mObjSpacePos;
-    ork::CVector3 mWldSpaceNrm;
-    ork::CVector3 mObjSpaceNrm;
-};
-///////////////////////////////////////////////////////////////////////////////
-struct ivertex
-{
-    float iX, iY;
+    ork::CVector4       mObjPos;
+    ork::CVector4       mObjNrm;
+    ork::CVector3       mRST;
 };
 
-struct rend_triangle
+struct RasterTri
 {
-    rend_triangle(MeshPrimModule& tac );
+    RasterVtx           mVertex[3];
 
-    rend_ivtx           mSVerts[3];
-    ork::CVector4       mSrcPos[3];
-    ork::CVector3       mSrcNrm[3];
-    ork::CVector3       mFaceNormal;
+    void SubDivAtCenter(RasterTri&t0,
+                        RasterTri&t1,
+                        RasterTri&t2,
+                        RasterTri&t3 ) const;
+
+    /*void SubDivNrm( RasterTri&t0,
+                    RasterTri&t1,
+                    RasterTri&t2,
+                    RasterTri&t3 ) const;*/
+ 
+};
+
+struct ScrSpcTri
+{
+    ScrSpcTri( const RasterTri& rt, const CMatrix4& mtxmvp, float fsw, float fsh );
+    const RasterTri& mRasterTri;
+    ork::CVector4 mScrPosA;
+    ork::CVector4 mScrPosB;
+    ork::CVector4 mScrPosC;
+    ork::CVector3 mScrCenter;
+    float mMinX;
+    float mMinY;
+    float mMaxX;
+    float mMaxY;
+
+    float mScreenArea2D;
+
+    //float ComputeScreenArea(float fsw,float fsh) const;
+};
+
+
+struct Stage1Tri
+{
+    Stage1Tri(MeshPrimModule& tac );
+
+    RasterTri mBaseTriangle;
     float               mfArea;
     const rend_shader*  mpShader;
     bool                mIsVisible;
     MeshPrimModule& mTAC;
     mutable atomic<int> mRefCount;
-    int mMinBx, mMinBy;
-    int mMaxBx, mMaxBy;
     float mMinX, mMinY;
     float mMaxX, mMaxY;
-    ivertex mIV0, mIV1, mIV2;
 
-    int IncRefCount() const;
-    int DecRefCount() const;
 };
-///////////////////////////////////////////////////////////////////////////////
-struct rend_subtri
-{
-    rend_ivtx vtxA;
-    rend_ivtx vtxB;
-    rend_ivtx vtxC;
-    const rend_triangle* mpSourcePrim;
-    int miIA;
-    int miIB;
-    int miIC;
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 
 struct IGeoPrim // reyes course primitive (pre-diced)
@@ -142,83 +144,6 @@ struct IGeoPrim // reyes course primitive (pre-diced)
     virtual void TransformAndCull(OpGroup& ogrp) = 0;
     //ork::AABox    mBoundingBoxWorldSpace;
     //ork::AABox    mBoundingBoxScreenSpace;
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-struct GeoPrimList // reyes primitive
-{
-    // 
-    ork::LockedResource<std::vector<IGeoPrim*>> mPrimitives;
-
-    void AddPrim( IGeoPrim* prim ); // thread safe function
-
-    GeoPrimList( const GeoPrimList& oth ) {}
-    GeoPrimList() {}
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-struct ClipVert
-{   ork::CVector3 pos;
-    void Lerp( const ClipVert& va, const ClipVert& vb, float flerp )
-    {   pos.Lerp( va.pos, vb.pos, flerp );
-    }
-    const ork::CVector3& Pos() const { return pos; }
-    ClipVert(const ork::CVector3&tp) : pos(tp) {}
-    ClipVert() : pos() {}
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-class ClipPoly
-{
-    static const int kmaxverts = 32;
-
-    ClipVert    mverts[kmaxverts];
-    int         minumverts;
-public:
-    typedef ClipVert VertexType;
-    void AddVertex( const ClipVert& v ) { mverts[minumverts++]=v; }
-    int GetNumVertices() const { return minumverts; }
-    const ClipVert& GetVertex( int idx ) const { return mverts[idx]; }
-    ClipPoly() : minumverts(0) {}
-    void SetDefault()
-    {   minumverts = 0;
-    }
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-struct TriangleBatch
-{
-    std::vector<rend_triangle*>             mPostTransformTriangles;
-    ork::atomic<int>                        mTriangleIndex;
-    rend_shader*                            mShader;
-
-    rend_triangle* GetTriangle()
-    {
-        int idx = mTriangleIndex.fetch_and_increment();
-        return mPostTransformTriangles[idx];
-    }
-
-    void AddTriangle(rend_triangle* rtri)
-    {
-        int idx = mTriangleIndex.fetch_and_increment();
-        mPostTransformTriangles.push_back(rtri);
-        rtri->IncRefCount();
-    } 
-
-    TriangleBatch()
-    {
-        Reset();
-    }
-    void Reset()
-    {
-        mShader = nullptr;
-        mTriangleIndex = 0;
-        mPostTransformTriangles.clear();
-    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -234,8 +159,7 @@ private:
     void TransformAndCull(OpGroup& ogrp) override;
 
     void XfChunk(size_t start, size_t end);
-    void RasterizeTri( const rendtri_context& ctx, const rend_triangle* tri );
-    void RasterizeSubTri( const rendtri_context& ctx, const rend_subtri& tri );
+    void RasterizeTri( const rendtri_context& ctx, const RasterTri& tri );
 
     void Reset();
 
@@ -246,7 +170,7 @@ private:
     ////////////////////////////////////////////////////////////
     rend_srcmesh*                     mpSrcMesh;
     RenderContext&                    mRenderContext;
-    std::vector<rend_triangle*>       mPostXfTris;
+    std::vector<Stage1Tri*>           mStage1Triangles;
     ork::atomic<int>                  mRtMap[krtmap_size];
 };
 
