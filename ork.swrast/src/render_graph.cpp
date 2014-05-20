@@ -68,7 +68,8 @@ render_graph::render_graph()
 	: mTileRend(mRenderContext)
 {
 	//auto src_mesh = LoadObj("ork.swrast/test/dispm.obj",mRenderContext);
-	auto src_mesh = LoadObj("ork.swrast/test/tetra.obj",mRenderContext);
+	//auto src_mesh = LoadObj("ork.swrast/test/tetra.obj",mRenderContext);
+	auto src_mesh = LoadObj("ork.swrast/test/ico.obj",mRenderContext);
 	
 
 	if( src_mesh )

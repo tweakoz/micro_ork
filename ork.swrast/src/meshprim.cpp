@@ -456,7 +456,7 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 	float fiW = float(mRenderContext.miImageWidth)*faadim;
 	float fiH = float(mRenderContext.miImageHeight)*faadim;
 
-	const float disp_bounds = 48;
+	const float disp_bounds = 40;
 	const float disp_bounds2 = 2*disp_bounds;
 
 	float fbucketDX0 = float(tile->miScreenXBase-disp_bounds)*float(aabuf.mAADim);
@@ -482,22 +482,28 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 
 	bool do_subdivide = false;
 
-	if( sst.mScreenArea2D < 0.5f )  // screen area < pixel thresh ?
+
+	if( sst.mScreenArea2D < 32.0f )  // screen area < pixel thresh ?
 	{
+    	float fi = float(mRenderContext.miFrame)/10.0f;
+
 		float fbucketX0 = float(tile->miScreenXBase)*float(aabuf.mAADim);
 		float fbucketY0 = float(tile->miScreenYBase)*float(aabuf.mAADim);
 		float fbucketX1 = fbucketX0+float(tile->miWidth)*float(aabuf.mAADim);
 		float fbucketY1 = fbucketY0+float(tile->miHeight)*float(aabuf.mAADim);
 
 		RasterTri rastri1 = rastri;
-		//{	///////////////////////////
+		{	///////////////////////////
 			// displacement map
 			///////////////////////////
 			auto l_disp = [&]( const CVector3& p, const CVector3& n ) -> CVector3
 			{
 				CVector3 dn = p.Normal();
-				float fd = sinf(dn.x*PI2*9.0f)*cosf(dn.z*PI2*9.0f)*0.1f; 
-				return (n*fd);
+				float fd = 	sinf((fi+dn.x)*PI2*9.0f)
+						 *	cosf(dn.z*PI2*9.0f)
+						 *	0.02f; 
+				auto nfd = dn*fd;
+				return nfd;
 			};
 			const RasterVtx& iv0 = rastri.mVertex[0];
 			const RasterVtx& iv1 = rastri.mVertex[1];
@@ -505,23 +511,19 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 			RasterVtx& ov0 = rastri1.mVertex[0];
 			RasterVtx& ov1 = rastri1.mVertex[1];
 			RasterVtx& ov2 = rastri1.mVertex[2];
-			
-			//ov0.mObjPos += l_disp(iv0.mObjPos,iv0.mObjNrm);
-			//ov1.mObjPos += l_disp(iv1.mObjPos,iv1.mObjNrm);
-			//ov2.mObjPos += l_disp(iv2.mObjPos,iv2.mObjNrm);
-
-			RasterVtx c = (iv0+iv1+iv2)*one_third;
-
-			auto disp = l_disp(c.mObjPos,c.mObjNrm);
-
-			rastri1.mVertex[0].mObjPos += disp;
-			rastri1.mVertex[1].mObjPos += disp;
-			rastri1.mVertex[2].mObjPos += disp;
-
-
+			ov0.mObjPos += l_disp(iv0.mObjPos,iv0.mObjNrm);
+			ov1.mObjPos += l_disp(iv1.mObjPos,iv1.mObjNrm);
+			ov2.mObjPos += l_disp(iv2.mObjPos,iv2.mObjNrm);
+			auto d01 = (ov1.mObjPos-ov0.mObjPos).Normal();
+			auto d02 = (ov2.mObjPos-ov0.mObjPos).Normal();
+			auto nn = d01.Cross(d02).Normal();
+			auto bn = (nn*0.5f)+CVector3(0.5f,0.5f,0.5f);
+			ov0.mRST = bn;
+			ov1.mRST = bn;
+			ov2.mRST = bn;
 
 			///////////////////////////
-		//}
+		}
 		ScrSpcTri sst2(rastri1,mtxMVP,fiW,fiH);
 
 		if( false==boxisect( sst2, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
@@ -594,6 +596,7 @@ void RasterTri::SubDivAtCenter(	RasterTri&t0,
 					const RasterVtx& b )
 	{
 		mid.mObjPos=(a.mObjPos+b.mObjPos)*0.5f;
+		mid.mObjNrm=(a.mObjNrm+b.mObjNrm).Normal();
 		mid.mRST=(a.mRST+b.mRST)*0.5f;
 	};
 	auto l2 = [&](	RasterTri&t, 
