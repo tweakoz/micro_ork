@@ -80,8 +80,8 @@ struct rend_srcmesh
 
 struct RasterVtx
 {
-    ork::CVector4       mObjPos;
-    ork::CVector4       mObjNrm;
+    ork::CVector3       mObjPos;
+    ork::CVector3       mObjNrm;
     ork::CVector3       mRST;
 
     RasterVtx operator+( const RasterVtx& o ) const

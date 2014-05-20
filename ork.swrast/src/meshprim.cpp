@@ -456,48 +456,25 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 	float fiW = float(mRenderContext.miImageWidth)*faadim;
 	float fiH = float(mRenderContext.miImageHeight)*faadim;
 
-	float fbucketX0 = float(tile->miScreenXBase)*float(aabuf.mAADim);
-	float fbucketY0 = float(tile->miScreenYBase)*float(aabuf.mAADim);
-	float fbucketX1 = fbucketX0+float(tile->miWidth)*float(aabuf.mAADim);
-	float fbucketY1 = fbucketY0+float(tile->miHeight)*float(aabuf.mAADim);
+	const float disp_bounds = 48;
+	const float disp_bounds2 = 2*disp_bounds;
+
+	float fbucketDX0 = float(tile->miScreenXBase-disp_bounds)*float(aabuf.mAADim);
+	float fbucketDY0 = float(tile->miScreenYBase-disp_bounds)*float(aabuf.mAADim);
+	float fbucketDX1 = fbucketDX0+float(tile->miWidth+disp_bounds2)*float(aabuf.mAADim);
+	float fbucketDY1 = fbucketDY0+float(tile->miHeight+disp_bounds2)*float(aabuf.mAADim);
 
 	//printf( "st2\n");
 
 	//////////////////////////////////////////
-
-	if( 0 ) // displacement shading here ?
-	{
-		RasterTri rastri1 = rastri;
-		RasterVtx ctr = (rastri.mVertex[0]+rastri.mVertex[1]+rastri.mVertex[2])*one_third;
-		auto nn = ctr.mObjNrm.Normal();
-		const auto& rst = ctr.mRST;
-		auto displacement = nn*sinf(rst.x)*cosf(rst.y)*1.1f;
-
-		rastri1.mVertex[0].mObjPos += displacement;
-		rastri1.mVertex[1].mObjPos += displacement;
-		rastri1.mVertex[2].mObjPos += displacement;
-	}
-
-	//////////////////////////////////////////
-
+	
 	ScrSpcTri sst(rastri,mtxMVP,fiW,fiH);
 
-	//////////////////////////////////////////
-	// bounds check against tile
-	//////////////////////////////////////////
-
-	if( false==boxisect( sst, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
-	{
-		//reject++;
+	if( false==boxisect( sst, fbucketDX0, fbucketDY0, fbucketDX1, fbucketDY1 ) )
 		return;
-	}
-	//printf( "st1\n");
-	bool bsectT = triangleTest(sst,irect(fbucketX0,fbucketX1,fbucketY0,fbucketY1));
-	if( false == bsectT )
-	{
-		//reject++;
+	bool bsectT = triangleTest(sst,irect(fbucketDX0,fbucketDX1,fbucketDY0,fbucketDY1));
+	if( false  == bsectT )
 		return;
-	}
 
 	//////////////////////////////////////////
 	// if screen area is small enough - actually rasterize it
@@ -507,10 +484,51 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 
 	if( sst.mScreenArea2D < 0.5f )  // screen area < pixel thresh ?
 	{
-		float fbucketX0 = float(tile->miScreenXBase)*faadim;
-		float fbucketY0 = float(tile->miScreenYBase)*faadim;
-		float fbucketX1 = fbucketX0+float(tile->miWidth)*faadim;
-		float fbucketY1 = fbucketY0+float(tile->miHeight)*faadim;
+		float fbucketX0 = float(tile->miScreenXBase)*float(aabuf.mAADim);
+		float fbucketY0 = float(tile->miScreenYBase)*float(aabuf.mAADim);
+		float fbucketX1 = fbucketX0+float(tile->miWidth)*float(aabuf.mAADim);
+		float fbucketY1 = fbucketY0+float(tile->miHeight)*float(aabuf.mAADim);
+
+		RasterTri rastri1 = rastri;
+		//{	///////////////////////////
+			// displacement map
+			///////////////////////////
+			auto l_disp = [&]( const CVector3& p, const CVector3& n ) -> CVector3
+			{
+				CVector3 dn = p.Normal();
+				float fd = sinf(dn.x*PI2*9.0f)*cosf(dn.z*PI2*9.0f)*0.1f; 
+				return (n*fd);
+			};
+			const RasterVtx& iv0 = rastri.mVertex[0];
+			const RasterVtx& iv1 = rastri.mVertex[1];
+			const RasterVtx& iv2 = rastri.mVertex[2];
+			RasterVtx& ov0 = rastri1.mVertex[0];
+			RasterVtx& ov1 = rastri1.mVertex[1];
+			RasterVtx& ov2 = rastri1.mVertex[2];
+			
+			//ov0.mObjPos += l_disp(iv0.mObjPos,iv0.mObjNrm);
+			//ov1.mObjPos += l_disp(iv1.mObjPos,iv1.mObjNrm);
+			//ov2.mObjPos += l_disp(iv2.mObjPos,iv2.mObjNrm);
+
+			RasterVtx c = (iv0+iv1+iv2)*one_third;
+
+			auto disp = l_disp(c.mObjPos,c.mObjNrm);
+
+			rastri1.mVertex[0].mObjPos += disp;
+			rastri1.mVertex[1].mObjPos += disp;
+			rastri1.mVertex[2].mObjPos += disp;
+
+
+
+			///////////////////////////
+		//}
+		ScrSpcTri sst2(rastri1,mtxMVP,fiW,fiH);
+
+		if( false==boxisect( sst2, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
+			return;
+		bool bsectT = triangleTest(sst2,irect(fbucketX0,fbucketX1,fbucketY0,fbucketY1));
+		if( false  == bsectT )
+			return;
 
 		auto l_is_inside_tile = [&](const CVector4&v) -> bool
 		{
@@ -523,26 +541,26 @@ void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const RasterTri& 
 		//////////////////////////////////////////
 
 
-		if( 	l_is_inside_tile(sst.mScrPosA)
-			&&	l_is_inside_tile(sst.mScrPosB)
-			&&	l_is_inside_tile(sst.mScrPosC) )
+		if( 	l_is_inside_tile(sst2.mScrPosA)
+			&&	l_is_inside_tile(sst2.mScrPosB)
+			&&	l_is_inside_tile(sst2.mScrPosC) )
 		{
-			const CVector3& rst0 = rastri.mVertex[0].mRST;
-			const CVector3& rst1 = rastri.mVertex[1].mRST;
-			const CVector3& rst2 = rastri.mVertex[2].mRST;
+			const CVector3& rst0 = rastri1.mVertex[0].mRST;
+			const CVector3& rst1 = rastri1.mVertex[1].mRST;
+			const CVector3& rst2 = rastri1.mVertex[2].mRST;
 
 			const CVector3 rstC = (rst0+rst1+rst2)*one_third;
 
-			float fctrx = sst.mScrCenter.x;
-			float fctry = sst.mScrCenter.y;
-			float fctrz = sst.mScrCenter.z;
+			float fctrx = sst2.mScrCenter.x;
+			float fctry = sst2.mScrCenter.y;
+			float fctrz = sst2.mScrCenter.z;
 			int iax = int(fctrx);
 			int iay = int(fctry);
 
 			PreShadedFragmentPool& pfgs = aabuf.mPreFrags;
 
 			PreShadedFragment& prefrag = pfgs.AllocPreFrag();
-			prefrag.mfR = rstC.GetX();
+			prefrag.mfR = rstC.x;
 			prefrag.mfS = rstC.y;
 			prefrag.mfT = rstC.z;
 			prefrag.mfZ = fctrz;

@@ -98,7 +98,7 @@ struct AABuffer
 	CVector3					mClearColor;
 
 	PreShadedFragmentPool		mPreFrags;
-	static const int kfragallocsize = 1<<19;
+	static const int kfragallocsize = 1<<20;
 	rend_fragment*				mpFragments[kfragallocsize];
 
 	AABuffer(int tile_dim,int aa_dim);
