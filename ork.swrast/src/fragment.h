@@ -37,6 +37,23 @@ struct rend_shader;
 struct rend_volume_shader;
 struct AABuffer;
 struct rend_prefragsubgroup;
+struct RasterTri;
+
+
+struct DisplacementShaderContext
+{
+    DisplacementShaderContext(const RenderContext& rctx, const RasterTri&inp)
+        : mRenderContext(rctx)
+        , mRasterTri(inp)
+    {
+
+    }
+
+    const RenderContext& mRenderContext;
+    const RasterTri& mRasterTri;
+};
+
+typedef std::function<RasterTri(const DisplacementShaderContext&dsc)> displacement_lambda_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -49,12 +66,17 @@ struct rend_shader
         EShaderTypeDisplacement,
     };
 
-    const RenderContext*             mRenderContext;
-    const rend_volume_shader    *mpVolumeShader;
+    const RenderContext*            mRenderContext;
+    const rend_volume_shader*       mpVolumeShader;
+    displacement_lambda_t           mDisplacementShader;
 
     ////////////////////////////////////////////
 
-    rend_shader() : mRenderContext(0), mpVolumeShader(0) {}
+    rend_shader()
+        : mRenderContext(nullptr)
+        , mpVolumeShader(nullptr)
+        , mDisplacementShader(nullptr)
+    {}
     virtual eType GetType() const = 0;
     virtual void ShadeBlock( AABuffer* aabuf, int ifragbase, int icount ) const = 0;
 

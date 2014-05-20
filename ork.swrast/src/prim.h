@@ -131,6 +131,8 @@ struct ScrSpcTri
     float mMaxX;
     float mMaxY;
 
+    const ork::CVector4& GetScrPos(int idx) const;
+
     float mScreenArea2D;
 
     //float ComputeScreenArea(float fsw,float fsh) const;
@@ -166,6 +168,15 @@ struct IGeoPrim // reyes course primitive (pre-diced)
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
+struct SsOrdTri
+{
+    SsOrdTri(const ScrSpcTri&ss);
+    const ScrSpcTri& mSSTri;
+    int mIndexA;
+    int mIndexB;
+    int mIndexC;
+};
+
 struct MeshPrimModule : public IGeoPrim
 {
     MeshPrimModule(RenderContext& rdata, rend_srcmesh* pmesh);
@@ -176,11 +187,14 @@ private:
     void TransformAndCull(OpGroup& ogrp) override;
 
     void XfChunk(size_t start, size_t end);
-    void RasterizeTri( const rendtri_context& ctx, const RasterTri& tri );
+    void SubdivideTri( const rendtri_context& ctx, const RasterTri& tri );
 
     void Reset();
 
     bool IsBoundToRasterTile(const RasterTile* prt ) const;
+
+    void RasterizeTri( AABuffer& aab, const SsOrdTri& sstri );
+    //void RrSubTri( const rendtri_context& ctx, const rend_subtri& subtri );
 
     ////////////////////////////////////////////////////////////
     static const int krtmap_size = 8192;
@@ -196,8 +210,13 @@ private:
 ///////////////////////////////////////////////////////////////////////////////
 struct rendtri_context
 {
-    rendtri_context( AABuffer& aabuf ) : mAABuffer( aabuf ) {}
+    rendtri_context( AABuffer& aabuf ) 
+        : mAABuffer( aabuf )
+        , mpShader(nullptr)
+    {}
+
     AABuffer& mAABuffer;
+    const rend_shader* mpShader;
 };
 
 } // namespace ork {

@@ -78,8 +78,54 @@ render_graph::render_graph()
 		mRenderContext.mEye = src_mesh->mEye;
 
 		auto mpm = new MeshPrimModule( mRenderContext, src_mesh );
-
 		mRenderContext.AddPrim(mpm);
+
+		//////////////////////////////////////////////
+		// assign test displacement shader
+		//////////////////////////////////////////////
+
+		int inumsub = src_mesh->miNumSubMesh;
+		int itotaltris = 0;
+		for( int is=0; is<inumsub; is++ )
+		{
+			const rend_srcsubmesh& Sub = src_mesh->mpSubMeshes[is];
+			rend_shader* pshader = Sub.mpShader;
+
+			pshader->mDisplacementShader = [=](const DisplacementShaderContext&dsc) ->RasterTri
+			{
+				float fi = dsc.mRenderContext.miFrame*0.1f;
+
+				const RasterTri& inp = dsc.mRasterTri;
+				RasterTri out = inp;
+
+				auto l_disp = [&]( const CVector3& p, const CVector3& n ) -> CVector3
+				{
+					CVector3 dn = p.Normal();
+					float fd = 	sinf((fi+dn.x)*PI2*9.0f)
+							 *	cosf(dn.z*PI2*9.0f)
+							 *	0.02f; 
+					auto nfd = dn*fd;
+					return nfd;
+				};
+				const RasterVtx& iv0 = inp.mVertex[0];
+				const RasterVtx& iv1 = inp.mVertex[1];
+				const RasterVtx& iv2 = inp.mVertex[2];
+				RasterVtx& ov0 = out.mVertex[0];
+				RasterVtx& ov1 = out.mVertex[1];
+				RasterVtx& ov2 = out.mVertex[2];
+				ov0.mObjPos += l_disp(iv0.mObjPos,iv0.mObjNrm);
+				ov1.mObjPos += l_disp(iv1.mObjPos,iv1.mObjNrm);
+				ov2.mObjPos += l_disp(iv2.mObjPos,iv2.mObjNrm);
+				auto d01 = (ov1.mObjPos-ov0.mObjPos).Normal();
+				auto d02 = (ov2.mObjPos-ov0.mObjPos).Normal();
+				auto nn = d01.Cross(d02).Normal();
+				auto bn = (nn*0.5f)+CVector3(0.5f,0.5f,0.5f);
+				ov0.mRST = bn;
+				ov1.mRST = bn;
+				ov2.mRST = bn;
+				return out;
+			};
+		}
 	}
 }
 
