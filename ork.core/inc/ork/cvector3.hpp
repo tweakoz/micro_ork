@@ -129,6 +129,13 @@ template <typename T> TVector3<T>::TVector3( T _x, T _y, T _z)
 {
 }
 
+template <typename T> TVector3<T>::TVector3( T scalar )
+	: x(scalar)
+	, y(scalar)
+	, z(scalar)
+{
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> u32 TVector3<T>::GetVtxColorAsU32( void ) const 

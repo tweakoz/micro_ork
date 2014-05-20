@@ -42,7 +42,7 @@ void Shader1::ShadeBlock( AABuffer* aabuf, int ifragbase, int icount ) const
 	{	const PreShadedFragment& pfrag = PFRAGS.mPreFrags[ifragidx++];
 		rend_fragment* frag = aabuf->mpFragments[i];
 //		const ork::CVector3 nrm = (frag->mWldSpaceNrm*0.5f)+ork::CVector3(0.5f,0.5f,0.5f);
-		frag->mRGBA.SetXYZ( pfrag.mfR, pfrag.mfS, pfrag.mfT );
+		frag->mRGBA.SetXYZ( pfrag.mON.x, pfrag.mON.y, pfrag.mON.z );
 		//frag->mRGBA.SetXYZ( nrm.GetX(), nrm.GetY(), nrm.GetZ() );
 		frag->mRGBA.SetW( 1.0f );
 		frag->mZ = pfrag.mfZ;

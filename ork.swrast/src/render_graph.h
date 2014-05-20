@@ -116,6 +116,10 @@ struct RasterTile
 	int						miScreenXBase;
 	int 					miScreenYBase;
 	int						miWidth, miHeight;
+
+	float					mAAScreenXBase;
+	float					mAAScreenYBase;
+	float					mAAWidth, mAAHeight;
 	ork::Frustum			mFrustum;
 	//mutable float			MinZ;
 };

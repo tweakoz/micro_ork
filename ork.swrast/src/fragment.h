@@ -90,6 +90,7 @@ struct PreShadedFragment
     float                   mfS;
     float                   mfT;
     float                   mfZ;
+    CVector3                mON;
     int                     miPixIdxAA;
 };
 

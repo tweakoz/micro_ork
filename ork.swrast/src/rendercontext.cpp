@@ -329,6 +329,11 @@ void RenderContext::Resize( int iw, int ih )
             mRasterTiles[idx].miHeight = (iby<ih) ? ktovsize : (ktovsize-(1+iby-ih));
             mRasterTiles[idx].miScreenXBase = ilx;
             mRasterTiles[idx].miScreenYBase = ity;
+
+            mRasterTiles[idx].mAAScreenXBase = float(ilx)*float(mAADim);
+            mRasterTiles[idx].mAAScreenYBase = float(ity)*float(mAADim);
+            mRasterTiles[idx].mAAWidth = float(mRasterTiles[idx].miWidth)*float(mAADim);
+            mRasterTiles[idx].mAAHeight = float(mRasterTiles[idx].miHeight)*float(mAADim);
         }
     }
 }

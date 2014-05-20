@@ -29,6 +29,7 @@ template <typename T> class  TVector3
 public:
 
 	TVector3();
+	explicit TVector3( T scalar );												// constructor from 3 floats
 	explicit TVector3( T _x, T _y, T _z);												// constructor from 3 floats
 	TVector3( const TVector3 &vec);											// constructor from a vector
 	TVector3( const TVector4<T> &vec);

@@ -507,19 +507,25 @@ void MeshPrimModule::SubdivideTri( const rendtri_context& ctx, const RasterTri& 
 	{
     	float fi = float(mRenderContext.miFrame)/10.0f;
 
-		float fbucketX0 = float(tile->miScreenXBase)*float(aabuf.mAADim);
-		float fbucketY0 = float(tile->miScreenYBase)*float(aabuf.mAADim);
-		float fbucketX1 = fbucketX0+float(tile->miWidth)*float(aabuf.mAADim);
-		float fbucketY1 = fbucketY0+float(tile->miHeight)*float(aabuf.mAADim);
+		float fbucketX0 = tile->mAAScreenXBase;
+		float fbucketY0 = tile->mAAScreenYBase;
+		float fbucketX1 = fbucketX0+tile->mAAWidth;
+		float fbucketY1 = fbucketY0+tile->mAAHeight;
 
-		RasterTri rastri1 = rastri;
+		//////////////////////////////////////////
+		// displacement mapping
+		//////////////////////////////////////////
+
+		RasterTri displaced_rastri = rastri;
 
 		if( ctx.mpShader->mDisplacementShader )
 		{	
 			DisplacementShaderContext dsc(mRenderContext,rastri);
-			rastri1 = ctx.mpShader->mDisplacementShader(dsc);
+			displaced_rastri = ctx.mpShader->mDisplacementShader(dsc);
 		}
-		ScrSpcTri sst2(rastri1,mtxMVP,fiW,fiH);
+		ScrSpcTri sst2(displaced_rastri,mtxMVP,fiW,fiH);
+
+		//////////////////////////////////////////
 
 		if( false==boxisect( sst2, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
 			return;
@@ -553,9 +559,9 @@ void MeshPrimModule::SubdivideTri( const rendtri_context& ctx, const RasterTri& 
 			}
 			else // 
 			{
-				const CVector3& rst0 = rastri1.mVertex[0].mRST;
-				const CVector3& rst1 = rastri1.mVertex[1].mRST;
-				const CVector3& rst2 = rastri1.mVertex[2].mRST;
+				const CVector3& rst0 = displaced_rastri.mVertex[0].mRST;
+				const CVector3& rst1 = displaced_rastri.mVertex[1].mRST;
+				const CVector3& rst2 = displaced_rastri.mVertex[2].mRST;
 
 				const CVector3 rstC = (rst0+rst1+rst2)*one_third;
 
@@ -711,30 +717,97 @@ SsOrdTri::SsOrdTri( const ScrSpcTri& sstri )
 }
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+
+struct d_y
+{
+	float mA;
+	float mB;
+	float mC;
+	float mAB;
+	float mAC;
+	float mBC;
+	float minvAB;
+	float minvAC;
+	float minvBC;
+
+	bool mABZERO;
+	bool mACZERO;
+	bool mBCZERO;
+
+	d_y( float a, float b, float c )
+		: mA(a)
+		, mB(b)
+		, mC(c)
+		, mAB(b-a)
+		, mAC(c-a)
+		, mBC(c-b)
+	{
+		minvAB = (1.0f/mAB);
+		minvAC = (1.0f/mAC);
+		minvBC = (1.0f/mBC);
+		mABZERO = (mAB==0.0f); // prevent division by zero
+		mACZERO = (mAC==0.0f); // prevent division by zero
+		mBCZERO = (mBC==0.0f); // prevent division by zero
+	}
+	float selab( bool b ) const { return b ? mA : mB; }
+};
+
+template <typename T> struct d_n
+{
+	T mA;
+	T mB;
+	T mC;
+	T mAB;
+	T mAC;
+	T mBC;
+	T mABdy;
+	T mACdy;
+	T mBCdy;
+
+	d_n( T a, T b, T c, const d_y& dy)
+		: mA(a)
+		, mB(b)
+		, mC(c)
+		, mAB(b-a)
+		, mAC(c-a)
+		, mBC(c-b)
+	{
+		mABdy = dy.mABZERO ? T(0.0f) : mAB * dy.minvAB;
+		mACdy = dy.mACZERO ? T(0.0f) : mAC * dy.minvAC;
+		mBCdy = dy.mBCZERO ? T(0.0f) : mBC * dy.minvBC;
+	}
+
+	const T& seldy( bool b ) const { return b ? mABdy : mBCdy; }
+	const T& selab( bool b ) const { return b ? mA : mB; }
+	//float dXdyB = bAB ? dxABdy : dxBCdy;
+	T fn1( float dya ) const { return mA + mACdy*dya; }
+	T fn2( bool q, float dyb )
+	{
+		const T& B = selab(q);
+		const T& dNdyB = seldy(q);
+		T right = B + dNdyB*dyb;
+		return right;
+	}
+
+};
+
 void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 {	auto tile = aabuf.mRasterTile;
 
 	const ScrSpcTri& sst = sotri.mSSTri;
+	const RasterTri& rastri = sst.mRasterTri;
 
 	const auto& vtxA = sst.GetScrPos(sotri.mIndexA);
 	const auto& vtxB = sst.GetScrPos(sotri.mIndexB);
 	const auto& vtxC = sst.GetScrPos(sotri.mIndexC);
 
+	const RasterVtx& rvtxA = rastri.mVertex[sotri.mIndexA];
+	const RasterVtx& rvtxB = rastri.mVertex[sotri.mIndexB];
+	const RasterVtx& rvtxC = rastri.mVertex[sotri.mIndexC];
+
 	float iza = 1.0f/vtxA.z;
 	float izb = 1.0f/vtxB.z;
 	float izc = 1.0f/vtxC.z;
-
-	float roza = iza;
-	float soza = 0.0f;
-	float toza = 0.0f;
-
-	float rozb = 0.0f;
-	float sozb = izb;
-	float tozb = 0.0f;
-
-	float rozc = 0.0f;
-	float sozc = 0.0f;
-	float tozc = izc;
 
 	////////////////////////////////
 	// trivially reject 
@@ -751,62 +824,18 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 	// vtxC.mSY > vtxA.mSY
 	// no guarantees on left/right ordering
 	////////////////////////////////
-	float VtxAX_AaScreenSpace = vtxA.x;	// vtxA AA-ScreenSpace X
-	float VtxAY_AaScreenSpace = vtxA.y;	// vtxA AA-ScreenSpace Y
-	float VtxBX_AaScreenSpace = vtxB.x;	// vtxB AA-ScreenSpace X
-	float VtxBY_AaScreenSpace = vtxB.y;	// vtxB AA-ScreenSpace Y
-	float VtxCX_AaScreenSpace = vtxC.x;	// vtxC AA-ScreenSpace X
-	float VtxCY_AaScreenSpace = vtxC.y;	// vtxC AA-ScreenSpace Y
-	////////////////////////////////
 	// gradient set up
 	////////////////////////////////
-	float dyAB = (VtxBY_AaScreenSpace - VtxAY_AaScreenSpace); // vertical distance between A and B in fp pixel coordinates
-	float dyAC = (VtxCY_AaScreenSpace - VtxAY_AaScreenSpace); // vertical distance between A and C in fp pixel coordinates
-	float dyBC = (VtxCY_AaScreenSpace - VtxBY_AaScreenSpace); // vertical distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dxAB = (VtxBX_AaScreenSpace - VtxAX_AaScreenSpace); // horizontal distance between A and B in fp pixel coordinates
-	float dxAC = (VtxCX_AaScreenSpace - VtxAX_AaScreenSpace); // horizontal distance between A and C in fp pixel coordinates
-	float dxBC = (VtxCX_AaScreenSpace - VtxBX_AaScreenSpace); // horizontal distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dzAB = (izb - iza); // depth distance between A and B in fp pixel coordinates
-	float dzAC = (izc - iza); // depth distance between A and C in fp pixel coordinates
-	float dzBC = (izc - izb); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float drAB = (rozb - roza); // depth distance between A and B in fp pixel coordinates
-	float drAC = (rozc - roza); // depth distance between A and C in fp pixel coordinates
-	float drBC = (rozc - rozb); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dsAB = (sozb - soza); // depth distance between A and B in fp pixel coordinates
-	float dsAC = (sozc - soza); // depth distance between A and C in fp pixel coordinates
-	float dsBC = (sozc - sozb); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dtAB = (tozb - toza); // depth distance between A and B in fp pixel coordinates
-	float dtAC = (tozc - toza); // depth distance between A and C in fp pixel coordinates
-	float dtBC = (tozc - tozb); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	bool bABZERO = (dyAB==0.0f); // prevent division by zero
-	bool bACZERO = (dyAC==0.0f); // prevent division by zero
-	bool bBCZERO = (dyBC==0.0f); // prevent division by zero
-	////////////////////////////////
-	float dxABdy = bABZERO ? 0.0f : dxAB / dyAB;
-	float dxACdy = bACZERO ? 0.0f : dxAC / dyAC;
-	float dxBCdy = bBCZERO ? 0.0f : dxBC / dyBC;
-	//////////////////////////////////
-	float dzABdy = bABZERO ? 0.0f : dzAB / dyAB;
-	float dzACdy = bACZERO ? 0.0f : dzAC / dyAC;
-	float dzBCdy = bBCZERO ? 0.0f : dzBC / dyBC;
-	//////////////////////////////////
-	float drABdy = bABZERO ? 0.0f : drAB / dyAB;
-	float drACdy = bACZERO ? 0.0f : drAC / dyAC;
-	float drBCdy = bBCZERO ? 0.0f : drBC / dyBC;
-	//////////////////////////////////
-	float dsABdy = bABZERO ? 0.0f : dsAB / dyAB;
-	float dsACdy = bACZERO ? 0.0f : dsAC / dyAC;
-	float dsBCdy = bBCZERO ? 0.0f : dsBC / dyBC;
-	//////////////////////////////////
-	float dtABdy = bABZERO ? 0.0f : dtAB / dyAB;
-	float dtACdy = bACZERO ? 0.0f : dtAC / dyAC;
-	float dtBCdy = bBCZERO ? 0.0f : dtBC / dyBC;
+
+	d_y the_dy(vtxA.y,vtxB.y,vtxC.y);
+	d_n<float> lerpX(vtxA.x,vtxB.x,vtxC.x,the_dy);
+	d_n<float> lerpZ(iza,izb,izc,the_dy);
+
+	d_n<float> lerpR(iza,0.0f,0.0f,the_dy);
+	d_n<float> lerpS(0.0f,izb,0.0f,the_dy);
+	d_n<float> lerpT(0.0f,0.0f,izc,the_dy);
+
+	d_n<CVector3> lerpON(rvtxA.mObjNrm,rvtxB.mObjNrm,rvtxC.mObjNrm,the_dy);
 
 	//////////////////////////////////
 	// raster loop
@@ -815,15 +844,15 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 
 	int imod = aabuf.miAATileDim;
 
-	int tileY0_AaScreenspace = (tile->miScreenYBase*aabuf.mAADim);
-	int tileY1_AaScreenspace = ((tile->miScreenYBase+tile->miHeight)*aabuf.mAADim);
-	int tileX0_AaScreenspace = tile->miScreenXBase*aabuf.mAADim;
-	int tileX1_AaScreenspace = ((tile->miScreenXBase+tile->miWidth)*aabuf.mAADim);
+	int tileY0_AaScreenspace = tile->mAAScreenYBase;
+	int tileY1_AaScreenspace = tile->mAAScreenYBase+tile->mAAHeight;
+	int tileX0_AaScreenspace = tile->mAAScreenXBase;
+	int tileX1_AaScreenspace = tile->mAAScreenXBase+tile->mAAWidth;
 
 	////////////////////////////////
 
-	int iYA = int(std::floor(VtxAY_AaScreenSpace+0.5f)); // iYA, iYC, iy are in pixel coordinate
-	int iYC = int(std::floor(VtxCY_AaScreenSpace+0.5f)); // iYA, iYC, iy are in pixel coordinate
+	int iYA = int(std::floor(vtxA.y+0.5f)); // iYA, iYC, iy are in pixel coordinate
+	int iYC = int(std::floor(vtxC.y+0.5f)); // iYA, iYC, iy are in pixel coordinate
 	OrkAssert(iYC>=iYA);
 
 	if( iYA<tileY0_AaScreenspace ) 
@@ -841,33 +870,26 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 		///////////////////////////////////
 		// edge selection (AC always active, AB or BC depending upon y)
 		///////////////////////////////////
-		bool bAB = pixel_center_Y<=VtxBY_AaScreenSpace;
-		float yB = bAB ? VtxAY_AaScreenSpace : VtxBY_AaScreenSpace;
-		float xB = bAB ? VtxAX_AaScreenSpace : VtxBX_AaScreenSpace;
-		float zB = bAB ? iza : izb;
-		float rB = bAB ? roza : rozb;
-		float sB = bAB ? soza : sozb;
-		float tB = bAB ? toza : tozb;
-		float dXdyB = bAB ? dxABdy : dxBCdy;
-		float dZdyB = bAB ? dzABdy : dzBCdy;
-		float dRdyB = bAB ? drABdy : drBCdy;
-		float dSdyB = bAB ? dsABdy : dsBCdy;
-		float dTdyB = bAB ? dtABdy : dtBCdy;
+		bool bAB = pixel_center_Y<=vtxB.y;
+		float yB = the_dy.selab(bAB);
+		//printf( "dXdyB<%f> abdy<%f>\n", dXdyB, lerpX.sel(bAB));
 		///////////////////////////////////
-		float dyA = pixel_center_Y-VtxAY_AaScreenSpace;
+		float dyA = pixel_center_Y-vtxA.y;
 		float dyB = pixel_center_Y-yB;
 		///////////////////////////////////
 		// calc left and right boundaries
-		float fxLEFT = VtxAX_AaScreenSpace + dxACdy*dyA;
-		float fxRIGHT = xB + dXdyB*dyB;
-		float fzLEFT = iza + dzACdy*dyA;
-		float fzRIGHT = zB + dZdyB*dyB;
-		float frLEFT = roza + drACdy*dyA;
-		float frRIGHT = rB + dRdyB*dyB;
-		float fsLEFT = soza + dsACdy*dyA;
-		float fsRIGHT = sB + dSdyB*dyB;
-		float ftLEFT = toza + dtACdy*dyA;
-		float ftRIGHT = tB + dTdyB*dyB;
+		float fxLEFT = lerpX.fn1(dyA);
+		float fxRIGHT = lerpX.fn2(bAB,dyB);
+		float fzLEFT = lerpZ.fn1(dyA);
+		float fzRIGHT = lerpZ.fn2(bAB,dyB);
+		float frLEFT = lerpR.fn1(dyA);
+		float frRIGHT = lerpR.fn2(bAB,dyB);
+		float fsLEFT = lerpS.fn1(dyA);
+		float fsRIGHT = lerpS.fn2(bAB,dyB);
+		float ftLEFT = lerpT.fn1(dyA);
+		float ftRIGHT = lerpT.fn2(bAB,dyB);
+		CVector3 onLEFT = lerpON.fn1(dyA);
+		CVector3 onRIGHT = lerpON.fn2(bAB,dyB);
 		///////////////////////////////////
 		// enforce left to right
 		///////////////////////////////////
@@ -877,6 +899,7 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 			std::swap(frLEFT,frRIGHT);
 			std::swap(fsLEFT,fsRIGHT);
 			std::swap(ftLEFT,ftRIGHT);
+			std::swap(onLEFT,onRIGHT);
 		}
 		int ixLEFT = int(std::floor(fxLEFT+0.5f));
 		int ixRIGHT = int(std::floor(fxRIGHT+0.5f));
@@ -885,10 +908,12 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 		float fdRdX = (frRIGHT-frLEFT)/float(ixRIGHT-ixLEFT);
 		float fdSdX = (fsRIGHT-fsLEFT)/float(ixRIGHT-ixLEFT);
 		float fdTdX = (ftRIGHT-ftLEFT)/float(ixRIGHT-ixLEFT);
+		CVector3 dONdX = (onRIGHT-onLEFT)/float(ixRIGHT-ixLEFT);
 		float fZ = fzLEFT; 
 		float fR = frLEFT; 
 		float fS = fsLEFT; 
 		float fT = ftLEFT; 
+		CVector3 ON = onLEFT;
 		///////////////////////////////////
 		ixRIGHT = ( ixRIGHT>tileX1_AaScreenspace ) 
 				? tileX1_AaScreenspace 
@@ -904,6 +929,7 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 			fR += fdRdX*fxprestep;
 			fS += fdSdX*fxprestep;
 			fT += fdTdX*fxprestep;
+			ON += dONdX*fxprestep;
 		}
 		///////////////////////////////////
 		// X loop
@@ -924,6 +950,7 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 				prefrag.mfS = fS*rz;
 				prefrag.mfT = fT*rz;
 				prefrag.mfZ = rz;
+				prefrag.mON = ON*rz;
 				prefrag.miPixIdxAA = aabuf.CalcAAPixelAddress(iAAX,iAAY);
 			}
 			///////////////////////////////////////////////
@@ -931,6 +958,7 @@ void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
 			fR += fdRdX;
 			fS += fdSdX;
 			fT += fdTdX;
+			ON += dONdX;
 		}
 		///////////////////////////////////
 	}
