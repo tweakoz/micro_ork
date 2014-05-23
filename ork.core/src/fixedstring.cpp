@@ -118,6 +118,38 @@ bool cstr_replace(  const char *src,
 
 }
 
+fxstring<5> Char4::fx_str( void ) const
+{
+    char rval[5];
+    
+    rval[0] = mCharMems[0];
+    rval[1] = mCharMems[1];
+    rval[2] = mCharMems[2];
+    rval[3] = mCharMems[3];
+
+    rval[4] = 0;
+
+    return fxstring<5>(rval);
+}
+
+fxstring<9> Char8::fx_str( void ) const
+{
+    char rval[9];
+
+    rval[0] = mCharMems[0];
+    rval[1] = mCharMems[1];
+    rval[2] = mCharMems[2];
+    rval[3] = mCharMems[3];
+
+    rval[4] = mCharMems[4];
+    rval[5] = mCharMems[5];
+    rval[6] = mCharMems[6];
+    rval[7] = mCharMems[7];
+
+    rval[8] = 0;
+
+    return fxstring<9>(rval);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // template instantiations
