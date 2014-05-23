@@ -257,8 +257,8 @@ void OpMultiQ::BlockingIterate(int thid)
 
 	Op the_op;
 
-	ork::Timer tmr_grp_outer;
-	tmr_grp_outer.Start();
+	//ork::Timer tmr_grp_outer;
+	//tmr_grp_outer.Start();
 
 	const int ksleepar[9] = {10,17,23,27,35,151,301,603,1201};
 	//const int ksleepar[9] = {1,1,1,1,1,1,1,1,1};
@@ -330,8 +330,8 @@ void OpMultiQ::BlockingIterate(int thid)
 	
 	const int kmaxperquanta = 1024;
 
-	float outer_wait_ms = 1000.0f * tmr_grp_outer.SecsSinceStart();
-	mPerfCntGroupWaitMs.fetch_and_add( int(outer_wait_ms) );
+	//float outer_wait_ms = 1000.0f * tmr_grp_outer.SecsSinceStart();
+	//mPerfCntGroupWaitMs.fetch_and_add( int(outer_wait_ms) );
 
 	//ProcessOne(exec_grp,the_op);
 

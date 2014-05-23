@@ -48,7 +48,10 @@ class ClangToolChain:
 	prj.CompilerType = 'gcc'
 	prj.XCFLG += "-DOSX -arch %s " % Arch
 	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
-	prj.XCFLG += '-ffast-math '
+	prj.XCFLG += '-ffast-math -march=corei7-avx '
+	prj.XCFLG += '-mllvm -force-vector-width=4 '
+	#prj.XCFLG += '-mllvm -fslp-vectorize-aggressive '
+	#prj.XCFLG += '-mllvm  -force-vector-unroll=8 '
 	prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
 	prj.XCXXFLG += '-F%s/Contents/Resources/include -Wno-c++11-narrowing ' % AqsisDir
 	prj.XLINK = '-stdlib=libc++ -v -g -F/Library/Frameworks -arch %s '%Arch

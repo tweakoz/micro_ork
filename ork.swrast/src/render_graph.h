@@ -173,7 +173,8 @@ public:
 	
 	SplitAndDice			mSplitAndDice;
 
-	LockedResource<prim_set_t> mPrimSet;
+	//LockedResource<prim_set_t> mPrimSet;
+	prim_set_t mPrimSet;
 
 	int GetTileX( float fx ) const;
 	int GetTileY( float fy ) const;

@@ -257,11 +257,11 @@ void RenderContext::Update(OpGroup& ogrp)
         }
     }
 
-    auto prims = mPrimSet.AtomicCopy();
+    //auto prims = mPrimSet.AtomicCopy();
 
     //ogrp.drain();
 
-    for( const auto& p : prims )
+    for( const auto& p : mPrimSet )
     {
         p->TransformAndCull(ogrp);
     }
@@ -389,9 +389,9 @@ int RenderContext::CalcPixelAddress( int ix, int iy ) const
 
 void RenderContext::AddPrim(IGeoPrim*prim)
 {
-    auto& s = mPrimSet.LockForWrite();
-    s.insert(prim);
-    mPrimSet.Unlock();
+    //auto& s = mPrimSet.LockForWrite();
+    mPrimSet.insert(prim);
+    //mPrimSet.Unlock();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -400,9 +400,9 @@ void RenderContext::RenderToTile(AABuffer* aabuf)
 {
     aabuf->Clear(*this);
 
-    auto prims = mPrimSet.AtomicCopy();
+    //auto prims = mPrimSet.AtomicCopy();
 
-    for( const auto& p : prims )
+    for( const auto& p : mPrimSet )
     {
         p->RenderToTile(aabuf);
     }
