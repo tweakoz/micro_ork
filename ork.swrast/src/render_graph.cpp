@@ -98,6 +98,13 @@ const u32* render_graph::GetPixels() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+void render_graph::ComputeAsync(OpGroup& ogrp)
+{
+	mRenderContext.Update(ogrp);
+	mTileRend.QueueTiles(ogrp);
+	mRenderContext.miFrame++;
+}
+
 void render_graph::Compute(OpGroup& ogrp)
 {
 	mRenderContext.Update(ogrp);

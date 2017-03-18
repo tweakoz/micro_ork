@@ -40,6 +40,7 @@ class swrast:
    the_test.SetSrcBase( "." )
    the_test.AddFolders( "test", files )
    libs = sln.explibnams("ork.swrast ork.core")
+   the_test.AddLibs( "caca" )
    print "LIBS: %s" % libs
    the_test.AddLibs( libs )
    if cmn.IsOsx:

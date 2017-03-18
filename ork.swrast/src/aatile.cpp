@@ -72,7 +72,8 @@ void AABuffer::Clear(RenderContext& rctx)
     u8 ucg = (gicounter&2)<<(ishift+4);
     u8 ucb = (gicounter&4)<<(ishift+3);
     u32 upix = (ucb<<0)|u32(ucg<<8)|u32(ucr<<16);
-    mClearColor = ork::CVector3( float(ucr)/255.0f, float(ucg)/255.0f, float(ucb)/255.0f );
+    mClearColor = ork::CVector3( 0,0,0 );
+    //mClearColor = ork::CVector3( float(ucr)/255.0f, float(ucg)/255.0f, float(ucb)/255.0f );
 
     for( int iy=0; iy<miAATileDim; iy++ )
     {

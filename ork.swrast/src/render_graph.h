@@ -223,6 +223,7 @@ class render_graph
 public:
 	render_graph();
 	void Compute(OpGroup& ogrp);
+	void ComputeAsync(OpGroup& ogrp);
 
 	void Resize( int iw, int ih );
 	const uint32_t* GetPixels() const;

@@ -75,7 +75,7 @@ void RenderContext::Update(OpGroup& ogrp)
     mMatrixV = ork::CMatrix4::Identity;
     mMatrixP = ork::CMatrix4::Identity;
 //  mMatrixV.LookAt( mEye+ork::CVector3(0.0f,750.0f,0.0f), mTarget, -ork::CVector3::Green() );
-    mMatrixV.LookAt( mEye, mTarget, ork::CVector3::Green() );
+    mMatrixV.LookAt( mEye, mTarget, ork::CVector3::Green()*-1 );
     //mMatrixP.Perspective( 25.0f, faspect, 1500.0f, 10000.0f );
     mMatrixP.Perspective( 25.0f, faspect, 1500.0f, 10000.0f );
 //  mMatrixP.Perspective( 25.0f, faspect, 0.1f, 10.0f );
