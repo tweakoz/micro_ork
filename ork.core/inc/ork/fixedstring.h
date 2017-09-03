@@ -60,7 +60,7 @@ public:
 	typedef size_t size_type;
 	static const size_type npos = 0xffffffff;
 
-	virtual size_t get_maxlen() const { return kmaxlen; }
+	size_t get_maxlen() const final { return kmaxlen; }
 
 	/////////////////////////
 
@@ -134,8 +134,8 @@ public:
 	//////////////////////////////////////////////////////////
 	static const unsigned int kMAXLEN = kmaxlen-1;
 	//////////////////////////////////////////////////////////
-    char* mutable_c_str() { return buffer; } // virtual
-	const char* c_str() const { return buffer; } // virtual
+    char* mutable_c_str() { return buffer; } 
+	const char* c_str() const final { return buffer; } // virtual
 	void SetChar( size_t index, char val );
 	//////////////////////////////////////////////////////////
 	void set(const char* pstr) override;

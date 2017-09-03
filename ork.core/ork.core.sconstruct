@@ -12,8 +12,6 @@ SetOption('num_jobs', obu.num_cores)
 sln.optset.add("ork.upp")
 BasicEnv = Environment( ENV=os.environ )
 
-#obu.install_files("src/*.h","include/unittest++")
-#obu.install_files("src/Posix/*.h","include/unittest++/Posix")
 obu.install_headers("inc/*")
 
 # basics #################################

@@ -49,7 +49,7 @@ struct autothread
 		};
 		mThread.start(l);
 	}
-	~autothread()
+	virtual ~autothread()
 	{
 		join();
 	}

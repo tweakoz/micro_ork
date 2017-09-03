@@ -211,10 +211,10 @@ struct FragmentCompositorREYES : public rend_fraglist_visitor
     ork::RadixSort          mRadixSorter;
     int                     miThreadID;
     FragmentCompositorREYES() : miThreadID(0), opaqueZ(1.0e30f), miNumFragments(0), mpOpaqueFragment(0) {}
-    void Visit( const rend_fragment* pfrag ); // virtual
+    void Visit( const rend_fragment* pfrag ) final; // virtual
     void SortAndHide(); // Sort and Hide occluded
-    void Reset() override;
-    ork::CVector3 Composite(const ork::CVector3&clrcolor) override;
+    void Reset() final;
+    ork::CVector3 Composite(const ork::CVector3&clrcolor) final;
     ////////////////////////////////////////////
 };
 
@@ -225,10 +225,10 @@ struct FragmentCompositorZBuffer : public rend_fraglist_visitor
     float                   opaqueZ;
     const rend_fragment*    mpOpaqueFragment;
     FragmentCompositorZBuffer() : opaqueZ(1.0e30f), mpOpaqueFragment(0) {}
-    void Visit( const rend_fragment* pfrag ); // virtual
-    void Reset() override;
+    void Visit( const rend_fragment* pfrag ) final; 
+    void Reset() final;
     atomic<int> miNumFragments;
-    ork::CVector3 Composite(const ork::CVector3&clrcolor) override;
+    ork::CVector3 Composite(const ork::CVector3&clrcolor) final;
     ////////////////////////////////////////////
 };
 

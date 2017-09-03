@@ -397,7 +397,7 @@ int rend_fraglist::DepthComplexity() const
 	{
 		countvisitor() : icount(0) {}
 		int icount;
-		void Visit( const rend_fragment* pnode ) // virtual
+		void Visit( const rend_fragment* pnode ) final // virtual
 		{
 			icount++;
 		}

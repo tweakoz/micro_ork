@@ -39,50 +39,26 @@ USE_DEBUG_CXX = False
 #############################################
 class ClangToolChain:
   def __init__(self,env, prj):
-	bindir = "%s/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin" % XcodeDir
-	c_compiler = "%s/clang"%bindir
-	cpp_compiler = "%s/clang++"%bindir
-	env.Replace( CXX = cpp_compiler, CC = c_compiler )
-	env.Replace( LINK = cpp_compiler )
-	prj.AddLibs( ' m c c++' )
-	prj.CompilerType = 'gcc'
-	prj.XCFLG += "-DOSX -arch %s " % Arch
-	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
-	prj.XCFLG += '-ffast-math '
-	prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
-	prj.XCXXFLG += '-F%s/Contents/Resources/include -Wno-c++11-narrowing ' % AqsisDir
-	prj.XLINK = '-stdlib=libc++ -v -g -F/Library/Frameworks -arch %s '%Arch
-	prj.XLINK += '-F/System/Library/Frameworks/Quartz.framework/Frameworks '
-#############################################
-class MacPortsToolChain:
-  def __init__(self,env, prj):
-	c_compiler = "gcc-mp-4.8"
-	cpp_compiler = "g++-mp-4.8"
-	env.Replace( CXX = cpp_compiler, CC = c_compiler )
-	env.Replace( LINK = cpp_compiler )
-	prj.AddLibs( ' m c ' )
-	prj.CompilerType = 'gcc'
-	prj.XCFLG += "-arch %s " % Arch
-	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
-	prj.XCXXFLG += '-std=c++0x -fexceptions' + prj.XCFLG
-	prj.XCXXFLG += '-F%s/Contents/Resources/include ' % AqsisDir
-	prj.XLINK = '-v -g '
-	prj.XLINK += "-arch %s " % Arch
-#############################################
-class HpcToolChain:
-  def __init__(self,env, prj):
-	c_compiler = "/opt/gcc48/bin/gcc"
-	cpp_compiler = "/opt/gcc48/bin/g++"
-	env.Replace( CXX = cpp_compiler, CC = c_compiler )
-	env.Replace( LINK = cpp_compiler )
-	prj.AddLibs( ' m c ' )
-	prj.CompilerType = 'gcc'
-	prj.XCFLG += "-arch %s " % Arch
-	prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
-	prj.XCXXFLG += '-std=c++0x -fexceptions ' + prj.XCFLG
-	prj.XCXXFLG += '-F%s/Contents/Resources/include ' % AqsisDir
-	prj.XLINK = '-v -g '
-	prj.XLINK += "-arch %s " % Arch
+    bindir = "%s/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin" % XcodeDir
+    c_compiler = "%s/clang"%bindir
+    cpp_compiler = "%s/clang++"%bindir
+    env.Replace( CXX = cpp_compiler, CC = c_compiler )
+    env.Replace( LINK = cpp_compiler )
+    prj.AddLibs( ' m c c++' )
+    prj.CompilerType = 'gcc'
+    prj.XCFLG += "-DOSX -arch %s " % Arch
+    prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
+    prj.XCFLG += '-ffast-math '
+    prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
+    prj.XCXXFLG += '-F%s/Contents/Resources/include -Wno-c++11-narrowing ' % AqsisDir
+    #######################
+    # see answer to:
+    # https://stackoverflow.com/questions/35242099/stdterminate-linker-error-on-a-small-clang-project
+    #######################
+    prj.XLINK = '-L/usr/lib '
+    #######################
+    prj.XLINK += '-std=c++11 -stdlib=libc++ -v -g -F/Library/Frameworks -arch %s '%Arch
+    prj.XLINK += '-F/System/Library/Frameworks/Quartz.framework/Frameworks '
 #############################################
 def DefaultBuildEnv( env, prj ):
 	##
@@ -94,7 +70,7 @@ def DefaultBuildEnv( env, prj ):
 	CCFLG = ' '
 	CXXFLG = ' '
 	LIBS = "m tbb pthread"
-	LIBPATH = ' /opt/local/lib '
+	LIBPATH = ' '#/opt/local/lib '
 	#if USE_DEBUG_CXX:
 	#	LIBPATH += ' /usr/lib/x86_64-linux-gnu/debug '
 	LINK = ''
