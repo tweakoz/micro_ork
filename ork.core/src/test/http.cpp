@@ -11,8 +11,8 @@ using namespace ork;
 
 TEST(HttpOne)
 {
-    HttpRequest req("https://raw.githubusercontent.com/tweakoz/micro_ork/master/README.md");
+    HttpRequest req("http://4k.com/wp-content/uploads/2014/06/4k-image-santiago.jpg");
     req.get();
     printf( "\n" );
-    //exit(0);
+    exit(0);
 }

@@ -10,6 +10,7 @@
 #include <ork/svariant.h>
 #include <functional>
 #include <ork/atomic.h>
+#include <vector>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace ork {
@@ -26,6 +27,9 @@ struct HttpRequest
 
     std::string _url;
     svarp_t _impl;
+    size_t _numbytessofar;
+    size_t _knownlength;
+    std::vector<uint8_t> _payload;
 };
 
 ///////////////////////////////////////////////////////////////////////////////
