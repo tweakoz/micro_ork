@@ -66,20 +66,6 @@ void atomic_counter::init()
 atomic_reservoir_t atomic_counter::gatomres;
 #endif
 
-///////////////////////////////////////////////////////////////////////////
-
-void SetCurrentThreadName(const char* threadName)
-{
-#if defined(LINUX)
-	static const int  kMAX_NAME_LEN = 15;
-	char name[kMAX_NAME_LEN+1];
-	for( int i=0; i<kMAX_NAME_LEN; i++ ) name[i]=0;
-	strncpy(name,threadName,kMAX_NAME_LEN);
-	name[kMAX_NAME_LEN]=0;
-	prctl(PR_SET_NAME,(unsigned long)&name);
-#endif
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 Op::Op(const void_lambda_t& op,const std::string& name)
 	: mName(name)

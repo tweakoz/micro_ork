@@ -2,7 +2,8 @@
 
 namespace ork {
 
-thread::thread()
+thread::thread(const std::string& name)
+    : _name(name)
 {
     mState = 0;
 }
@@ -13,8 +14,11 @@ thread::~thread()
 
 void* thread_impl(void* pdat)
 {
-    //printf( "starting thread<%p>\n", pdat );
     thread* pthr = (thread*) pdat;
+
+    printf( "starting thread<%p:%s>\n", pdat,pthr->_name.c_str() );
+    SetCurrentThreadName(pthr->_name.c_str());
+
     pthr->mLambda();
     //printf( "thread<%p> returned\n", pdat );
     return nullptr;
@@ -70,6 +74,22 @@ void thread::join()
     {
         mState.fetch_and_increment();
     }
+}
+
+///////////////////////////////////////////////////////////////////////////
+
+void SetCurrentThreadName(const char* threadName)
+{
+    static const int  kMAX_NAME_LEN = 15;
+    char name[kMAX_NAME_LEN+1];
+    for( int i=0; i<kMAX_NAME_LEN; i++ ) name[i]=0;
+    strncpy(name,threadName,kMAX_NAME_LEN);
+    name[kMAX_NAME_LEN]=0;
+#if defined(OSX)
+    pthread_setname_np(name); 
+#elif defined(LINUX)
+    prctl(PR_SET_NAME,(unsigned long)&name);
+#endif
 }
 
 }

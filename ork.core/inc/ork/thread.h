@@ -29,7 +29,7 @@ namespace ork {
 struct thread
 {
 
-	thread();
+	thread(const std::string& name="ork::thread");
 	~thread();
 
 	void start( const ork::void_lambda_t& l );
@@ -42,6 +42,7 @@ struct thread
 	int mSprocPid;
 	#endif
 	ork::void_lambda_t mLambda;
+    std::string _name;
 
 };
 
@@ -67,6 +68,8 @@ struct autothread
 
 	thread mThread;
 };
+
+void SetCurrentThreadName(const char* threadName);
 
 }
 

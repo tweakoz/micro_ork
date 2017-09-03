@@ -52,7 +52,7 @@ TEST(HttpOne)
     // start app in its own thread
     //////////////////////////////////////////////
 
-    auto thr = std::make_shared<thread>();
+    auto thr = std::make_shared<thread>("wtserver_thread");
 
     std::shared_ptr<WServer> wtserver;
 
@@ -73,15 +73,11 @@ TEST(HttpOne)
         try {
 
             wtserver = std::make_shared<WServer>(argv[0]);
-            // WTHTTP_CONFIGURATION is e.g. "/etc/wt/wthttpd"
             wtserver->setServerConfiguration(argc, argv, WTHTTP_CONFIGURATION);
-            // add a single entry point, at the default location (as determined
-            // by the wtserver configuration's deploy-path)
             wtserver->addEntryPoint(Wt::Application, TestApp::create);
             TestApi* _tapi;
             auto tapi = std::make_shared<TestApi>();
             wtserver->addResource(tapi.get(), "/yo");
-
 
             if (wtserver->start()) {
                 int sig = WServer::waitForShutdown(argv[0]);
@@ -100,8 +96,6 @@ TEST(HttpOne)
             assert(false);
 
         }
-          //--docroot=./ --http-port=666 --http-address=localhost
-
     });
     
     //////////////////////////////////////////////
