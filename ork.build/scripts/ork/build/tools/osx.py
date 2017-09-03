@@ -44,7 +44,7 @@ class ClangToolChain:
     cpp_compiler = "%s/clang++"%bindir
     env.Replace( CXX = cpp_compiler, CC = c_compiler )
     env.Replace( LINK = cpp_compiler )
-    prj.AddLibs( ' m c c++' )
+    prj.AddLibs( ' m c c++ curl' )
     prj.CompilerType = 'gcc'
     prj.XCFLG += "-DOSX -arch %s " % Arch
     prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
