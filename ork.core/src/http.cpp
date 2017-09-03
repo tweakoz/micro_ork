@@ -90,11 +90,16 @@ bool HttpRequest::get(on_datacb_t ondata)
             //////////////
             // resize payload
             //   and copy bytes into it
+            //  null terminate 
+            //   (for convenience in printing
+            //    contents as a string)
             //////////////
 
-            req->_payload.resize(req->_numbytessofar);
+            req->_payload.resize(req->_numbytessofar+1);
             char* pdestbase = (char*) req->_payload.data();
             memcpy((void*)(pdestbase+prevbase),inc_data_ptr,numbytes);
+            req->_payload[req->_numbytessofar]=0;
+            req->_payload.resize(req->_numbytessofar);
 
             //////////////
 
