@@ -98,7 +98,7 @@ def append_env(key,val):
  #########################
 
 def install_headers(dir):
-	print "Installing headers from <%s> to <%s/include/>" % (dir,stage_dir)
+	print "%s from <%s> to <%s>" % (deco.magenta("Installing headers"),deco.path(dir),deco.path(stage_dir+"/include"))
 	os.system( "cp -rf %s %s/include/" % (dir,stage_dir) )
 
 def install_files(pth,dst):

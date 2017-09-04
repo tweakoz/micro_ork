@@ -113,7 +113,7 @@ def GetProcessor(args):
 	PROCESSOR = "cpu"
 	PLAT = sys.platform.lower().replace( " ", "_" )
 	TARGETPLAT = args['PLATFORM']
-	print "PLAT<%s> TARGETPLAT<%s>" % (PLAT,TARGETPLAT)
+	print "%s<%s> %s<%s>" % (deco.magenta("PLAT"),deco.key(PLAT),deco.cyan("TARGETPLAT"),deco.val(TARGETPLAT))
 	if PLAT == 'irix6':
 		PROCESSOR='mips4'
 		TARGETPLAT='sgi'
@@ -258,7 +258,7 @@ class Project:
 
 		do_opt = (name in optset)
 
-		print "name<%s> do_opt<%s>" % (name,do_opt)
+		print "%s<%s> %s<%s>" % (deco.magenta("name"),deco.key(name),deco.cyan("do_opt"),deco.val(do_opt))
 
 		if do_opt:
 			self.XCCFLG += '-O3 '
