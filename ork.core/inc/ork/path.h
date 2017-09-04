@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <ork/fixedstring.h>
+#include <vector>
 
 namespace ork {
 
@@ -187,6 +188,12 @@ class Path
         //////////////////////////////////////
 
 };
+
+typedef std::vector<Path::NameType> filename_list_t;
+
+filename_list_t glob( const Path::NameType & wildcards,
+                      const ork::Path& initdir );
+
 
 //////////////////////////////////////////////////////////
 };
