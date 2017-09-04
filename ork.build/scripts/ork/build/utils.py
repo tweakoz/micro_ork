@@ -17,6 +17,9 @@ import sys
 import xml.etree.ElementTree as xml
 import hashlib
 
+import ork.build.common
+deco = ork.build.common.deco()
+
 def is_irix():
 	return sys.platform.find("irix")!=-1
 
@@ -25,7 +28,7 @@ def pexec(args):
 
 num_cores = 1
 
-print "is_irix<%s>" % is_irix()
+print "is_irix<%s>" % deco.val(is_irix())
 if is_irix():
 	num_cores_str = pexec( 'hinv -c processor' )
 	f = string.split(num_cores_str)[0]
@@ -132,10 +135,10 @@ def check_for_project(path):
 	rval = None
 	prj_manifest = "%s/ork.build.manifest"%path
 	prj_scripts = os.path.abspath("%s/scripts"%path)
-	print "checking for project at<%s>" % path
+	print "checking for project at<%s>" % deco.path(path)
 	if os.path.exists(prj_manifest):
 		print "/////////////////////////////////////////"
-		print "// Projects Found !! <%s>" % path
+		print "// Projects Found !! <%s>" % deco.path(path)
 		print "/////////////////////////////////////////"
 		###############
 		prj = manifests.add_project(path)

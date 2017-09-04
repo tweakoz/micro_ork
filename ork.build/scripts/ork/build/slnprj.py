@@ -13,6 +13,8 @@ from sets import Set
 import ork.build.utils as utils
 import ork.build.common as common
 import ork.build.localopts as localopts
+import ork.build.common
+deco = ork.build.common.deco()
 
 HostIsOsx = common.IsOsx
 HostIsIrix = common.IsIrix

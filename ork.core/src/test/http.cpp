@@ -97,7 +97,6 @@ TEST(HttpOne)
 
     HttpRequest req("http://localhost:1234/yo");
     req.get();
-    usleep(1<<20);
     std::string reponse = (const char*) req._payload.data();
     printf( "got<%s>\n", reponse.c_str()  );
 
