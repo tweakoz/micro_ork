@@ -47,23 +47,36 @@ documentation and/or software.
 //      MD5(std::string).hexdigest()
 //
 // assumes that char is 8 bit and int is 32 bit
+
 class MD5
 {
 public:
-  typedef unsigned int size_type; // must be 32bit
- 
-  MD5();
-  MD5(const std::string& text);
-  void update(const unsigned char *buf, size_type length);
-  void update(const char *buf, size_type length);
-  MD5& finalize();
-  std::string hexdigest() const;
-  friend std::ostream& operator<<(std::ostream&, MD5 md5);
- 
+    typedef unsigned char uint1; //  8bit
+    typedef unsigned int uint4;  // 32bit
+    typedef unsigned int size_type; // must be 32bit
+
+    struct bindigest_t
+    {
+        uint8_t _data[16];        
+    };
+
+    MD5();
+    MD5(const std::string& text);
+    void update(const unsigned char *buf, size_type length);
+    void update(const char *buf, size_type length);
+    MD5& finalize();
+    std::string hexdigest() const;
+    friend std::ostream& operator<<(std::ostream&, MD5 md5);
+
+    const bindigest_t& bindigest() const { return _digest; }
+
+    template <typename T> void updateItem(const T& item)
+    {
+    this->update((const char*)&item,sizeof(T));
+    }
+
 private:
   void init();
-  typedef unsigned char uint1; //  8bit
-  typedef unsigned int uint4;  // 32bit
   enum {blocksize = 64}; // VC6 won't eat a const static int here
  
   void transform(const uint1 block[blocksize]);
@@ -74,7 +87,7 @@ private:
   uint1 buffer[blocksize]; // bytes that didn't fit in last 64 byte chunk
   uint4 count[2];   // 64bit counter for number of bits (lo, hi)
   uint4 state[4];   // digest so far
-  uint1 digest[16]; // the result
+  bindigest_t _digest; // the result
  
   // low level logic operations
   static inline uint4 F(uint4 x, uint4 y, uint4 z);
