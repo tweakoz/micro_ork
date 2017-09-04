@@ -16,7 +16,7 @@ void* thread_impl(void* pdat)
 {
     thread* pthr = (thread*) pdat;
 
-    printf( "starting thread<%p:%s>\n", pdat,pthr->_name.c_str() );
+    //printf( "starting thread<%p:%s>\n", pdat,pthr->_name.c_str() );
     SetCurrentThreadName(pthr->_name.c_str());
 
     pthr->mLambda();

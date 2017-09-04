@@ -38,17 +38,6 @@ TEST(HttpOne)
     };
 
     //////////////////////////////////////////////
-    // testapp creator
-    //////////////////////////////////////////////
-
-    struct TestApp
-    {
-        static WApplication *create(const WEnvironment& env) {
-          return new WApplication(env);
-        }
-    };
-
-    //////////////////////////////////////////////
     // start app in its own thread
     //////////////////////////////////////////////
 
@@ -56,7 +45,9 @@ TEST(HttpOne)
 
     std::shared_ptr<WServer> wtserver;
 
-    thr->start([&wtserver](){
+    std::atomic<bool> ok_to_exit(false);
+
+    thr->start([&wtserver,&ok_to_exit](){
 
         static char* argv[] = 
         {
@@ -74,14 +65,12 @@ TEST(HttpOne)
 
             wtserver = std::make_shared<WServer>(argv[0]);
             wtserver->setServerConfiguration(argc, argv, WTHTTP_CONFIGURATION);
-            wtserver->addEntryPoint(Wt::Application, TestApp::create);
-            TestApi* _tapi;
             auto tapi = std::make_shared<TestApi>();
             wtserver->addResource(tapi.get(), "/yo");
 
             if (wtserver->start()) {
-                int sig = WServer::waitForShutdown(argv[0]);
-                std::cerr << "Shutdown (signal = " << sig << ")" << std::endl;
+                while(false==ok_to_exit)
+                    usleep(1<<18);
                 wtserver->stop();
             }
 
@@ -96,6 +85,8 @@ TEST(HttpOne)
             assert(false);
 
         }
+
+        printf( "Leaving Server Thread\n");
     });
     
     //////////////////////////////////////////////
@@ -114,7 +105,7 @@ TEST(HttpOne)
     // todo better server stop method
     //////////////////////////////////////////////
 
-    raise(SIGHUP);
+    ok_to_exit=true;
     thr->join();
 
     //////////////////////////////////////////////
