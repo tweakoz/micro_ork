@@ -19,13 +19,17 @@ namespace ork {
 struct HttpRequest
 {
     typedef std::function<void(HttpRequest*,const void*,size_t)> on_datacb_t;
-
+    typedef std::function<void()> oncomplete_t;
     HttpRequest(const std::string& url);
     ~HttpRequest();
 
     bool get(on_datacb_t=nullptr);
+    void getAsync(oncomplete_t onc);
 
+    const char* c_str() const;
+    bool statusOk() const { return _httpStatus==200; }
     std::string _url;
+    int _httpStatus;
     svarp_t _impl;
     size_t _numbytessofar;
     size_t _knownlength;

@@ -5,6 +5,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <ork/http.h>
+#include <ork/thread.h>
 #include <mutex>
 #include <curl/curl.h>
 #include <cstdlib>
@@ -17,6 +18,7 @@ HttpRequest::HttpRequest(const std::string& url)
     : _url(url)
     , _numbytessofar(0)
     , _knownlength(0)
+    , _httpStatus(0)
 {
     /////////////////////////////////
     // one time init - start up CURL
@@ -62,6 +64,11 @@ HttpRequest::~HttpRequest()
     if( auto curl = _impl.TryAs<CURL*>() )
         curl_easy_cleanup(curl.value());        
 
+}
+
+const char* HttpRequest::c_str() const
+{
+    return (const char*) _payload.data();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,13 +169,19 @@ bool HttpRequest::get(on_datacb_t ondata)
         ///////////////////////////
 
         auto res = curl_easy_perform(curl);
+
+
         if(res == CURLE_OK)
         {
+            curl_easy_getinfo(curl,CURLINFO_RESPONSE_CODE,&_httpStatus);
             printf( "payload size<%zu>\n", _payload.size());
             printf( "_knownlength<%zu>\n", _knownlength );
+            printf( "_httpstatus<%d>\n", _httpStatus );
 
             assert(_knownlength==_payload.size());
             rval = true;
+
+
         }
         else
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
@@ -177,6 +190,22 @@ bool HttpRequest::get(on_datacb_t ondata)
 
     return rval;
 }
+
+void HttpRequest::getAsync(oncomplete_t onc)
+{
+    auto thr = std::make_shared<ork::thread>("curlDLthread");
+
+    thr->start([=](){
+
+        auto hold_thread = thr;
+        bool ok = this->get();
+        assert(ok);
+        onc();
+        hold_thread = nullptr;
+    });
+
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 } // namespace ork
