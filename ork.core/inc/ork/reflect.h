@@ -64,6 +64,18 @@ namespace ork { namespace reflect {
 
     //////////////////////////////////////////////////////////////
 
+    template <typename clazz_t, typename value_type>
+    struct DirectProperty : public Property
+    {       
+        DirectProperty( value_type clazz_t::* m);
+
+        void set( Object* object, const propdec_t& inpdata ) const final;
+
+        value_type clazz_t::* _member;
+    };
+
+    //////////////////////////////////////////////////////////////
+
     struct Object
     {
         virtual ~Object() {}
@@ -99,6 +111,9 @@ namespace ork { namespace reflect {
         template <typename classtype, typename map_type>
         Property* _addMapProperty(const char* name, map_type classtype::* member);
 
+        template <typename classtype, typename val_type>
+        Property* _addDirectProperty(const char* name, val_type classtype::* member);
+
         Class* _c;
     };
 
@@ -121,6 +136,8 @@ namespace ork { namespace reflect {
 #define AddMapProperty(clasnam,propname,the_map)\
     desc._addMapProperty<clasnam>(propname,&clasnam::the_map);
 
+#define AddDirectProperty(clasnam,propname,the_val)\
+    desc._addDirectProperty<clasnam>(propname,&clasnam::the_val);
 
 #define BEGIN_REFLECTED_CLASS(name,basename) \
     struct name : public basename {\
