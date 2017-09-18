@@ -47,14 +47,14 @@ ork::CVector3 FragmentCompositorZBuffer::Composite(const ork::CVector3&clrcolor)
 	return rgb;
 }
 ///////////////////////////////////////////////////////////////////////////////
-void FragmentCompositorREYES::Reset()
+void FragmentCompositorABuffer::Reset()
 {
 	miNumFragments=0;
 	mpOpaqueFragment = 0;
 	opaqueZ=1.0e30f;
 }
 
-void FragmentCompositorREYES::Visit( const rend_fragment* pfrag ) // virtual
+void FragmentCompositorABuffer::Visit( const rend_fragment* pfrag ) // virtual
 {
 	OrkAssert( miNumFragments<kmaxfrags );
 
@@ -78,7 +78,7 @@ void FragmentCompositorREYES::Visit( const rend_fragment* pfrag ) // virtual
 ////////////////////////////////////////////
 // sort and hide occluded
 ////////////////////////////////////////////
-void FragmentCompositorREYES::SortAndHide()
+void FragmentCompositorABuffer::SortAndHide()
 {
 	//mRadixSorter.ResetIndices();
 	//if( miNumFragments<2 ) return;
@@ -141,7 +141,7 @@ void FragmentCompositorREYES::SortAndHide()
 
 }
 ////////////////////////////////////////////////////////////
-ork::CVector3 FragmentCompositorREYES::Composite(const ork::CVector3&clrcolor)
+ork::CVector3 FragmentCompositorABuffer::Composite(const ork::CVector3&clrcolor)
 {	////////////////////////////////////////////////////////////
 	// sort, hide fragments
 	////////////////////////////////////////////////////////////
@@ -435,7 +435,6 @@ rend_fragment* FragmentPoolNode::AllocFragment()
 	{
 		rend_fragment* rval = & mFragments[idx];
 		rval->mpNext = 0;
-		rval->mpPrimitive = 0;
 		return rval;
 	}
 	return 0;
@@ -448,7 +447,6 @@ void FragmentPoolNode::AllocFragments(rend_fragment** ppfrag, int icount)
 		int idx = mFragmentIndex++;
 		rend_fragment* rval = & mFragments[idx];
 		rval->mpNext = 0;
-		rval->mpPrimitive = 0;
 		ppfrag[i] = rval;
 	}
 }
@@ -571,11 +569,6 @@ PreShadedFragment& PreShadedFragmentPool::AllocPreFrag()
 	int idx = miNumPreFrags;
 	miNumPreFrags++;
 	PreShadedFragment& pfrag = mPreFrags[idx];
-
-//	pfrag.mpSrcPrimitive = 0;
-//	pfrag.srcvtxR = 0;
-//	pfrag.srcvtxS = 0;
-//	pfrag.srcvtxT = 0;
 
 	return pfrag;
 }

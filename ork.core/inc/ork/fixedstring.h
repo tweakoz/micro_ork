@@ -190,6 +190,21 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
+template<int tsize> using fxstring = fixedstring<tsize>;
+
+typedef fxstring<16> fxstring16;
+typedef fxstring<32> fxstring32;
+typedef fxstring<64> fxstring64;
+typedef fxstring<128> fxstring128;
+typedef fxstring<256> fxstring256;
+
+typedef fxstring<1024> PropTypeString;
+typedef fxstring<1024> SerAnnoTypeString;
+typedef fxstring<256> uristring_t;
+typedef fxstring<16> extstring_t;
+
+///////////////////////////////////////////////////////////////////////////////
+
 class Char4 // run time low overhead std::string (max 4 characters)
 {
     public: //
@@ -201,18 +216,7 @@ class Char4 // run time low overhead std::string (max 4 characters)
         muVal32 = uval;
     }
 
-    const char *c_str( void ) const
-    {
-        static char rval[5];
-
-        rval[0] = mCharMems[0];
-        rval[1] = mCharMems[1];
-        rval[2] = mCharMems[2];
-        rval[3] = mCharMems[3];
-        rval[4] = 0;
-
-        return rval;
-    }
+    fxstring<5> fx_str( void ) const;
 
     U32 GetU32( void ) const { return muVal32; }
 
@@ -271,24 +275,7 @@ class Char8 // run time low overhead std::string (max 4 characters)
 
     inline void SetU64( u64 uval ) {  muVal64 = uval; }
 
-    const char *c_str( void ) const
-    {
-        static char rval[9];
-
-        rval[0] = mCharMems[0];
-        rval[1] = mCharMems[1];
-        rval[2] = mCharMems[2];
-        rval[3] = mCharMems[3];
-
-		rval[4] = mCharMems[4];
-        rval[5] = mCharMems[5];
-        rval[6] = mCharMems[6];
-        rval[7] = mCharMems[7];
-
-		rval[8] = 0;
-
-        return rval;
-    }
+    fxstring<9> fx_str( void ) const;
 
     inline U64 GetU64( void ) const { return muVal64; }
 
@@ -323,21 +310,6 @@ class Char8 // run time low overhead std::string (max 4 characters)
     {   SetCString( str );
     }
 };
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<int tsize> using fxstring = fixedstring<tsize>;
-
-typedef fxstring<16> fxstring16;
-typedef fxstring<32> fxstring32;
-typedef fxstring<64> fxstring64;
-typedef fxstring<128> fxstring128;
-typedef fxstring<256> fxstring256;
-
-typedef fxstring<1024> PropTypeString;
-typedef fxstring<1024> SerAnnoTypeString;
-typedef fxstring<256> uristring_t;
-typedef fxstring<16> extstring_t;
 
 
 ///////////////////////////////////////////////////////////////////////////////

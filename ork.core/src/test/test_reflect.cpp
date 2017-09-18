@@ -206,17 +206,17 @@ TEST(Reflect1)
     CHECK_EQUAL(3.14f,sh_as_c->_directF32);
     CHECK_EQUAL(1e9,sh_as_c->_directF64);
 
-    CHECK_EQUAL(0.5f,sh_as_c->_directVec2.GetX());
-    CHECK_EQUAL(0.5f,sh_as_c->_directVec2.GetY());
+    CHECK_EQUAL(0.5f,sh_as_c->_directVec2.x);
+    CHECK_EQUAL(0.5f,sh_as_c->_directVec2.y);
 
-    CHECK_EQUAL(0,sh_as_c->_directVec3.GetX());
-    CHECK_EQUAL(1,sh_as_c->_directVec3.GetY());
-    CHECK_EQUAL(0,sh_as_c->_directVec3.GetZ());
+    CHECK_EQUAL(0,sh_as_c->_directVec3.x);
+    CHECK_EQUAL(1,sh_as_c->_directVec3.y);
+    CHECK_EQUAL(0,sh_as_c->_directVec3.z);
 
-    CHECK_EQUAL(1.0f,sh_as_c->_directVec4.GetX());
-    CHECK_EQUAL(0.0f,sh_as_c->_directVec4.GetY());
-    CHECK_EQUAL(1.0f,sh_as_c->_directVec4.GetZ());
-    CHECK_EQUAL(0.5f,sh_as_c->_directVec4.GetW());
+    CHECK_EQUAL(1.0f,sh_as_c->_directVec4.x);
+    CHECK_EQUAL(0.0f,sh_as_c->_directVec4.y);
+    CHECK_EQUAL(1.0f,sh_as_c->_directVec4.z);
+    CHECK_EQUAL(0.5f,sh_as_c->_directVec4.w);
 
     auto& VMAP = sh_as_c->_vmap;
     for( int i=0; i<3; i++ )
@@ -224,10 +224,8 @@ TEST(Reflect1)
         float bit0 = float(i&1);
         float bit1 = float(i>>1);
         auto& V = VMAP[i];  
-        float x = V.GetX();      
-        float y = V.GetY();      
-        CHECK_EQUAL(bit0,x);
-        CHECK_EQUAL(bit1,y);
+        CHECK_EQUAL(bit0,V.x);
+        CHECK_EQUAL(bit1,V.y);
     }
 
 

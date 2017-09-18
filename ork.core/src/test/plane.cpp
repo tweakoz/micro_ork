@@ -132,7 +132,9 @@ TEST(PlaneRayIntersection)
 	bool ray2_doesintersect = xzplane.Intersect( ray, planedist, ray2_isect );
 
 	CHECK( ray2_doesintersect );
-	CHECK( ork::abs(planedist-(10.0f*ork::sqrt<float>(2.0f))) < ork::float_epsilon() );
+
+	auto d = ork::abs(planedist-(10.0f*ork::sqrt<float>(2.0f)));
+	CHECK( d < 1.0e-05f );
 
 	/////////////////////////////////////////////////
 

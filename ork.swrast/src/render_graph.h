@@ -89,7 +89,7 @@ struct AABuffer
 
 	rend_fraglist*				mFragmentBuffer;
 	FragmentPool				mFragmentPool;
-	FragmentCompositorREYES		mCompositorREYES;
+	FragmentCompositorABuffer	mCompositorAB;
 	FragmentCompositorZBuffer	mCompositorZB;
 	NoCLFromHostBuffer*			mTriangleClBuffer;
 	NoCLFromHostBuffer*			mFragInpClBuffer;
@@ -98,7 +98,7 @@ struct AABuffer
 	CVector3					mClearColor;
 
 	PreShadedFragmentPool		mPreFrags;
-	static const int kfragallocsize = 1<<19;
+	static const int kfragallocsize = 1<<20;
 	rend_fragment*				mpFragments[kfragallocsize];
 
 	AABuffer(int tile_dim,int aa_dim);
@@ -116,6 +116,10 @@ struct RasterTile
 	int						miScreenXBase;
 	int 					miScreenYBase;
 	int						miWidth, miHeight;
+
+	float					mAAScreenXBase;
+	float					mAAScreenYBase;
+	float					mAAWidth, mAAHeight;
 	ork::Frustum			mFrustum;
 	//mutable float			MinZ;
 };
@@ -146,6 +150,7 @@ public:
 	static const int 		kTileDim=32;
 	static const int		kAABUFTILES = 128;
 	int						mAADim;
+	int 					mAATileSize;
 	int						miNumTilesW;
 	int						miNumTilesH;
 	int						miImageWidth;
@@ -168,7 +173,8 @@ public:
 	
 	SplitAndDice			mSplitAndDice;
 
-	LockedResource<prim_set_t> mPrimSet;
+	//LockedResource<prim_set_t> mPrimSet;
+	prim_set_t mPrimSet;
 
 	int GetTileX( float fx ) const;
 	int GetTileY( float fy ) const;
@@ -228,7 +234,7 @@ public:
 	const uint32_t* GetPixels() const;
 	
 	static const int ktrinringsize = 65536;
-	MpMcRingBuf<rend_triangle*,ktrinringsize> mTriRing;
+	MpMcRingBuf<Stage1Tri*,ktrinringsize> mTriRing;
 
 private:
 	RenderContext			mRenderContext;

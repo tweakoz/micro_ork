@@ -15,6 +15,8 @@
 
 namespace ork {
 
+static const float one_third = 0.333333333f;
+
 ///////////////////////////////////////////////////////////////////////////////
 
 MeshPrimModule::MeshPrimModule(RenderContext& rdata,rend_srcmesh*pmsh)
@@ -31,30 +33,26 @@ MeshPrimModule::MeshPrimModule(RenderContext& rdata,rend_srcmesh*pmsh)
 		for( int it=0; it<inumtri; it++ )
 		{
 			const rend_srctri& SrcTri = Sub.mpTriangles[it];
-			const rend_srcvtx& SrcTriV0 = SrcTri.mpVertices[0];
-			const rend_srcvtx& SrcTriV1 = SrcTri.mpVertices[1];
-			const rend_srcvtx& SrcTriV2 = SrcTri.mpVertices[2];
-			const ork::CVector4& o0 = SrcTriV0.mPos;
-			const ork::CVector4& o1 = SrcTriV1.mPos;
-			const ork::CVector4& o2 = SrcTriV2.mPos;
-			const ork::CVector3& on0 = SrcTriV0.mVertexNormal;
-			const ork::CVector3& on1 = SrcTriV1.mVertexNormal;
-			const ork::CVector3& on2 = SrcTriV2.mVertexNormal;
-
-			auto rtri = new rend_triangle(*this);
-
+			const auto& src_vtx0 = SrcTri.mpVertices[0];
+			const auto& src_vtx1 = SrcTri.mpVertices[1];
+			const auto& src_vtx2 = SrcTri.mpVertices[2];
+			////////////////////////////////////////////////
+			auto rtri = new Stage1Tri(*this);
+			auto& dst_vtx0 = rtri->mBaseTriangle.mVertex[0];
+			auto& dst_vtx1 = rtri->mBaseTriangle.mVertex[1];
+			auto& dst_vtx2 = rtri->mBaseTriangle.mVertex[2];
+			dst_vtx0.mObjPos = src_vtx0.mPos;
+			dst_vtx1.mObjPos = src_vtx1.mPos;
+			dst_vtx2.mObjPos = src_vtx2.mPos;
+			dst_vtx0.mObjNrm = src_vtx0.mVertexNormal;
+			dst_vtx1.mObjNrm = src_vtx1.mVertexNormal;
+			dst_vtx2.mObjNrm = src_vtx2.mVertexNormal;
+			dst_vtx0.mRST = CVector3(1.0f,0.0f,0.0f);
+			dst_vtx1.mRST = CVector3(0.0f,1.0f,0.0f);
+			dst_vtx2.mRST = CVector3(0.0f,0.0f,1.0f);
 			rtri->mfArea = SrcTri.mSurfaceArea;
 			rtri->mpShader = pshader;
-			rtri->mFaceNormal = SrcTri.mFaceNormal;
-
-			rtri->mSrcPos[0] = SrcTriV0.mPos;
-			rtri->mSrcPos[1] = SrcTriV1.mPos;
-			rtri->mSrcPos[2] = SrcTriV2.mPos;
-			rtri->mSrcNrm[0] = SrcTriV0.mVertexNormal;
-			rtri->mSrcNrm[1] = SrcTriV1.mVertexNormal;
-			rtri->mSrcNrm[2] = SrcTriV2.mVertexNormal;
-
-			mPostXfTris.push_back(rtri);
+			mStage1Triangles.push_back(rtri);
 		}
 	}
 }
@@ -67,31 +65,19 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 	const ork::CMatrix4& mtxMV = mRenderContext.mMatrixMV;
 	const ork::CMatrix4& mtxMVP = mRenderContext.mMatrixMVP;
 
-	float fiW = float(mRenderContext.miImageWidth);
-	float fiH = float(mRenderContext.miImageHeight);
-	float fwd4 = fiW*0.25f;
-	float fhd4 = fiH*0.25f;
-
 	float faadim(mRenderContext.mAADim);
+
+	float fiW = float(mRenderContext.miImageWidth)*faadim;
+	float fiH = float(mRenderContext.miImageHeight)*faadim;
+
 
 	for( size_t i=start; i<end; i++ )
 	{
-		auto rtri = this->mPostXfTris[i];
+		auto rtri = this->mStage1Triangles[i];
+
+		const auto& btri = rtri->mBaseTriangle;
 
 		rtri->mIsVisible = false;
-
-		const ork::CVector4& o0 = rtri->mSrcPos[0];
-		const ork::CVector4& o1 = rtri->mSrcPos[1];
-		const ork::CVector4& o2 = rtri->mSrcPos[2];
-		ork::CVector4 w0 = o0.Transform(mtxM);
-		ork::CVector4 w1 = o1.Transform(mtxM);
-		ork::CVector4 w2 = o2.Transform(mtxM);
-		const ork::CVector3& on0 = rtri->mSrcNrm[0];
-		const ork::CVector3& on1 = rtri->mSrcNrm[1];
-		const ork::CVector3& on2 = rtri->mSrcNrm[2];
-		const ork::CVector3 wn0 = on0.Transform3x3( mtxM ).Normal();
-		const ork::CVector3 wn1 = on1.Transform3x3( mtxM ).Normal();
-		const ork::CVector3 wn2 = on2.Transform3x3( mtxM ).Normal();
 
 		//////////////////////////////////////
 
@@ -103,41 +89,33 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 		// trivial reject
 		//////////////////////////////////////
 
-		ork::CVector4 h0 = o0.Transform(mtxMVP);
-		ork::CVector4 h1 = o1.Transform(mtxMVP);
-		ork::CVector4 h2 = o2.Transform(mtxMVP);
-
-		ork::CVector4 hd0 = h0;
-		ork::CVector4 hd1 = h1;
-		ork::CVector4 hd2 = h2;
-		hd0.PerspectiveDivide();
-		hd1.PerspectiveDivide();
-		hd2.PerspectiveDivide();
+		ScrSpcTri sst(btri,mtxMVP,fiW,fiH);
+		const ork::CVector4& hd0 = sst.mScrPosA;
+		const ork::CVector4& hd1 = sst.mScrPosB;
+		const ork::CVector4& hd2 = sst.mScrPosC;
 		ork::CVector3 d0 = (hd1.GetXYZ()-hd0.GetXYZ());
 		ork::CVector3 d1 = (hd2.GetXYZ()-hd1.GetXYZ());
-
 		ork::CVector3 dX = d0.Cross(d1);
 
-		bool bFRONTFACE = (dX.GetZ()<=0.0f);
-
-		if( true == bFRONTFACE ) continue;
+		if( true == (dX.z<=0.0f) ) continue; // is it frontfacing ?
 
 		int inuminside = 0;
 
-		inuminside += (		((hd0.GetX()>=-1.0f) || (hd0.GetX()<=1.0f))
-			&&	((hd0.GetY()>=-1.0f) || (hd0.GetY()<=1.0f))
-			&&	((hd0.GetZ()>=-1.0f) || (hd0.GetZ()<=1.0f)) );
+		inuminside += (		((hd0.x>=0.0f) || (hd0.x<fiW))
+						&&	((hd0.y>=0.0f) || (hd0.y<fiH))
+						&&	((hd0.z>=0.0f) || (hd0.z<=1.0f)) );
 
-		inuminside += (		((hd1.GetX()>=-1.0f) || (hd1.GetX()<=1.0f))
-			&&	((hd1.GetY()>=-1.0f) || (hd1.GetY()<=1.0f))
-			&&	((hd1.GetZ()>=-1.0f) || (hd1.GetZ()<=1.0f)) );
+		inuminside += (		((hd1.x>=0.0f) || (hd1.x<fiW))
+						&&	((hd1.y>=0.0f) || (hd1.y<fiH))
+						&&	((hd1.z>=0.0f) || (hd1.z<=1.0f)) );
 
-		inuminside += (		((hd2.GetX()>=-1.0f) || (hd2.GetX()<=1.0f))
-			&&	((hd2.GetY()>=-1.0f) || (hd2.GetY()<=1.0f))
-			&&	((hd2.GetZ()>=-1.0f) || (hd2.GetZ()<=1.0f)) );
+		inuminside += (		((hd2.x>=0.0f) || (hd2.x<fiW))
+						&&	((hd2.y>=0.0f) || (hd2.y<fiH))
+						&&	((hd2.z>=0.0f) || (hd2.z<=1.0f)) );
 
-		if( 0 == inuminside )
+		if( 0 == inuminside ) // is it in the screen bounds ?
 		{
+			// todo : this is probably better done by the subdivider
 			continue;
 		}
 
@@ -147,92 +125,20 @@ void MeshPrimModule::XfChunk(size_t start, size_t end)
 		// the triangle passed the backface cull and trivial reject, queue it
 		//////////////////////////////////////
 
-		float fX0 = (0.5f+hd0.GetX()*0.5f)*fiW;
-		float fY0 = (0.5f+hd0.GetY()*0.5f)*fiH;
-		float fX1 = (0.5f+hd1.GetX()*0.5f)*fiW;
-		float fY1 = (0.5f+hd1.GetY()*0.5f)*fiH;
-		float fX2 = (0.5f+hd2.GetX()*0.5f)*fiW;
-		float fY2 = (0.5f+hd2.GetY()*0.5f)*fiH;
-		float fZ0 = hd0.GetZ();
-		float fZ1 = hd1.GetZ();
-		float fZ2 = hd2.GetZ();
-		float fiZ0 = 1.0f/fZ0;
-		float fiZ1 = 1.0f/fZ1;
-		float fiZ2 = 1.0f/fZ2;
+		rtri->mMinX = sst.mMinX;
+		rtri->mMinY = sst.mMinY;
+		rtri->mMaxX = sst.mMaxX;
+		rtri->mMaxY = sst.mMaxY;
 
-		rend_ivtx& v0 = rtri->mSVerts[0];
-		rend_ivtx& v1 = rtri->mSVerts[1];
-		rend_ivtx& v2 = rtri->mSVerts[2];
-
-
-		v0.mSX = fX0;
-		v0.mSY = fY0;
-		v0.mfDepth = fZ0;
-		v0.mfInvDepth = fiZ0;
-		v0.mRoZ = fiZ0; 
-		v0.mSoZ = 0.0f; 
-		v0.mToZ = 0.0f; 
-		v0.mWldSpacePos = w0;
-		v0.mObjSpacePos = o0;
-		v0.mObjSpaceNrm = on0;
-		v0.mWldSpaceNrm = wn0;
-		v1.mSX = fX1;
-		v1.mSY = fY1;
-		v1.mfDepth = fZ1;
-		v1.mfInvDepth = fiZ1;
-		v1.mRoZ = 0.0f; 
-		v1.mSoZ = fiZ1; 
-		v1.mToZ = 0.0f; 
-		v1.mWldSpacePos = w1;
-		v1.mObjSpacePos = o1;
-		v1.mObjSpaceNrm = on1;
-		v1.mWldSpaceNrm = wn1;
-		v2.mSX = fX2;
-		v2.mSY = fY2;
-		v2.mfDepth = fZ2;
-		v2.mfInvDepth = fiZ2;
-		v2.mRoZ = 0.0f; 
-		v2.mSoZ = 0.0f; 
-		v2.mToZ = fiZ2; 
-		v2.mWldSpacePos = w2;
-		v2.mObjSpacePos = o2;
-		v2.mObjSpaceNrm = on2;
-		v2.mWldSpaceNrm = wn2;
-
-		///////////////////////////////////////////////////
-		ivertex iV0, iV1, iV2;
-		iV0.iX = (fX0);
-		iV0.iY = (fY0);
-		iV1.iX = (fX1);
-		iV1.iY = (fY1);
-		iV2.iX = (fX2);
-		iV2.iY = (fY2);
-		float MinX = std::min(fX0,std::min(fX1,fX2));
-		float MaxX = std::max(fX0,std::max(fX1,fX2));
-		float MinY = std::min(fY0,std::min(fY1,fY2));
-		float MaxY = std::max(fY0,std::max(fY1,fY2));
-
-		int iminbx = mRenderContext.GetTileX(MinX)-1;
-		int imaxbx = mRenderContext.GetTileX(MaxX)+1;
-		int iminby = mRenderContext.GetTileY(MinY)-1;
-		int imaxby = mRenderContext.GetTileY(MaxY)+1;
+		int iminbx = mRenderContext.GetTileX(sst.mMinX)-1;
+		int imaxbx = mRenderContext.GetTileX(sst.mMaxX)+1;
+		int iminby = mRenderContext.GetTileY(sst.mMinY)-1;
+		int imaxby = mRenderContext.GetTileY(sst.mMaxY)+1;
 
 		if( iminbx<0 ) iminbx = 0;
 		if( iminby<0 ) iminby = 0;
 		if( imaxbx>=mRenderContext.miNumTilesW ) imaxbx = mRenderContext.miNumTilesW-1;
 		if( imaxby>=mRenderContext.miNumTilesH ) imaxby = mRenderContext.miNumTilesH-1;
-
-		rtri->mMinBx = iminbx;
-		rtri->mMinBy = iminby;
-		rtri->mMaxBx = imaxbx;
-		rtri->mMaxBy = imaxby;
-		rtri->mIV0 = iV0;
-		rtri->mIV1 = iV1;
-		rtri->mIV2 = iV2;
-		rtri->mMinX = MinX;
-		rtri->mMinY = MinY;
-		rtri->mMaxX = MaxX;
-		rtri->mMaxY = MaxY;
 
 		///////////////////////////////////////////////////
 		// bind to intersecting rastertiles
@@ -268,7 +174,7 @@ void MeshPrimModule::TransformAndCull(OpGroup& ogrp)
 	/////////////////////////////////////////////////////////////////////////
 
 	const size_t kchunksize = 1024;
-	size_t num_tris = mPostXfTris.size();
+	size_t num_tris = mStage1Triangles.size();
 	size_t tri_base = 0;
 
 	while( num_tris )
@@ -291,25 +197,10 @@ void MeshPrimModule::TransformAndCull(OpGroup& ogrp)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-rend_triangle::rend_triangle(MeshPrimModule& tac )
+Stage1Tri::Stage1Tri(MeshPrimModule& tac )
 	: mTAC(tac)
 {
 	mRefCount = 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-int rend_triangle::IncRefCount() const
-{
-	return mRefCount.fetch_and_increment();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-int rend_triangle::DecRefCount() const
-{
-	return mRefCount.fetch_and_decrement();
-	//printf( "ir<%d>\n", ir );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -359,47 +250,39 @@ static bool isIntersecting(const irect& ir, float xa, float ya, float xb, float 
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static bool isInsideTriangle( const irect& ir, const ivertex& v0, const ivertex& v1, const ivertex& v2)
+static bool isInsideTriangle( const irect& ir, const ork::CVector4& v0, const ork::CVector4& v1, const ork::CVector4& v2)
 { 
 	float l = ir.l;
 	float r = ir.r;
 	float t = ir.t;
 	float b = ir.b;
-	float x0=v0.iX;
-	float y0=v0.iY;
-	float x1=v1.iX;
-	float y1=v1.iY;
-	float x2=v2.iX;
-	float y2=v2.iY;
+	float x0=v0.x;
+	float y0=v0.y;
+	float x1=v1.x;
+	float y1=v1.y;
+	float x2=v2.x;
+	float y2=v2.y;
 
 	// Calculate m and c for the equation for the line (y = mx+c)
 	float m0 = (y2-y1) / (x2-x1); 
 	float c0 = y2 -(m0 * x2);
-
 	float m1 = (y2-y0) / (x2-x0); 
 	float c1 = y0 -(m1 * x0);
-
 	float m2 = (y1-y0) / (x1-x0); 
 	float c2 = y0 -(m2 * x0);
-
 	int t0 = int(x0 * m0 + c0 > y0);
 	int t1 = int(x1 * m1 + c1 > y1);
 	int t2 = int(x2 * m2 + c2 > y2);
-
 	float lm0 = l * m0 + c0;
 	float lm1 = l * m1 + c1;
 	float lm2 = l * m2 + c2;
-
 	float rm0 = r * m0 + c0;
 	float rm1 = r * m1 + c1;
 	float rm2 = r * m2 + c2;
 
 	if ( !(t0 ^ int( lm0 > t)) && !(t1 ^ int(lm1 > t)) && !(t2 ^ int(lm2 > t))) return true;
-
 	if (!(t0 ^ int( lm0 > b)) && !(t1 ^ int(lm1 > b)) && !(t2 ^ int(lm2 > b))) return true;
-
 	if ( !(t0 ^ int( rm0 > t)) && !(t1 ^ int(rm1 > t)) && !(t2 ^ int(rm2 > t))) return true;
-
 	if (!(t0 ^ int( rm0 > b)) && !(t1 ^ int(rm1 > b)) && !(t2 ^ int(rm2 > b))) return true;
 
 	return false;
@@ -408,51 +291,40 @@ static bool isInsideTriangle( const irect& ir, const ivertex& v0, const ivertex&
 
 ///////////////////////////////////////////////////////////////////////////////
 
-static bool triangleTest( const rend_triangle* rtri, const irect& ir )
+static bool triangleTest( const ScrSpcTri& sstri, const irect& ir )
 {
-	const ivertex& v0 = rtri->mIV0;
-	const ivertex& v1 = rtri->mIV1;
-	const ivertex& v2 = rtri->mIV2;
-
-	float x0 = v0.iX; 
-	float y0 = v0.iY; 
-	float x1 = v1.iX; 
-	float y1 = v1.iY; 
-	float x2 = v2.iX; 
-	float y2 = v2.iY; 
+	float x0 = sstri.mScrPosA.x; 
+	float y0 = sstri.mScrPosA.y; 
+	float x1 = sstri.mScrPosB.x; 
+	float y1 = sstri.mScrPosB.y; 
+	float x2 = sstri.mScrPosC.x; 
+	float y2 = sstri.mScrPosC.y; 
 	float l = ir.l;
 	float r = ir.r;
 	float t = ir.t;
 	float b = ir.b;
 
-	//printf( "v0<%f %f>\n", v0.iX, v0.iY );
-	//printf( "v1<%f %f>\n", v1.iX, v1.iY );
-	//printf( "v2<%f %f>\n", v2.iX, v2.iY );
-	//printf( "l<%f> r<%f> t<%f> b<%f>\n", l, r, t, b );
-
 	if (x0 > l) if(x0 < r) if(y0 > t) if(y0 < b) return true;
 	if (x1 > l) if( x1 < r ) if( y1 > t ) if( y1 < b) return true;
 	if (x2 > l ) if( x2 < r ) if( y2 > t ) if( y2 < b) return true;
 
-	if (isInsideTriangle(ir,v0,v1,v2)) return true;
+	if (isInsideTriangle(ir,sstri.mScrPosA,sstri.mScrPosB,sstri.mScrPosC)) return true;
 
 	return(		isIntersecting(ir,x0, y0, x1, y1) 
 			|| 	isIntersecting(ir,x1, y1, x2, y2)
 			||	isIntersecting(ir,x0, y0, x2, y2)
 	);
-
-	//return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool boxisect(	const rend_triangle* rtri,
+bool boxisect(	const ScrSpcTri& sstri,
 				//float fax0, float fay0, float fax1, float fay1,
 				float fbx0, float fby0, float fbx1, float fby1 )
-{	if (rtri->mMaxY < fby0) return false;
-	if (rtri->mMinY > fby1) return false;
-	if (rtri->mMaxX < fbx0) return false;
-	if (rtri->mMinX > fbx1) return false;
+{	if (sstri.mMaxY < fby0) return false;
+	if (sstri.mMinY > fby1) return false;
+	if (sstri.mMaxX < fbx0) return false;
+	if (sstri.mMinX > fbx1) return false;
 	//printf( "boxisect minxy<%f %f> maxxy<%f %f>\n", rtri->mMinX, rtri->mMinY, rtri->mMaxX, rtri->mMaxY );
 	return true;
 }
@@ -480,65 +352,22 @@ void MeshPrimModule::RenderToTile(AABuffer* aabuf)
 
     /////////////////////////////////////////////////
 
-	float fbucketX0 = float(tile->miScreenXBase);
-	float fbucketY0 = float(tile->miScreenYBase);
-	float fbucketX1 = fbucketX0+float(tile->miWidth);
-	float fbucketY1 = fbucketY0+float(tile->miHeight);
-
-    int itw = tile->miWidth;
-    int ith = tile->miHeight;
-    int itx = tile->miScreenXBase;
-    int ity = tile->miScreenYBase;
-
     rendtri_context ctx( *aabuf );
-
-	int accept = 0;
-	int visible = 0;
-	int reject = 0;
 
 	const rend_shader* pshader = nullptr;
 
-	for( auto rtri : mPostXfTris )
+	for( auto rtri : mStage1Triangles )
 	{
-		////////////////////////
-		// skip backface culled 
-		////////////////////////
-
-		if( false == rtri->mIsVisible )
-			continue;
-
-		visible++;
-
-		////////////////////////
-
-		int iminbx = rtri->mMinBx;
-		int iminby = rtri->mMinBy;
-		int imaxbx = rtri->mMaxBx;
-		int imaxby = rtri->mMaxBy;
-
-		if( false==boxisect( rtri, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
+		if( rtri->mIsVisible )
 		{
-			reject++;
-			continue;
+			pshader = rtri->mpShader;
+			ctx.mpShader = pshader;
+			SubdivideTri( ctx, rtri->mBaseTriangle );
+			////////////////////////
+			// todo - multishader/mesh support
 		}
-		//printf( "st1\n");
-		bool bsectT = triangleTest(rtri,irect(fbucketX0,fbucketX1,fbucketY0,fbucketY1));
-		if( false == bsectT )
-		{
-			reject++;
-			continue;
-		}
-		//printf( "st2\n");
-
-		accept++;
-
-		// todo - multishader/mesh support
-		pshader = rtri->mpShader;
-
-		RasterizeTri( ctx, rtri );
-		rtri->DecRefCount();
-
 	}
+
 	/////////////////////////////////////////////////////////
 	// shade fragments in per material blocks
 	//  the block method will allow shading by GP/GPU
@@ -568,7 +397,7 @@ void MeshPrimModule::RenderToTile(AABuffer* aabuf)
 			///////////////////////////////////////////////
 			// CL shadeblock will write a CL fragment buffer, call a shader kernel, and read the resulting colorz fragments
 			
-			pshader->ShadeBlock( aabuf, ipfragbase, icount, itx );
+			pshader->ShadeBlock( aabuf, ipfragbase, icount );
 			///////////
 			for( int j=0; j<icount; j++ )
 			{	const PreShadedFragment& pfrag = pfgs.mPreFrags[ipfragbase++];
@@ -581,49 +410,411 @@ void MeshPrimModule::RenderToTile(AABuffer* aabuf)
 	}
 }
 
+ScrSpcTri::ScrSpcTri( const RasterTri& rastri, const CMatrix4& mtxmvp, float fsw, float fsh )
+	: mRasterTri(rastri)
+	, mScrPosA(rastri.mVertex[0].mObjPos.Transform(mtxmvp))
+	, mScrPosB(rastri.mVertex[1].mObjPos.Transform(mtxmvp))
+	, mScrPosC(rastri.mVertex[2].mObjPos.Transform(mtxmvp))
+{
+	mScrPosA.PerspectiveDivide();
+	mScrPosB.PerspectiveDivide();
+	mScrPosC.PerspectiveDivide();
+
+	CVector3 bias(0.5f,0.5f,0.5f);
+	CVector3 scali(0.5f,0.5f,0.5f);
+	CVector3 scalo(fsw,fsh,1.0f);
+
+	mScrPosA = (bias+mScrPosA*scali)*scalo;
+	mScrPosB = (bias+mScrPosB*scali)*scalo;
+	mScrPosC = (bias+mScrPosC*scali)*scalo;
+
+	mScrCenter = (mScrPosA+mScrPosB+mScrPosC)*one_third;
+
+	auto v0 = CVector3(mScrPosA.GetXY(),0.0f);
+	auto v1 = CVector3(mScrPosB.GetXY(),0.0f);
+	auto v2 = CVector3(mScrPosC.GetXY(),0.0f);
+	mScreenArea2D = (v1-v0).Cross(v2-v0).Mag() * 0.5f;
+
+	mMinX = std::min(mScrPosA.x,std::min(mScrPosB.x,mScrPosC.x));
+    mMinY = std::min(mScrPosA.y,std::min(mScrPosB.y,mScrPosC.y));
+    mMaxX = std::max(mScrPosA.x,std::max(mScrPosB.x,mScrPosC.x));
+    mMaxY = std::max(mScrPosA.y,std::max(mScrPosB.y,mScrPosC.y));
+
+}
+
+const ork::CVector4& ScrSpcTri::GetScrPos(int idx) const
+{
+	switch( idx )
+	{
+		case 0:
+			return mScrPosA;
+		case 1:
+			return mScrPosB;
+		case 2:
+		default:
+			return mScrPosC;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
-void MeshPrimModule::RasterizeTri( const rendtri_context& ctx, const rend_triangle* tri )
+void MeshPrimModule::SubdivideTri( const rendtri_context& ctx, const RasterTri& rastri )
+{	
+	assert (ctx.mpShader != nullptr);
+
+	//printf( "fscrarea<%f>\n", fscrarea );
+	const ork::CMatrix4& mtxMVP = mRenderContext.mMatrixMVP;
+
+	AABuffer& aabuf = ctx.mAABuffer;
+	auto tile = aabuf.mRasterTile;
+	int idim1 = aabuf.miAATileDim;
+	int imod = aabuf.miAATileDim;
+	float faadim(aabuf.mAADim);
+	float fiW = float(mRenderContext.miImageWidth)*faadim;
+	float fiH = float(mRenderContext.miImageHeight)*faadim;
+
+	const float disp_bounds = 48;
+	const float disp_bounds2 = 2*disp_bounds;
+
+	float fbucketDX0 = float(tile->miScreenXBase-disp_bounds)*float(aabuf.mAADim);
+	float fbucketDY0 = float(tile->miScreenYBase-disp_bounds)*float(aabuf.mAADim);
+	float fbucketDX1 = fbucketDX0+float(tile->miWidth+disp_bounds2)*float(aabuf.mAADim);
+	float fbucketDY1 = fbucketDY0+float(tile->miHeight+disp_bounds2)*float(aabuf.mAADim);
+
+	//printf( "st2\n");
+
+	//////////////////////////////////////////
+	
+	ScrSpcTri sst(rastri,mtxMVP,fiW,fiH);
+
+	if( false==boxisect( sst, fbucketDX0, fbucketDY0, fbucketDX1, fbucketDY1 ) )
+		return;
+	bool bsectT = triangleTest(sst,irect(fbucketDX0,fbucketDX1,fbucketDY0,fbucketDY1));
+	if( false  == bsectT )
+		return;
+
+	//////////////////////////////////////////
+	// if screen area is small enough - actually rasterize it
+	//////////////////////////////////////////
+
+	bool do_subdivide = false;
+
+	const bool use_scanline_renderer = true;
+
+	float scrthresh = use_scanline_renderer ? 8.0f : 0.25f;
+
+	if( sst.mScreenArea2D < scrthresh )  // screen area < pixel thresh ?
+	{
+    	float fi = float(mRenderContext.miFrame)/10.0f;
+
+		float fbucketX0 = tile->mAAScreenXBase;
+		float fbucketY0 = tile->mAAScreenYBase;
+		float fbucketX1 = fbucketX0+tile->mAAWidth;
+		float fbucketY1 = fbucketY0+tile->mAAHeight;
+
+		//////////////////////////////////////////
+		// displacement mapping
+		//////////////////////////////////////////
+
+		RasterTri displaced_rastri = rastri;
+
+		if( ctx.mpShader->mDisplacementShader )
+		{	
+			DisplacementShaderContext dsc(mRenderContext,rastri);
+			displaced_rastri = ctx.mpShader->mDisplacementShader(dsc);
+		}
+		ScrSpcTri sst2(displaced_rastri,mtxMVP,fiW,fiH);
+
+		//////////////////////////////////////////
+
+		if( false==boxisect( sst2, fbucketX0, fbucketY0, fbucketX1, fbucketY1 ) )
+			return;
+		bool bsectT = triangleTest(sst2,irect(fbucketX0,fbucketX1,fbucketY0,fbucketY1));
+		if( false  == bsectT )
+			return;
+
+		auto l_is_inside_tile = [&](const CVector4&v) -> bool
+		{
+			return ( 		v.x>=fbucketX0
+						&&	v.x<fbucketX1
+						&&	v.y>=fbucketY0
+						&&	v.y<fbucketY1 );
+		};
+
+		//////////////////////////////////////////
+
+
+		if( 	use_scanline_renderer ||
+				(	l_is_inside_tile(sst2.mScrPosA) &&
+					l_is_inside_tile(sst2.mScrPosB) &&
+					l_is_inside_tile(sst2.mScrPosC)
+				)
+		)
+		{
+
+			if( use_scanline_renderer )
+			{
+				SsOrdTri sot(sst2);
+				RasterizeTri(aabuf,sot);
+			}
+			else // 
+			{
+				const CVector3& rst0 = displaced_rastri.mVertex[0].mRST;
+				const CVector3& rst1 = displaced_rastri.mVertex[1].mRST;
+				const CVector3& rst2 = displaced_rastri.mVertex[2].mRST;
+
+				const CVector3 rstC = (rst0+rst1+rst2)*one_third;
+
+				float fctrx = sst2.mScrCenter.x;
+				float fctry = sst2.mScrCenter.y;
+				float fctrz = sst2.mScrCenter.z;
+				int iax = int(fctrx);
+				int iay = int(fctry);
+
+				PreShadedFragmentPool& pfgs = aabuf.mPreFrags;
+
+				PreShadedFragment& prefrag = pfgs.AllocPreFrag();
+				prefrag.mfR = rstC.x;
+				prefrag.mfS = rstC.y;
+				prefrag.mfT = rstC.z;
+				prefrag.mfZ = fctrz;
+				prefrag.miPixIdxAA = aabuf.CalcAAPixelAddress(iax%imod,iay%imod);
+			}
+		}
+		else
+			do_subdivide = sst.mScreenArea2D>0.01f;
+	}
+	else
+		do_subdivide = true;
+
+	//////////////////////////////////////////
+	if( do_subdivide ) 
+	{
+		// TODO : subdivide in screen space
+		RasterTri t0,t1,t2,t3;
+		rastri.SubDivAtCenter(t0,t1,t2,t3);
+		SubdivideTri( ctx, t0 );
+		SubdivideTri( ctx, t1 );
+		SubdivideTri( ctx, t2 );
+		SubdivideTri( ctx, t3 );
+	}
+}
+void RasterTri::SubDivAtCenter(	RasterTri&t0,
+		                        	RasterTri&t1,
+        		                	RasterTri&t2,
+                		        	RasterTri&t3 ) const
 {
-	float sy0 = tri->mSVerts[0].mSY;
-	float sy1 = tri->mSVerts[1].mSY;
-	float sy2 = tri->mSVerts[2].mSY;
+	auto l = [&](	RasterVtx&mid, 
+					const RasterVtx& a,
+					const RasterVtx& b )
+	{
+		mid.mObjPos=(a.mObjPos+b.mObjPos)*0.5f;
+		mid.mObjNrm=(a.mObjNrm+b.mObjNrm).Normal();
+		mid.mRST=(a.mRST+b.mRST)*0.5f;
+	};
+	auto l2 = [&](	RasterTri&t, 
+					const RasterVtx& a,
+					const RasterVtx& b,
+					const RasterVtx& c )
+	{
+		t.mVertex[0]=a;
+		t.mVertex[1]=b;
+		t.mVertex[2]=c;
+	};
+
+	const RasterVtx& v0 = mVertex[0];
+	const RasterVtx& v1 = mVertex[1];
+	const RasterVtx& v2 = mVertex[2];
+	RasterVtx v01, v02, v12;
+	l( v01, v0, v1 );
+	l( v02, v0, v2 );
+	l( v12, v1, v2 );
+	l2( t0, v02, v0, v01 );
+	l2( t1, v2, v02, v12 );
+	l2( t2, v02, v01, v12 );
+	l2( t3, v12, v01, v1 );
+}
+/*
+void Stage1Tri::SubDivNrm(	RasterTri&t0,
+		                        RasterTri&t1,
+        		                RasterTri&t2,
+                		        RasterTri&t3 ) const
+{
+	auto l = [&](	rend_ivtx&mid, 
+					const rend_ivtx& a,
+					const rend_ivtx& b )
+	{
+		mid.mSX=(a.mSX+b.mSX)*0.5f;
+		mid.mSY=(a.mSY+b.mSY)*0.5f;
+		mid.mR=(a.mR+b.mR)*0.5f;
+		mid.mS=(a.mS+b.mS)*0.5f;
+		mid.mT=(a.mT+b.mT)*0.5f;
+		mid.mfDepth=(a.mfDepth+b.mfDepth)*0.5f;
+	};
+	auto l2 = [&](	rend_triangle&t, 
+					const rend_ivtx& a,
+					const rend_ivtx& b,
+					const rend_ivtx& c )
+	{
+		t.mSVerts[0]=a;
+		t.mSVerts[1]=b;
+		t.mSVerts[2]=c;
+	};
+
+	const rend_ivtx& v0 = mSVerts[0];
+	const rend_ivtx& v1 = mSVerts[1];
+	const rend_ivtx& v2 = mSVerts[2];
+	rend_ivtx v01, v02, v12;
+	l( v01, v0, v1 );
+	l( v02, v0, v2 );
+	l( v12, v1, v2 );
+	l2( t0, v02, v0, v01 );
+	l2( t1, v2, v02, v12 );
+	l2( t2, v02, v01, v12 );
+	l2( t3, v12, v01, v1 );
+}*/
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+/*float Stage1Tri::ComputeScreenArea() const
+{	auto v0 = CVector3(mSVerts[0].mSX,mSVerts[0].mSY,0.0f);
+	auto v1 = CVector3(mSVerts[1].mSX,mSVerts[1].mSY,0.0f);
+	auto v2 = CVector3(mSVerts[2].mSX,mSVerts[2].mSY,0.0f);
+	// area of triangle 1/2 length of cross product the vector of any two edges
+	float farea = (v1-v0).Cross(v2-v0).Mag() * 0.5f;
+	return farea;
+}
+float Stage1Tri::ComputeSurfaceArea() const
+{	const auto& v0 = mSrcPos[0];
+	const auto& v1 = mSrcPos[1];
+	const auto& v2 = mSrcPos[2];
+	// area of triangle 1/2 length of cross product the vector of any two edges
+	float farea = (v1-v0).Cross(v2-v0).Mag() * 0.5f;
+	return farea;
+}*/
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+SsOrdTri::SsOrdTri( const ScrSpcTri& sstri )
+	: mSSTri(sstri)
+{
+	float sy0 = sstri.mScrPosA.y;
+	float sy1 = sstri.mScrPosB.y;
+	float sy2 = sstri.mScrPosC.y;
 	////////////////////////////////
-	int or0 =			 (sy0<sy1)	// min Y	
+	mIndexA =			 (sy0<sy1)	// min Y	
 					?	((sy0<sy2)	? 0 : 2)
 					:	((sy1<sy2)	? 1 : 2);
 	////////////////////////////////
-	int or2 =			 (sy0>sy1)	// max Y
+	mIndexC =			 (sy0>sy1)	// max Y
 					?	((sy0>sy2)	? 0 : 2)
 					:	((sy1>sy2)	? 1 : 2);
 	////////////////////////////////
-	int or1 = 3 - (or0 + or2); 
+	mIndexB = 3 - (mIndexA + mIndexC); 
 	////////////////////////////////
-	const rend_ivtx& vtxA = tri->mSVerts[or0];
-	const rend_ivtx& vtxB = tri->mSVerts[or1];
-	const rend_ivtx& vtxC = tri->mSVerts[or2];
-	////////////////////////////////
-	// trivially reject 
-	if( int(vtxA.mSY - vtxC.mSY) == 0 ) return; 
-	////////////////////////////////
-	rend_subtri stri;
-	stri.mpSourcePrim = tri;
-	stri.vtxA = vtxA;
-	stri.vtxB = vtxB;
-	stri.vtxC = vtxC;
-	stri.miIA = or0;
-	stri.miIB = or1;
-	stri.miIC = or2;
-	RasterizeSubTri( ctx, stri );
-	//////////////////////////////////
 }
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_subtri& tri )
-{	AABuffer& aabuf = ctx.mAABuffer;
-	auto tile = aabuf.mRasterTile;
-	int idim1 = aabuf.mAADim;
-	float fdim1(idim1);
+
+struct d_y
+{
+	float mA;
+	float mB;
+	float mC;
+	float mAB;
+	float mAC;
+	float mBC;
+	float minvAB;
+	float minvAC;
+	float minvBC;
+
+	bool mABZERO;
+	bool mACZERO;
+	bool mBCZERO;
+
+	d_y( float a, float b, float c )
+		: mA(a)
+		, mB(b)
+		, mC(c)
+		, mAB(b-a)
+		, mAC(c-a)
+		, mBC(c-b)
+	{
+		minvAB = (1.0f/mAB);
+		minvAC = (1.0f/mAC);
+		minvBC = (1.0f/mBC);
+		mABZERO = (mAB==0.0f); // prevent division by zero
+		mACZERO = (mAC==0.0f); // prevent division by zero
+		mBCZERO = (mBC==0.0f); // prevent division by zero
+	}
+	float selab( bool b ) const { return b ? mA : mB; }
+};
+
+template <typename T> struct d_n
+{
+	T mA;
+	T mB;
+	T mC;
+	T mAB;
+	T mAC;
+	T mBC;
+	T mABdy;
+	T mACdy;
+	T mBCdy;
+
+	d_n( T a, T b, T c, const d_y& dy)
+		: mA(a)
+		, mB(b)
+		, mC(c)
+		, mAB(b-a)
+		, mAC(c-a)
+		, mBC(c-b)
+	{
+		mABdy = dy.mABZERO ? T(0.0f) : mAB * dy.minvAB;
+		mACdy = dy.mACZERO ? T(0.0f) : mAC * dy.minvAC;
+		mBCdy = dy.mBCZERO ? T(0.0f) : mBC * dy.minvBC;
+	}
+
+	const T& seldy( bool b ) const { return b ? mABdy : mBCdy; }
+	const T& selab( bool b ) const { return b ? mA : mB; }
+	//float dXdyB = bAB ? dxABdy : dxBCdy;
+	T fn1( float dya ) const { return mA + mACdy*dya; }
+	T fn2( bool q, float dyb )
+	{
+		const T& B = selab(q);
+		const T& dNdyB = seldy(q);
+		T right = B + dNdyB*dyb;
+		return right;
+	}
+
+};
+
+void MeshPrimModule::RasterizeTri( AABuffer& aabuf, const SsOrdTri& sotri )
+{	auto tile = aabuf.mRasterTile;
+
+	const ScrSpcTri& sst = sotri.mSSTri;
+	const RasterTri& rastri = sst.mRasterTri;
+
+	const auto& vtxA = sst.GetScrPos(sotri.mIndexA);
+	const auto& vtxB = sst.GetScrPos(sotri.mIndexB);
+	const auto& vtxC = sst.GetScrPos(sotri.mIndexC);
+
+	const RasterVtx& rvtxA = rastri.mVertex[sotri.mIndexA];
+	const RasterVtx& rvtxB = rastri.mVertex[sotri.mIndexB];
+	const RasterVtx& rvtxC = rastri.mVertex[sotri.mIndexC];
+
+	float iza = 1.0f/vtxA.z;
+	float izb = 1.0f/vtxB.z;
+	float izc = 1.0f/vtxC.z;
+
+	////////////////////////////////
+	// trivially reject 
+	////////////////////////////////
+	
+	if( int(vtxA.y - vtxC.y) == 0 ) return; 
+
 	////////////////////////////////
 	// guarantees
 	////////////////////////////////
@@ -633,66 +824,18 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 	// vtxC.mSY > vtxA.mSY
 	// no guarantees on left/right ordering
 	////////////////////////////////
-	const rend_ivtx& vtxA = tri.vtxA;
-	const rend_ivtx& vtxB = tri.vtxB;
-	const rend_ivtx& vtxC = tri.vtxC;
-	////////////////////////////////
-	float VtxAX_AaScreenSpace = vtxA.mSX*fdim1;	// vtxA AA-ScreenSpace X
-	float VtxAY_AaScreenSpace = vtxA.mSY*fdim1;	// vtxA AA-ScreenSpace Y
-	float VtxBX_AaScreenSpace = vtxB.mSX*fdim1;	// vtxB AA-ScreenSpace X
-	float VtxBY_AaScreenSpace = vtxB.mSY*fdim1;	// vtxB AA-ScreenSpace Y
-	float VtxCX_AaScreenSpace = vtxC.mSX*fdim1;	// vtxC AA-ScreenSpace X
-	float VtxCY_AaScreenSpace = vtxC.mSY*fdim1;	// vtxC AA-ScreenSpace Y
-	////////////////////////////////
 	// gradient set up
 	////////////////////////////////
-	float dyAB = (VtxBY_AaScreenSpace - VtxAY_AaScreenSpace); // vertical distance between A and B in fp pixel coordinates
-	float dyAC = (VtxCY_AaScreenSpace - VtxAY_AaScreenSpace); // vertical distance between A and C in fp pixel coordinates
-	float dyBC = (VtxCY_AaScreenSpace - VtxBY_AaScreenSpace); // vertical distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dxAB = (VtxBX_AaScreenSpace - VtxAX_AaScreenSpace); // horizontal distance between A and B in fp pixel coordinates
-	float dxAC = (VtxCX_AaScreenSpace - VtxAX_AaScreenSpace); // horizontal distance between A and C in fp pixel coordinates
-	float dxBC = (VtxCX_AaScreenSpace - VtxBX_AaScreenSpace); // horizontal distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dzAB = (vtxB.mfInvDepth - vtxA.mfInvDepth); // depth distance between A and B in fp pixel coordinates
-	float dzAC = (vtxC.mfInvDepth - vtxA.mfInvDepth); // depth distance between A and C in fp pixel coordinates
-	float dzBC = (vtxC.mfInvDepth - vtxB.mfInvDepth); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float drAB = (vtxB.mRoZ - vtxA.mRoZ); // depth distance between A and B in fp pixel coordinates
-	float drAC = (vtxC.mRoZ - vtxA.mRoZ); // depth distance between A and C in fp pixel coordinates
-	float drBC = (vtxC.mRoZ - vtxB.mRoZ); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dsAB = (vtxB.mSoZ - vtxA.mSoZ); // depth distance between A and B in fp pixel coordinates
-	float dsAC = (vtxC.mSoZ - vtxA.mSoZ); // depth distance between A and C in fp pixel coordinates
-	float dsBC = (vtxC.mSoZ - vtxB.mSoZ); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	float dtAB = (vtxB.mToZ - vtxA.mToZ); // depth distance between A and B in fp pixel coordinates
-	float dtAC = (vtxC.mToZ - vtxA.mToZ); // depth distance between A and C in fp pixel coordinates
-	float dtBC = (vtxC.mToZ - vtxB.mToZ); // depth distance between B and C in fp pixel coordinates
-	////////////////////////////////
-	bool bABZERO = (dyAB==0.0f); // prevent division by zero
-	bool bACZERO = (dyAC==0.0f); // prevent division by zero
-	bool bBCZERO = (dyBC==0.0f); // prevent division by zero
-	////////////////////////////////
-	float dxABdy = bABZERO ? 0.0f : dxAB / dyAB;
-	float dxACdy = bACZERO ? 0.0f : dxAC / dyAC;
-	float dxBCdy = bBCZERO ? 0.0f : dxBC / dyBC;
-	//////////////////////////////////
-	float dzABdy = bABZERO ? 0.0f : dzAB / dyAB;
-	float dzACdy = bACZERO ? 0.0f : dzAC / dyAC;
-	float dzBCdy = bBCZERO ? 0.0f : dzBC / dyBC;
-	//////////////////////////////////
-	float drABdy = bABZERO ? 0.0f : drAB / dyAB;
-	float drACdy = bACZERO ? 0.0f : drAC / dyAC;
-	float drBCdy = bBCZERO ? 0.0f : drBC / dyBC;
-	//////////////////////////////////
-	float dsABdy = bABZERO ? 0.0f : dsAB / dyAB;
-	float dsACdy = bACZERO ? 0.0f : dsAC / dyAC;
-	float dsBCdy = bBCZERO ? 0.0f : dsBC / dyBC;
-	//////////////////////////////////
-	float dtABdy = bABZERO ? 0.0f : dtAB / dyAB;
-	float dtACdy = bACZERO ? 0.0f : dtAC / dyAC;
-	float dtBCdy = bBCZERO ? 0.0f : dtBC / dyBC;
+
+	d_y the_dy(vtxA.y,vtxB.y,vtxC.y);
+	d_n<float> lerpX(vtxA.x,vtxB.x,vtxC.x,the_dy);
+	d_n<float> lerpZ(iza,izb,izc,the_dy);
+
+	d_n<float> lerpR(iza,0.0f,0.0f,the_dy);
+	d_n<float> lerpS(0.0f,izb,0.0f,the_dy);
+	d_n<float> lerpT(0.0f,0.0f,izc,the_dy);
+
+	d_n<CVector3> lerpON(rvtxA.mObjNrm,rvtxB.mObjNrm,rvtxC.mObjNrm,the_dy);
 
 	//////////////////////////////////
 	// raster loop
@@ -701,15 +844,15 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 
 	int imod = aabuf.miAATileDim;
 
-	int tileY0_AaScreenspace = (tile->miScreenYBase*idim1);
-	int tileY1_AaScreenspace = ((tile->miScreenYBase+tile->miHeight)*idim1);
-	int tileX0_AaScreenspace = tile->miScreenXBase*idim1;
-	int tileX1_AaScreenspace = ((tile->miScreenXBase+tile->miWidth)*idim1);
+	int tileY0_AaScreenspace = tile->mAAScreenYBase;
+	int tileY1_AaScreenspace = tile->mAAScreenYBase+tile->mAAHeight;
+	int tileX0_AaScreenspace = tile->mAAScreenXBase;
+	int tileX1_AaScreenspace = tile->mAAScreenXBase+tile->mAAWidth;
 
 	////////////////////////////////
 
-	int iYA = int(std::floor(VtxAY_AaScreenSpace+0.5f)); // iYA, iYC, iy are in pixel coordinate
-	int iYC = int(std::floor(VtxCY_AaScreenSpace+0.5f)); // iYA, iYC, iy are in pixel coordinate
+	int iYA = int(std::floor(vtxA.y+0.5f)); // iYA, iYC, iy are in pixel coordinate
+	int iYC = int(std::floor(vtxC.y+0.5f)); // iYA, iYC, iy are in pixel coordinate
 	OrkAssert(iYC>=iYA);
 
 	if( iYA<tileY0_AaScreenspace ) 
@@ -727,33 +870,26 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 		///////////////////////////////////
 		// edge selection (AC always active, AB or BC depending upon y)
 		///////////////////////////////////
-		bool bAB = pixel_center_Y<=VtxBY_AaScreenSpace;
-		float yB = bAB ? VtxAY_AaScreenSpace : VtxBY_AaScreenSpace;
-		float xB = bAB ? VtxAX_AaScreenSpace : VtxBX_AaScreenSpace;
-		float zB = bAB ? vtxA.mfInvDepth : vtxB.mfInvDepth;
-		float rB = bAB ? vtxA.mRoZ : vtxB.mRoZ;
-		float sB = bAB ? vtxA.mSoZ : vtxB.mSoZ;
-		float tB = bAB ? vtxA.mToZ : vtxB.mToZ;
-		float dXdyB = bAB ? dxABdy : dxBCdy;
-		float dZdyB = bAB ? dzABdy : dzBCdy;
-		float dRdyB = bAB ? drABdy : drBCdy;
-		float dSdyB = bAB ? dsABdy : dsBCdy;
-		float dTdyB = bAB ? dtABdy : dtBCdy;
+		bool bAB = pixel_center_Y<=vtxB.y;
+		float yB = the_dy.selab(bAB);
+		//printf( "dXdyB<%f> abdy<%f>\n", dXdyB, lerpX.sel(bAB));
 		///////////////////////////////////
-		float dyA = pixel_center_Y-VtxAY_AaScreenSpace;
+		float dyA = pixel_center_Y-vtxA.y;
 		float dyB = pixel_center_Y-yB;
 		///////////////////////////////////
 		// calc left and right boundaries
-		float fxLEFT = VtxAX_AaScreenSpace + dxACdy*dyA;
-		float fxRIGHT = xB + dXdyB*dyB;
-		float fzLEFT = vtxA.mfInvDepth + dzACdy*dyA;
-		float fzRIGHT = zB + dZdyB*dyB;
-		float frLEFT = vtxA.mRoZ + drACdy*dyA;
-		float frRIGHT = rB + dRdyB*dyB;
-		float fsLEFT = vtxA.mSoZ + dsACdy*dyA;
-		float fsRIGHT = sB + dSdyB*dyB;
-		float ftLEFT = vtxA.mToZ + dtACdy*dyA;
-		float ftRIGHT = tB + dTdyB*dyB;
+		float fxLEFT = lerpX.fn1(dyA);
+		float fxRIGHT = lerpX.fn2(bAB,dyB);
+		float fzLEFT = lerpZ.fn1(dyA);
+		float fzRIGHT = lerpZ.fn2(bAB,dyB);
+		float frLEFT = lerpR.fn1(dyA);
+		float frRIGHT = lerpR.fn2(bAB,dyB);
+		float fsLEFT = lerpS.fn1(dyA);
+		float fsRIGHT = lerpS.fn2(bAB,dyB);
+		float ftLEFT = lerpT.fn1(dyA);
+		float ftRIGHT = lerpT.fn2(bAB,dyB);
+		CVector3 onLEFT = lerpON.fn1(dyA);
+		CVector3 onRIGHT = lerpON.fn2(bAB,dyB);
 		///////////////////////////////////
 		// enforce left to right
 		///////////////////////////////////
@@ -763,6 +899,7 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 			std::swap(frLEFT,frRIGHT);
 			std::swap(fsLEFT,fsRIGHT);
 			std::swap(ftLEFT,ftRIGHT);
+			std::swap(onLEFT,onRIGHT);
 		}
 		int ixLEFT = int(std::floor(fxLEFT+0.5f));
 		int ixRIGHT = int(std::floor(fxRIGHT+0.5f));
@@ -771,10 +908,12 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 		float fdRdX = (frRIGHT-frLEFT)/float(ixRIGHT-ixLEFT);
 		float fdSdX = (fsRIGHT-fsLEFT)/float(ixRIGHT-ixLEFT);
 		float fdTdX = (ftRIGHT-ftLEFT)/float(ixRIGHT-ixLEFT);
+		CVector3 dONdX = (onRIGHT-onLEFT)/float(ixRIGHT-ixLEFT);
 		float fZ = fzLEFT; 
 		float fR = frLEFT; 
 		float fS = fsLEFT; 
 		float fT = ftLEFT; 
+		CVector3 ON = onLEFT;
 		///////////////////////////////////
 		ixRIGHT = ( ixRIGHT>tileX1_AaScreenspace ) 
 				? tileX1_AaScreenspace 
@@ -790,34 +929,28 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 			fR += fdRdX*fxprestep;
 			fS += fdSdX*fxprestep;
 			fT += fdTdX*fxprestep;
+			ON += dONdX*fxprestep;
 		}
 		///////////////////////////////////
 		// X loop
 		///////////////////////////////////
-		const rend_ivtx& srcvtxR = tri.mpSourcePrim->mSVerts[0];
-		const rend_ivtx& srcvtxS = tri.mpSourcePrim->mSVerts[1];
-		const rend_ivtx& srcvtxT = tri.mpSourcePrim->mSVerts[2];
 		PreShadedFragmentPool& pfgs = aabuf.mPreFrags;
 		//const rend_triangle* psrctri = tri.mpSourcePrim;
 		//const rend_shader* pshader = psrctri->mpShader;
 		///////////////////////////////////
 		int iAAY = (iY)%imod;
-		//if( iAAY>=0 && iAAY<imod )
 		for( int iX=ixLEFT; iX<ixRIGHT; iX++ )
 		{	
 			int iAAX = (iX)%imod;
-			//if( iAAX>=0 && iAAX<imod )
 			{	
 				PreShadedFragment& prefrag = pfgs.AllocPreFrag();
-				
+
 				float rz = 1.0f/fZ;
 				prefrag.mfR = fR*rz;
 				prefrag.mfS = fS*rz;
 				prefrag.mfT = fT*rz;
 				prefrag.mfZ = rz;
-				prefrag.srcvtxR = & srcvtxR;
-				prefrag.srcvtxS = & srcvtxS;
-				prefrag.srcvtxT = & srcvtxT;
+				prefrag.mON = ON*rz;
 				prefrag.miPixIdxAA = aabuf.CalcAAPixelAddress(iAAX,iAAY);
 			}
 			///////////////////////////////////////////////
@@ -825,6 +958,7 @@ void MeshPrimModule::RasterizeSubTri( const rendtri_context& ctx, const rend_sub
 			fR += fdRdX;
 			fS += fdSdX;
 			fT += fdTdX;
+			ON += dONdX;
 		}
 		///////////////////////////////////
 	}

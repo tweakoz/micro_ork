@@ -18,9 +18,9 @@ bool UsingOpenGl();
 template <typename T> TVector3<T> TVector3<T>::Saturate( void ) const
 {
 	TVector3<T> rval = *this;
-	rval.m_x = (rval.m_x>1.0f) ? 1.0f : (rval.m_x<0.0f) ? 0.0f : rval.m_x;
-	rval.m_y = (rval.m_y>1.0f) ? 1.0f : (rval.m_y<0.0f) ? 0.0f : rval.m_y;
-	rval.m_z = (rval.m_z>1.0f) ? 1.0f : (rval.m_z<0.0f) ? 0.0f : rval.m_z;
+	rval.x = (rval.x>1.0f) ? 1.0f : (rval.x<0.0f) ? 0.0f : rval.x;
+	rval.y = (rval.y>1.0f) ? 1.0f : (rval.y<0.0f) ? 0.0f : rval.y;
+	rval.z = (rval.z>1.0f) ? 1.0f : (rval.z<0.0f) ? 0.0f : rval.z;
 	return rval;
 }
 
@@ -99,7 +99,7 @@ template <typename T> const TVector3<T> & TVector3<T>::Magenta( void )
 
 template <typename T> const TVector3<T> & TVector3<T>::Cyan( void )
 {
-	static const TVector3<T> Cyan( T(0.0f), T(1.0f), T(1.0f) );
+	static const TVector3<T> Cyan( T(0), T(1), T(1) );
 	return Cyan;
 }
 
@@ -107,25 +107,32 @@ template <typename T> const TVector3<T> & TVector3<T>::Cyan( void )
 
 template <typename T> const TVector3<T> & TVector3<T>::Yellow( void )
 {
-	static const TVector3<T> Yellow( T(1.0f), T(1.0f), T(0.0f) );
+	static const TVector3<T> Yellow( T(1), T(1), T(0) );
 	return Yellow;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector3<T>::TVector3()
-	: m_x(T(0.0f))
-	, m_y(T(0.0f))
-	, m_z(T(0.0f))
+	: x(T(0))
+	, y(T(0))
+	, z(T(0))
 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template <typename T> TVector3<T>::TVector3( T x, T y, T z)
-	: m_x(x)
-	, m_y(y)
-	, m_z(z)
+template <typename T> TVector3<T>::TVector3( T _x, T _y, T _z)
+	: x(_x)
+	, y(_y)
+	, z(_z)
+{
+}
+
+template <typename T> TVector3<T>::TVector3( T scalar )
+	: x(scalar)
+	, y(scalar)
+	, z(scalar)
 {
 }
 
@@ -133,9 +140,9 @@ template <typename T> TVector3<T>::TVector3( T x, T y, T z)
 
 template <typename T> u32 TVector3<T>::GetVtxColorAsU32( void ) const 
 {
-	u32 r = u32(GetX()*T(255.0f));
-	u32 g = u32(GetY()*T(255.0f));
-	u32 b = u32(GetZ()*T(255.0f));
+	u32 r = u32(GetX()*T(255));
+	u32 g = u32(GetY()*T(255));
+	u32 b = u32(GetZ()*T(255));
 	u32 a = 255;
 	
 	if( ork::UsingOpenGl() )
@@ -148,9 +155,9 @@ template <typename T> u32 TVector3<T>::GetVtxColorAsU32( void ) const
 
 template <typename T> u32 TVector3<T>::GetABGRU32( void ) const 
 {
-	u32 r = u32(GetX()*T(255.0f));
-	u32 g = u32(GetY()*T(255.0f));
-	u32 b = u32(GetZ()*T(255.0f));
+	u32 r = u32(GetX()*T(255));
+	u32 g = u32(GetY()*T(255));
+	u32 b = u32(GetZ()*T(255));
 	u32 a = 255;
 	
 	return u32( (a<<24)|(b<<16)|(g<<8)|r );
@@ -160,9 +167,9 @@ template <typename T> u32 TVector3<T>::GetABGRU32( void ) const
 
 template <typename T> u32 TVector3<T>::GetARGBU32( void ) const 
 {
-	u32 r = u32(GetX()*T(255.0f));
-	u32 g = u32(GetY()*T(255.0f));
-	u32 b = u32(GetZ()*T(255.0f));
+	u32 r = u32(GetX()*T(255));
+	u32 g = u32(GetY()*T(255));
+	u32 b = u32(GetZ()*T(255));
 	u32 a = 255;
 	
 	return u32( (a<<24)|(r<<16)|(g<<8)|b );
@@ -172,9 +179,9 @@ template <typename T> u32 TVector3<T>::GetARGBU32( void ) const
 
 template <typename T> u32 TVector3<T>::GetRGBAU32( void ) const 
 {
-	u32 r = u32(GetX()*T(255.0f));
-	u32 g = u32(GetY()*T(255.0f));
-	u32 b = u32(GetZ()*T(255.0f));
+	u32 r = u32(GetX()*T(255));
+	u32 g = u32(GetY()*T(255));
+	u32 b = u32(GetZ()*T(255));
 	u32 a = 255;
 
 	u32 rval = 0;
@@ -191,9 +198,9 @@ template <typename T> u32 TVector3<T>::GetRGBAU32( void ) const
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> u32 TVector3<T>::GetBGRAU32( void ) const
-{	u32 r = u32(GetX()*T(255.0f));
-	u32 g = u32(GetY()*T(255.0f));
-	u32 b = u32(GetZ()*T(255.0f));
+{	u32 r = u32(GetX()*T(255));
+	u32 g = u32(GetY()*T(255));
+	u32 b = u32(GetZ()*T(255));
 	u32 a = 255;
 	
 	return u32( (b<<24)|(g<<16)|(r<<8)|a );
@@ -203,9 +210,9 @@ template <typename T> u32 TVector3<T>::GetBGRAU32( void ) const
 
 template <typename T> u16 TVector3<T>::GetRGBU16() const 
 {
-	u32 r = u32(GetX() * T(31.0f));
-	u32 g = u32(GetY() * T(31.0f));
-	u32 b = u32(GetZ() * T(31.0f));
+	u32 r = u32(GetX() * T(31));
+	u32 g = u32(GetY() * T(31));
+	u32 b = u32(GetZ() * T(31));
 
 	u16 rval = u16((b<<10)|(g<<5)|r);
 
@@ -289,36 +296,36 @@ template <typename T> TVector3<T> TVector3<T>::Reflect( const TVector3 &N ) cons
 
 template <typename T> TVector3<T>::TVector3( const TVector3<T> &vec)
 {
-	m_x = vec.m_x;
-	m_y = vec.m_y;
-	m_z = vec.m_z;
+	x = vec.x;
+	y = vec.y;
+	z = vec.z;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector3<T>::TVector3( const TVector4<T> &vec)
 {
-	m_x = vec.GetX();
-	m_y = vec.GetY();
-	m_z = vec.GetZ();
+	x = vec.GetX();
+	y = vec.GetY();
+	z = vec.GetZ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector3<T>::TVector3( const TVector2<T> &vec)
 {
-	m_x = vec.GetX();
-	m_y = vec.GetY();
-	m_z = T(0);
+	x = vec.GetX();
+	y = vec.GetY();
+	z = T(0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename T> TVector3<T>::TVector3( const TVector2<T> &vec, T w)
 {
-    m_x = vec.GetX();
-    m_y = vec.GetY();
-    m_z = w;
+    x = vec.GetX();
+    y = vec.GetY();
+    z = w;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -326,9 +333,9 @@ template <typename T> TVector3<T>::TVector3( const TVector2<T> &vec, T w)
 template <typename T> T TVector3<T>::Dot( const TVector3<T> &vec) const
 {
 #if defined WII
-	return __fmadds(m_x,vec.m_x,__fmadds(m_y,vec.m_y,__fmadds(m_z,vec.m_z,0.0f)));
+	return __fmadds(x,vec.x,__fmadds(y,vec.y,__fmadds(z,vec.z,0.0f)));
 #else
-	return ( (m_x * vec.m_x) + (m_y * vec.m_y) + (m_z * vec.m_z) );
+	return ( (x * vec.x) + (y * vec.y) + (z * vec.z) );
 #endif
 }
 
@@ -336,9 +343,9 @@ template <typename T> T TVector3<T>::Dot( const TVector3<T> &vec) const
 
 template <typename T> TVector3<T> TVector3<T>::Cross( const TVector3<T> &vec) const // c = this X vec
 {
-	T vx = ((m_y * vec.GetZ()) - (m_z * vec.GetY()));
-	T vy = ((m_z * vec.GetX()) - (m_x * vec.GetZ()));
-	T vz = ((m_x * vec.GetY()) - (m_y * vec.GetX()));
+	T vx = ((y * vec.GetZ()) - (z * vec.GetY()));
+	T vy = ((z * vec.GetX()) - (x * vec.GetZ()));
+	T vz = ((x * vec.GetY()) - (y * vec.GetX()));
 
 	return ( TVector3<T>( vx, vy, vz ) );
 }
@@ -352,9 +359,9 @@ template <typename T> void TVector3<T>::Normalize(void)
 	{
 		T	distance = (T) 1.0f / mag ;
 
-		m_x *= distance;
-		m_y *= distance;
-		m_z *= distance;
+		x *= distance;
+		y *= distance;
+		z *= distance;
 	}
 }
 
@@ -372,14 +379,14 @@ template <typename T> TVector3<T> TVector3<T>::Normal() const
 
 template <typename T> T TVector3<T>::Mag(void) const
 {
-	return sqrt(m_x * m_x + m_y * m_y + m_z * m_z);
+	return sqrt(x * x + y * y + z * z);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> T TVector3<T>::MagSquared(void) const
 {
-	T mag = (m_x * m_x + m_y * m_y + m_z * m_z);
+	T mag = (x * x + y * y + z * z);
 	return mag;
 }
 
@@ -390,18 +397,18 @@ template <typename T> TVector4<T> TVector3<T>::Transform( const TMatrix4<T> &mat
 	T	tx,ty,tz,tw;
 
 	T *mp = (T *) matrix.elements;
-	T x = m_x;
-	T y = m_y;
-	T z = m_z;
-	T w = T(1.0f);
+	T _x = x;
+	T _y = y;
+	T _z = z;
+	T _w = T(1.0f);
 
 #if 0 //defined WII
-	tx = __fmadds(m_x,vec.m_x,__fmadds(m_y,vec.m_y,__fmadds(m_z,vec.m_z,0.0f)));
+	tx = __fmadds(x,vec.x,__fmadds(y,vec.y,__fmadds(z,vec.z,0.0f)));
 #else
-	tx = x*mp[0] + y*mp[4] + z*mp[8] + w*mp[12];
-	ty = x*mp[1] + y*mp[5] + z*mp[9] + w*mp[13];
-	tz = x*mp[2] + y*mp[6] + z*mp[10] + w*mp[14];
-	tw = x*mp[3] + y*mp[7] + z*mp[11] + w*mp[15];
+	tx = _x*mp[0] + _y*mp[4] + _z*mp[8] + _w*mp[12];
+	ty = _x*mp[1] + _y*mp[5] + _z*mp[9] + _w*mp[13];
+	tz = _x*mp[2] + _y*mp[6] + _z*mp[10] + _w*mp[14];
+	tw = _x*mp[3] + _y*mp[7] + _z*mp[11] + _w*mp[15];
 #endif
 
 	return TVector4<T>( tx, ty, tz, tw );
@@ -415,13 +422,13 @@ template <typename T> TVector3<T> TVector3<T>::Transform( const TMatrix3<T> &mat
 	T	tx,ty,tz;
 
 	T *mp = (T *) matrix.elements;
-	T x = m_x;
-	T y = m_y;
-	T z = m_z;
+	T _x = x;
+	T _y = y;
+	T _z = z;
 
-	tx = x*mp[0] + y*mp[3] + z*mp[6];
-	ty = x*mp[1] + y*mp[4] + z*mp[7];
-	tz = x*mp[2] + y*mp[5] + z*mp[8];
+	tx = _x*mp[0] + _y*mp[3] + _z*mp[6];
+	ty = _x*mp[1] + _y*mp[4] + _z*mp[7];
+	tz = _x*mp[2] + _y*mp[5] + _z*mp[8];
 
 	return TVector3<T>( tx, ty, tz );
 }
@@ -432,13 +439,13 @@ template <typename T> TVector3<T> TVector3<T>::Transform3x3( const TMatrix4<T> &
 {
 	T	tx,ty,tz;
 	T *mp = (T *) matrix.elements;
-	T x = m_x;
-	T y = m_y;
-	T z = m_z;
+	T _x = x;
+	T _y = y;
+	T _z = z;
 
-	tx = x*mp[0] + y*mp[4] + z*mp[8];
-	ty = x*mp[1] + y*mp[5] + z*mp[9];
-	tz = x*mp[2] + y*mp[6] + z*mp[10];
+	tx = _x*mp[0] + _y*mp[4] + _z*mp[8];
+	ty = _x*mp[1] + _y*mp[5] + _z*mp[9];
+	tz = _x*mp[2] + _y*mp[6] + _z*mp[10];
 
 	return TVector3<T>( tx, ty, tz );
 }
@@ -457,32 +464,32 @@ template <typename T> void TVector3<T>::Serp( const TVector3<T> & PA, const TVec
 
 template <typename T> void TVector3<T>::RotateX(T rad)
 {
-	T	oldY = m_y;
-	T	oldZ = m_z;
-	m_y = (oldY * cos(rad) - oldZ * sin(rad));
-	m_z = (oldY * sin(rad) + oldZ * cos(rad));
+	T	oldY = y;
+	T	oldZ = z;
+	y = (oldY * cos(rad) - oldZ * sin(rad));
+	z = (oldY * sin(rad) + oldZ * cos(rad));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> void TVector3<T>::RotateY(T rad)
 {
-	T	oldX = m_x;
-	T	oldZ = m_z;
+	T	oldX = x;
+	T	oldZ = z;
 
-	m_x = (oldX * cos(rad) - oldZ * sin(rad));
-	m_z = (oldX * sin(rad) + oldZ * cos(rad));
+	x = (oldX * cos(rad) - oldZ * sin(rad));
+	z = (oldX * sin(rad) + oldZ * cos(rad));
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <typename T> void TVector3<T>::RotateZ(T rad)
 {
-	T	oldX = m_x;
-	T	oldY = m_y;
+	T	oldX = x;
+	T	oldY = y;
 
-	m_x = (oldX * cos(rad) - oldY * sin(rad));
-	m_y = (oldX * sin(rad) + oldY * cos(rad));
+	x = (oldX * cos(rad) - oldY * sin(rad));
+	y = (oldX * sin(rad) + oldY * cos(rad));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -492,9 +499,9 @@ template <typename T> void TVector3<T>::Lerp( const TVector3<T> &from, const TVe
 	if( par < T(0.0f) ) par = T(0.0f);
 	if( par > T(1.0f) ) par = T(1.0f);
 	T ipar = T(1.0f) - par;
-	m_x = (from.m_x*ipar) + (to.m_x*par);
-	m_y = (from.m_y*ipar) + (to.m_y*par);
-	m_z = (from.m_z*ipar) + (to.m_z*par);
+	x = (from.x*ipar) + (to.x*par);
+	y = (from.y*ipar) + (to.y*par);
+	z = (from.z*ipar) + (to.z*par);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

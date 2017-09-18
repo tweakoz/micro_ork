@@ -31,6 +31,7 @@ RenderContext::RenderContext()
     , miFrame(0)
     , mSplitAndDice(*this)
     , mAADim(1)
+    , mAATileSize(mAADim*kTileDim)
 {
     for( int i=0; i<kAABUFTILES; i++ )
     {
@@ -70,7 +71,7 @@ void RenderContext::operator=( const RenderContext& oth )
 
 void RenderContext::Update(OpGroup& ogrp)
 {
-
+    //printf( "miImageWidth<%d> miImageHeight<%d>\n", miImageWidth, miImageHeight );
     float faspect = float(miImageWidth)/float(miImageHeight);
     mMatrixV = ork::CMatrix4::Identity;
     mMatrixP = ork::CMatrix4::Identity;
@@ -256,11 +257,11 @@ void RenderContext::Update(OpGroup& ogrp)
         }
     }
 
-    auto prims = mPrimSet.AtomicCopy();
+    //auto prims = mPrimSet.AtomicCopy();
 
     //ogrp.drain();
 
-    for( const auto& p : prims )
+    for( const auto& p : mPrimSet )
     {
         p->TransformAndCull(ogrp);
     }
@@ -273,13 +274,13 @@ void RenderContext::Update(OpGroup& ogrp)
 int RenderContext::GetTileX( float fx ) const
 {
     int ix = int(std::floor(fx));
-    int ibx = ix/GetTileOvSize();
+    int ibx = ix/mAATileSize;
     return ibx;
 }
 int RenderContext::GetTileY( float fy ) const
 {
     int iy = int(std::floor(fy));
-    int iby = iy/GetTileOvSize();
+    int iby = iy/mAATileSize;
     return iby;
 }
 
@@ -328,6 +329,11 @@ void RenderContext::Resize( int iw, int ih )
             mRasterTiles[idx].miHeight = (iby<ih) ? ktovsize : (ktovsize-(1+iby-ih));
             mRasterTiles[idx].miScreenXBase = ilx;
             mRasterTiles[idx].miScreenYBase = ity;
+
+            mRasterTiles[idx].mAAScreenXBase = float(ilx)*float(mAADim);
+            mRasterTiles[idx].mAAScreenYBase = float(ity)*float(mAADim);
+            mRasterTiles[idx].mAAWidth = float(mRasterTiles[idx].miWidth)*float(mAADim);
+            mRasterTiles[idx].mAAHeight = float(mRasterTiles[idx].miHeight)*float(mAADim);
         }
     }
 }
@@ -383,9 +389,9 @@ int RenderContext::CalcPixelAddress( int ix, int iy ) const
 
 void RenderContext::AddPrim(IGeoPrim*prim)
 {
-    auto& s = mPrimSet.LockForWrite();
-    s.insert(prim);
-    mPrimSet.Unlock();
+    //auto& s = mPrimSet.LockForWrite();
+    mPrimSet.insert(prim);
+    //mPrimSet.Unlock();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -394,9 +400,9 @@ void RenderContext::RenderToTile(AABuffer* aabuf)
 {
     aabuf->Clear(*this);
 
-    auto prims = mPrimSet.AtomicCopy();
+    //auto prims = mPrimSet.AtomicCopy();
 
-    for( const auto& p : prims )
+    for( const auto& p : mPrimSet )
     {
         p->RenderToTile(aabuf);
     }
