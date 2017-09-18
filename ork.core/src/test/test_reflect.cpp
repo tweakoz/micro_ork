@@ -8,31 +8,33 @@ using namespace ork;
 namespace refl_test_1 {
 ///////////////////////////////////////////////////////////////////////////////
 
-struct A : public reflect::Object
-{
-    ReflectClass(); 
-};
+BEGIN_REFLECTED_CLASS( A, reflect::Object )
 
-struct B : public A
-{
-    ReflectClass(); 
+END_REFLECTED_CLASS; 
 
-};
+///////////////////////////////////////////////////////////////////////////////
 
-struct C : public B
-{
+BEGIN_REFLECTED_CLASS( B, A )
+
+    std::map<std::string,int>     _intmap;
+
+END_REFLECTED_CLASS;
+
+///////////////////////////////////////////////////////////////////////////////
+
+BEGIN_REFLECTED_CLASS( C, B ) 
+
     C(){}
+
     ~C() final
     {
         for( auto item : _objmap )
             delete item.second;
     }
 
-    ReflectClass(); 
-
-    std::map<std::string,int>     _intmap;
     std::map<std::string,Object*> _objmap;
-};
+
+END_REFLECTED_CLASS;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -42,17 +44,14 @@ void A::Describe( reflect::Description& desc )
 
 void B::Describe( reflect::Description& desc )
 {
+    auto imapprop = AddMapProperty(B,"intmap",_intmap);
 }
 
 void C::Describe( reflect::Description& desc )
 {
-    // todo - prop inheritance
-
-    auto imapprop = AddMapProperty(C,"intmap",_intmap);
     auto omapprop = AddMapProperty(C,"objmap",_objmap);
 
-    // todo - use class as anno, not classname
-    omapprop->annotate("map.val.objclass",std::string("refl_test_1::C"));
+    omapprop->annotate("map.val.objclass",C::getClassStatic());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -68,11 +67,13 @@ TEST(Reflect1)
     ImplementConcreteClass(refl_test_1::B);
     ImplementConcreteClass(refl_test_1::C);
 
+    reflect::init();
+
     //////////////////////////////
     // test Object Graph JSON
     //////////////////////////////
 
-    auto reflstream = R"XXX(
+    auto reflstream = R"JSON(
 
     {
         "class": "refl_test_1::C",
@@ -98,7 +99,7 @@ TEST(Reflect1)
         }
     }
 
-    )XXX";
+    )JSON";
 
     //////////////////////////////
     // deserialize objects from JSON stream

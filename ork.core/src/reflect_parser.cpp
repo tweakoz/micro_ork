@@ -6,6 +6,12 @@
 namespace ork { namespace reflect {
 ///////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////
+// _decodeJson - recursive function
+//   which converts json object tree representation into
+//   an svariant based object tree representation (aka propdec_t)
+///////////////////////////////////////////////////////////////////////////////
+
 void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
 {
     ///////////////////////////////
@@ -42,7 +48,7 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
     else if( jsonvalue.IsString() )
         decoded.Set<std::string>(jsonvalue.GetString());
     ///////////////////////////////
-    // arrays
+    // array
     ///////////////////////////////
     else if( jsonvalue.IsArray() ) {
         
@@ -59,7 +65,7 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
         }
     }
     ///////////////////////////////
-    // dictionarys (objects)
+    // dictionary (object)
     ///////////////////////////////
     else if( jsonvalue.IsObject() )
     {
@@ -85,8 +91,12 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// unpack (unmarshal) propdec_t based object representation
+//  into an actual object tree/graph
+///////////////////////////////////////////////////////////////////////////////
 
-reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos )
+reflect::Object* unpack(const decdict_t& dict, 
+                        const AnnoMap& annos )
 {
     reflect::Object* rval = nullptr;
 
@@ -105,11 +115,12 @@ reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos )
     };
 
     /////////////////////////////
-    // first try map val objclass (if anno set)
+    // first try map val objclass (if annotation set)
     /////////////////////////////
 
-    if( auto try_mvclass = annos.find("map.val.objclass").TryAs<std::string>() )
-        createObject(try_mvclass.value());
+    if( auto try_mvclass = annos.find("map.val.objclass")
+                         . TryAs<Class*>() )
+        createObject(try_mvclass.value()->_name);
 
     /////////////////////////////
     // loop through dict items
@@ -131,16 +142,12 @@ reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos )
             /////////////////////////////
 
             else if( rval and clazz )
-            {
-                const auto& value = item.second;
-
-                auto it_prop = clazz->_properties.find(name);
-                assert(it_prop != clazz->_properties.end());
-
-                auto prop = it_prop->second;
-
-                prop->set(rval,value);
-     
+            {   const auto& value = item.second;
+                auto prop = clazz->findProperty(name);
+                if( prop )
+                    prop->set(rval,value);
+                else
+                    printf( "property<%s> not found, skipping...\n", name.c_str() );
             }
         }
     }
@@ -148,6 +155,8 @@ reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos )
     return rval;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// unmarshall object graph from json
 ///////////////////////////////////////////////////////////////////////////////
 
 reflect::Object* fromJson(const std::string& jsondata )
@@ -162,7 +171,6 @@ reflect::Object* fromJson(const std::string& jsondata )
     static AnnoMap g_no_annos;
 
     return unpack(decoded.Get<decdict_t>(),g_no_annos);
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////

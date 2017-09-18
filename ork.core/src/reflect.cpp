@@ -28,6 +28,19 @@ const anno_t& AnnoMap::find(const std::string& key) const
 
 ///////////////////////////////////////////////////////////////////////////////
 
+const Property* Class::findProperty(const std::string& name) const
+{
+    auto it_prop = _properties.find(name);
+    if( it_prop != _properties.end())
+        return it_prop->second;
+    else if( _parent )
+        return _parent->findProperty(name);
+
+    return nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 void init()
 {
     printf( "initializing reflection...\n");

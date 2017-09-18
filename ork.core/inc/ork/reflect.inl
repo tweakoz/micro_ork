@@ -13,11 +13,11 @@ MapProperty<clazz_t,map_type>::MapProperty(map_type clazz_t::* m)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-template <typename to_type> to_type refl_convert( Property* prop, const propdec_t& from );
+template <typename to_type> to_type refl_convert( const Property* prop, const propdec_t& from );
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-std::string refl_convert<std::string>(Property* prop, const propdec_t& from)
+std::string refl_convert<std::string>(const Property* prop, const propdec_t& from)
 {   if(auto try_string = from.TryAs<std::string>() )
         return try_string.value();
     assert(false); // from's value type not convertible to string
@@ -27,7 +27,7 @@ std::string refl_convert<std::string>(Property* prop, const propdec_t& from)
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-int refl_convert<int>(Property* prop, const propdec_t& from)
+int refl_convert<int>(const Property* prop, const propdec_t& from)
 {   if(auto try_number = from.TryAs<double>() )
         return (int) try_number.value();
     assert(false); // from's value type not convertible to int
@@ -37,7 +37,7 @@ int refl_convert<int>(Property* prop, const propdec_t& from)
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-Object* refl_convert<Object*>(Property* prop, const propdec_t& from)
+Object* refl_convert<Object*>(const Property* prop, const propdec_t& from)
 {   if(auto try_dict = from.TryAs<decdict_t>() )
         return unpack(try_dict.value(),prop->_annotations);
     assert(false); // from's value type not convertible to Object*
@@ -47,7 +47,7 @@ Object* refl_convert<Object*>(Property* prop, const propdec_t& from)
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename clazz_t, typename map_type>
-void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdata ) //final 
+void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdata ) const //final 
 {
     if( auto try_as_dict = inpdata.TryAs<decdict_t>() )
     {
@@ -101,6 +101,9 @@ Class* RegisterClass(const std::string& cname,
     auto it = _classes.find(cname);
     assert(it==_classes.end());
     auto clazz = class_type::getClassStatic();
+    clazz->_name = cname;
+    clazz->_parent = class_type::getParentClassStatic();
+
     _classes[cname]=clazz;
     clazz->_factory = fac;
     
@@ -108,6 +111,7 @@ Class* RegisterClass(const std::string& cname,
 
     if(desCB)
         desCB(desc);
+
 
     return clazz;
 }

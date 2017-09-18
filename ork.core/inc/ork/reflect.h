@@ -43,7 +43,7 @@ namespace ork { namespace reflect {
     {
 
         void annotate(const std::string& k, anno_t v) { _annotations._annomap[k]=v; }
-        virtual void set( Object* object, const propdec_t& inpdata ) = 0;
+        virtual void set( Object* object, const propdec_t& inpdata ) const = 0;
         AnnoMap _annotations;
     };
 
@@ -57,7 +57,7 @@ namespace ork { namespace reflect {
        
         MapProperty( map_type clazz_t::* m);
 
-        void set( Object* object, const propdec_t& inpdata ) final;
+        void set( Object* object, const propdec_t& inpdata ) const final;
 
         map_type clazz_t::* _member;
     };
@@ -67,6 +67,8 @@ namespace ork { namespace reflect {
     struct Object
     {
         virtual ~Object() {}
+
+        static ::ork::reflect::Class* getClassStatic() { return nullptr; }
     };
 
     //////////////////////////////////////////////////////////////
@@ -76,8 +78,12 @@ namespace ork { namespace reflect {
         bool isAbstract() const { return _factory==nullptr; }
         bool isConcrete() const { return _factory!=nullptr; }
 
+        const Property* findProperty(const std::string& name) const;
+
         std::map<std::string,Property*> _properties;
         factory_t _factory = nullptr;
+        Class* _parent = nullptr;
+        std::string _name;
     };
 
     //////////////////////////////////////////////////////////////
@@ -116,10 +122,14 @@ namespace ork { namespace reflect {
     desc._addMapProperty<clasnam>(propname,&clasnam::the_map);
 
 
-#define ReflectClass() \
+#define BEGIN_REFLECTED_CLASS(name,basename) \
+    struct name : public basename {\
+    public: \
     static void Describe(::ork::reflect::Description& desc);\
-    static ::ork::reflect::Class* getClassStatic() { static reflect::Class _clazz; return & _clazz; }
+    static ::ork::reflect::Class* getClassStatic() { static reflect::Class _clazz; return & _clazz; }\
+    static ::ork::reflect::Class* getParentClassStatic() { return basename::getClassStatic(); }
 
+#define END_REFLECTED_CLASS };
 
 #define ImplementAbstractClass(cname) ::ork::reflect::RegisterClass<cname>( \
     #cname, \
