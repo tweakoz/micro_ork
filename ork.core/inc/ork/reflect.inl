@@ -28,146 +28,221 @@ DirectProperty<clazz_t,val_type>::DirectProperty(val_type clazz_t::* m)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-template <typename to_type> to_type refl_convert( const Property* prop, const propdec_t& from );
-///////////////////////////////////////////////////////////////////////////////
 
-template<>
-std::string refl_convert<std::string>(const Property* prop, const propdec_t& from)
-{   if(auto try_string = from.TryAs<std::string>() )
-        return try_string.value();
-    assert(false); // from's value type not convertible to string
-    return "";
-}
+struct TypeConverterBase
+{
+    TypeConverterBase(const Property* prop) : _prop(prop) {}
+    const Property* _prop;
+};
 
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-int32_t refl_convert<int32_t>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return (int32_t) try_number.value();
-    else if(auto try_string = from.TryAs<std::string>() )
-        return (int32_t) atoi(try_string.value().c_str());
-    assert(false); // from's value type not convertible to int32_t
-    return 0;
-}
+template<typename T,typename SFINAE = void> struct TypeConverter : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template<>
-uint32_t refl_convert<uint32_t>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return (uint32_t) try_number.value();
-    assert(false); // from's value type not convertible to uint32_t
-    return 0;
-}
+template<> struct TypeConverter<std::string> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
 
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-int64_t refl_convert<int64_t>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return (int64_t) try_number.value();
-    assert(false); // from's value type not convertible to int64_t
-    return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-uint64_t refl_convert<uint64_t>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return (uint64_t) try_number.value();
-    assert(false); // from's value type not convertible to uint64_t
-    return 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-float refl_convert<float>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return (float) try_number.value();
-    assert(false); // from's value type not convertible to float
-    return 0.0f;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-double refl_convert<double>(const Property* prop, const propdec_t& from)
-{   if(auto try_number = from.TryAs<double>() )
-        return try_number.value();
-    assert(false); // from's value type not convertible to float
-    return 0.0f;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-Object* refl_convert<Object*>(const Property* prop, const propdec_t& from)
-{   if(auto try_dict = from.TryAs<decdict_t>() )
-        return unpack(try_dict.value(),prop->_annotations);
-    assert(false); // from's value type not convertible to Object*
-    return nullptr;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-template<>
-fvec2 refl_convert<fvec2>(const Property* prop, const propdec_t& from)
-{   if(auto try_array = from.TryAs<decarray_t>() )
-    {   const auto& array = try_array.value();
-        assert(array.size()==2);
-        float x = array[0].Get<double>();
-        float y = array[1].Get<double>();
-        return fvec2(x,y);
+    std::string convert(const propdec_t& from)
+    {   if(auto try_string = from.TryAs<std::string>() )
+            return try_string.value();
+        assert(false); // from's value type not convertible to string
+        return "";
     }
-    assert(false); // from's value type not convertible to Object*
-    return fvec2();
-}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
+template<> struct TypeConverter<int32_t> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
 
-template<>
-fvec3 refl_convert<fvec3>(const Property* prop, const propdec_t& from)
-{   if(auto try_array = from.TryAs<decarray_t>() )
-    {   const auto& array = try_array.value();
-        assert(array.size()==3);
-        float x = array[0].Get<double>();
-        float y = array[1].Get<double>();
-        float z = array[2].Get<double>();
-        return fvec3(x,y,z);
+    int32_t convert(const propdec_t& from)
+    {   if(auto try_number = from.TryAs<double>() )
+            return (int32_t) try_number.value();
+        else if(auto try_string = from.TryAs<std::string>() )
+            return (int32_t) atoi(try_string.value().c_str());
+        assert(false); // from's value type not convertible to int32_t
+        return 0;
     }
-    assert(false); // from's value type not convertible to Object*
-    return fvec3();
-}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template<>
-fvec4 refl_convert<fvec4>(const Property* prop, const propdec_t& from)
-{   if(auto try_array = from.TryAs<decarray_t>() )
-    {   const auto& array = try_array.value();
-        assert(array.size()==4);
-        float x = array[0].Get<double>();
-        float y = array[1].Get<double>();
-        float z = array[2].Get<double>();
-        float w = array[3].Get<double>();
-        return fvec4(x,y,z,w);
+template<> struct TypeConverter<uint32_t> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    uint32_t convert(const propdec_t& from)
+    {   if(auto try_number = from.TryAs<double>() )
+            return (uint32_t) try_number.value();
+        assert(false); // from's value type not convertible to uint32_t
+        return 0;
     }
-    assert(false); // from's value type not convertible to Object*
-    return fvec4();
-}
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-template<>
-std::shared_ptr<Object> refl_convert<std::shared_ptr<Object>>(const Property* prop, const propdec_t& from)
-{   if(auto try_dict = from.TryAs<decdict_t>() )
-        return std::shared_ptr<Object>(unpack(try_dict.value(),prop->_annotations));
-    assert(false); // from's value type not convertible to Object*
-    return nullptr;
-}
+template<> struct TypeConverter<int64_t> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    int64_t convert(const propdec_t& from)
+    {   if(auto try_number = from.TryAs<double>() )
+            return (int64_t) try_number.value();
+        assert(false); // from's value type not convertible to int64_t
+        return 0;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<uint64_t> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    uint64_t convert(const propdec_t& from)
+    {   if(auto try_number = from.TryAs<double>() )
+            return (uint64_t) try_number.value();
+        assert(false); // from's value type not convertible to uint64_t
+        return 0;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<float> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    float convert(const propdec_t& from)
+    {   if(auto try_number = from.TryAs<double>() )
+            return (float) try_number.value();
+        assert(false); // from's value type not convertible to float
+        return 0.0f;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<double> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    double convert(const propdec_t& from)
+    {   
+        if(auto try_number = from.TryAs<double>() )
+            return try_number.value();
+        assert(false); // from's value type not convertible to float
+        return 0.0f;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+struct TypeConverter<T*> : public TypeConverterBase {
+
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    T* convert(const propdec_t& from)
+    {   
+        static_assert( std::is_base_of<::ork::reflect::Object, T>::value, "yo" );
+
+        if(auto try_dict = from.TryAs<decdict_t>() )
+        {
+            auto obj = unpack(try_dict.value(),_prop->_annotations);
+            auto as_t = dynamic_cast<T*>(obj);
+            return as_t;
+        }
+        assert(false); // from's value type not convertible to Object*
+        return nullptr;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+struct TypeConverter<std::shared_ptr<T>> : public TypeConverterBase {
+
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    std::shared_ptr<T> convert(const propdec_t& from)
+    {   
+        static_assert( std::is_base_of<::ork::reflect::Object, T>::value, "yo" );
+
+        if(auto try_dict = from.TryAs<decdict_t>() )
+        {
+            auto obj = unpack(try_dict.value(),_prop->_annotations);
+            auto as_t = dynamic_cast<T*>(obj);
+            return std::shared_ptr<T>(as_t);
+        }
+        assert(false); // from's value type not convertible to Object*
+        return nullptr;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<fvec2> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    fvec2 convert(const propdec_t& from)
+    {   if(auto try_array = from.TryAs<decarray_t>() )
+        {   const auto& array = try_array.value();
+            assert(array.size()==2);
+            float x = array[0].Get<double>();
+            float y = array[1].Get<double>();
+            return fvec2(x,y);
+        }
+        assert(false); // from's value type not convertible to Object*
+        return fvec2();
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<fvec3> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    fvec3 convert(const propdec_t& from)
+    {   if(auto try_array = from.TryAs<decarray_t>() )
+        {   const auto& array = try_array.value();
+            assert(array.size()==3);
+            float x = array[0].Get<double>();
+            float y = array[1].Get<double>();
+            float z = array[2].Get<double>();
+            return fvec3(x,y,z);
+        }
+        assert(false); // from's value type not convertible to Object*
+        return fvec3();
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<> struct TypeConverter<fvec4> : public TypeConverterBase
+{
+    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+
+    fvec4 convert(const propdec_t& from)
+    {   if(auto try_array = from.TryAs<decarray_t>() )
+        {   const auto& array = try_array.value();
+            assert(array.size()==4);
+            float x = array[0].Get<double>();
+            float y = array[1].Get<double>();
+            float z = array[2].Get<double>();
+            float w = array[3].Get<double>();
+            return fvec4(x,y,z,w);
+        }
+        assert(false); // from's value type not convertible to Object*
+        return fvec4();
+    }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -178,8 +253,10 @@ void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdat
         for( const auto& item : as_dict )
         {   const auto& K = item.first;
             const auto& V = item.second;
-            key_t out_k = refl_convert<key_t>(this,K);
-            val_t out_v = refl_convert<val_t>(this,V);
+            TypeConverter<key_t> keycon(this);
+            TypeConverter<val_t> valcon(this);
+            key_t out_k = keycon.convert(K);
+            val_t out_v = valcon.convert(V);
             auto instance = (clazz_t*) object;
             map_type& out_map = instance->*(this->_member);
             out_map[out_k] = out_v;
@@ -198,19 +275,23 @@ void DirectProperty<clazz_t,val_type>::set( Object* object, const propdec_t& inp
 {   auto instance = (clazz_t*) object;
     val_type& destination = instance->*(this->_member);    
     if( auto try_as_dict = inpdata.TryAs<decdict_t>() )
-    {   val_type value = refl_convert<val_type>(this,try_as_dict.value());
+    {   TypeConverter<val_type> typecon(this);
+        val_type value = typecon.convert(try_as_dict.value());
         destination = value;
     }
     else if( auto try_as_ary = inpdata.TryAs<decarray_t>() )
-    {   val_type value = refl_convert<val_type>(this,try_as_ary.value());
+    {   TypeConverter<val_type> typecon(this);
+        val_type value = typecon.convert(try_as_ary.value());
         destination = value;
     }
     else if( auto try_as_number = inpdata.TryAs<double>() )
-    {   val_type value = refl_convert<val_type>(this,try_as_number.value());
+    {   TypeConverter<val_type> typecon(this);
+        val_type value = typecon.convert(try_as_number.value());
         destination = value;
     }
     else if( auto try_as_string = inpdata.TryAs<std::string>() )
-    {   val_type value = refl_convert<val_type>(this,try_as_string.value());
+    {   TypeConverter<val_type> typecon(this);
+        val_type value = typecon.convert(try_as_string.value());
         destination = value;
     }
     else

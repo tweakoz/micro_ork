@@ -43,7 +43,7 @@ BEGIN_REFLECTED_CLASS( C, B )
             delete item.second;
     }
 
-    std::map<std::string,Object*> _objmap;
+    std::map<std::string,A*> _objmap;
     std::shared_ptr<Object> _shobj;
     std::map<int,fvec2> _vmap;
 
