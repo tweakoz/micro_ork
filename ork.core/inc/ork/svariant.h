@@ -34,6 +34,7 @@
 #include <new>
 
 #include <ork/atomic.h>
+#include <ork/types.h>
 
 namespace ork {
 
