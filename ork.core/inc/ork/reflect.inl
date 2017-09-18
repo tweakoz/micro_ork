@@ -13,6 +13,50 @@ MapProperty<clazz_t,map_type>::MapProperty(map_type clazz_t::* m)
 
 }
 
+///////////////////////////////////////////////////////////////////////////////
+template <typename to_type> to_type refl_convert( const propdec_t& from );
+///////////////////////////////////////////////////////////////////////////////
+
+template<>
+std::string refl_convert<std::string>(const propdec_t& from)
+{
+    if(auto try_string = from.TryAs<std::string>() )
+        return try_string.value();
+    assert(false); // from's value type not convertible to string
+    return "";
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<>
+int refl_convert<int>(const propdec_t& from)
+{
+    if(auto try_number = from.TryAs<double>() )
+        return (int) try_number.value();
+    assert(false); // from's value type not convertible to int
+    return 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<>
+Object* refl_convert<Object*>(const propdec_t& from)
+{
+    if(auto try_dict = from.TryAs<decdict_t>() )
+    {
+        const decdict_t& child_dict = try_dict.value();
+        
+        printf( "yoyoz\n");
+        Object* rval = unpack(child_dict);
+        printf( "yoyoz2\n");
+        return rval;
+    }
+    assert(false); // from's value type not convertible to Object*
+    return nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 template <typename clazz_t, typename map_type>
 void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdata ) //final 
 {
@@ -25,13 +69,14 @@ void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdat
             const auto& K = item.first;
             const auto& V = item.second;
 
-            key_t out_k;
-            val_t out_v;
+            key_t out_k = refl_convert<key_t>(K);
+            val_t out_v = refl_convert<val_t>(V);
 
-            assert(false);
-            // this should be fun...
-            //if( auto try_int32 = K.TryAs<int32_t>() )
-            //    out_k = (key_t) try_int32.value();
+            auto instance = (clazz_t*) object;
+
+            map_type& out_map = instance->*(this->_member);
+
+            out_map[out_k] = out_v;
         }        
     }
     else

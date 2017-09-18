@@ -45,7 +45,7 @@ namespace ork { namespace reflect {
     struct MapProperty : public Property
     {
         typedef typename map_type::key_type key_t;
-        typedef typename map_type::value_type val_t;
+        typedef typename map_type::mapped_type val_t;
        
         MapProperty( map_type clazz_t::* m);
 
@@ -95,6 +95,8 @@ namespace ork { namespace reflect {
 
     void init();
     void exit();
+
+    reflect::Object* unpack(const decdict_t& dict );
 
 }} // namespace ork::reflect
 
