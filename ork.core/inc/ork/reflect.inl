@@ -13,11 +13,11 @@ MapProperty<clazz_t,map_type>::MapProperty(map_type clazz_t::* m)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-template <typename to_type> to_type refl_convert( const propdec_t& from );
+template <typename to_type> to_type refl_convert( Property* prop, const propdec_t& from );
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-std::string refl_convert<std::string>(const propdec_t& from)
+std::string refl_convert<std::string>(Property* prop, const propdec_t& from)
 {   if(auto try_string = from.TryAs<std::string>() )
         return try_string.value();
     assert(false); // from's value type not convertible to string
@@ -27,7 +27,7 @@ std::string refl_convert<std::string>(const propdec_t& from)
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-int refl_convert<int>(const propdec_t& from)
+int refl_convert<int>(Property* prop, const propdec_t& from)
 {   if(auto try_number = from.TryAs<double>() )
         return (int) try_number.value();
     assert(false); // from's value type not convertible to int
@@ -37,9 +37,9 @@ int refl_convert<int>(const propdec_t& from)
 ///////////////////////////////////////////////////////////////////////////////
 
 template<>
-Object* refl_convert<Object*>(const propdec_t& from)
+Object* refl_convert<Object*>(Property* prop, const propdec_t& from)
 {   if(auto try_dict = from.TryAs<decdict_t>() )
-        return unpack(try_dict.value());
+        return unpack(try_dict.value(),prop->_annotations);
     assert(false); // from's value type not convertible to Object*
     return nullptr;
 }
@@ -58,8 +58,8 @@ void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdat
             const auto& K = item.first;
             const auto& V = item.second;
 
-            key_t out_k = refl_convert<key_t>(K);
-            val_t out_v = refl_convert<val_t>(V);
+            key_t out_k = refl_convert<key_t>(this,K);
+            val_t out_v = refl_convert<val_t>(this,V);
 
             auto instance = (clazz_t*) object;
 
@@ -83,7 +83,7 @@ Property* Description::_addMapProperty(const char* name, map_type classtype::* m
 
     Property* prop = new MapProperty<classtype,map_type>(m);
     auto clazz = classtype::getClassStatic();
-    printf( "addmapprop clazz<%p> name<%s> prop<%p>\n", clazz, name, prop );
+    //printf( "addmapprop clazz<%p> name<%s> prop<%p>\n", clazz, name, prop );
     clazz->_properties[name] = prop;
     return prop;
 }

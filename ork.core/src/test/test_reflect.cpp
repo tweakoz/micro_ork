@@ -21,6 +21,13 @@ struct B : public A
 
 struct C : public B
 {
+    C(){}
+    ~C() final
+    {
+        for( auto item : _objmap )
+            delete item.second;
+    }
+
     ReflectClass(); 
 
     std::map<std::string,int>     _intmap;
@@ -41,8 +48,11 @@ void C::Describe( reflect::Description& desc )
 {
     // todo - prop inheritance
 
-    AddMapProperty(C,"intmap",_intmap);
-    AddMapProperty(C,"objmap",_objmap);
+    auto imapprop = AddMapProperty(C,"intmap",_intmap);
+    auto omapprop = AddMapProperty(C,"objmap",_objmap);
+
+    // todo - use class as anno, not classname
+    omapprop->annotate("map.val.objclass",std::string("refl_test_1::C"));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -50,10 +60,16 @@ void C::Describe( reflect::Description& desc )
 
 TEST(Reflect1)
 {
+    //////////////////////////////
+    // init reflection data
+    //////////////////////////////
+
     ImplementAbstractClass(refl_test_1::A);
     ImplementConcreteClass(refl_test_1::B);
     ImplementConcreteClass(refl_test_1::C);
 
+    //////////////////////////////
+    // test Object Graph JSON
     //////////////////////////////
 
     auto reflstream = R"XXX(
@@ -67,7 +83,6 @@ TEST(Reflect1)
         },
         "objmap": {
             "what": {
-                "class": "refl_test_1::C",
                 "intmap": {
                     "one": 1,
                     "two": 2,
@@ -75,7 +90,6 @@ TEST(Reflect1)
                 }
             },
             "the": {
-                "class": "refl_test_1::C",
                 "intmap": {
                     "six": 6,
                     "seven": 7
@@ -87,29 +101,43 @@ TEST(Reflect1)
     )XXX";
 
     //////////////////////////////
-    
+    // deserialize objects from JSON stream
+    //////////////////////////////
+
     auto deser = reflect::fromJson(reflstream);    
-
     assert(deser!=nullptr);
+    auto root_as_c = dynamic_cast<refl_test_1::C*>(deser);
+    assert(root_as_c!=nullptr);
 
-    auto as_c = dynamic_cast<refl_test_1::C*>(deser);
+    //////////////////////////////
+    // inspect "what" child
+    //////////////////////////////
 
-    assert(as_c!=nullptr);
+    auto child_what = root_as_c->_objmap["what"];
+    auto what_as_c = dynamic_cast<refl_test_1::C*>(child_what);
 
-    for( auto item : as_c->_intmap )
-    {
-        const auto& K = item.first;
-        const auto& V = item.second;
+    assert(what_as_c!=nullptr);
 
-        printf( "intmap k<%s> -> v<%d>\n", K.c_str(), V );
-    }
+    CHECK_EQUAL(1,what_as_c->_intmap["one"]);
+    CHECK_EQUAL(2,what_as_c->_intmap["two"]);
+    CHECK_EQUAL(4,what_as_c->_intmap["four"]);
 
-    auto what = dynamic_cast<refl_test_1::C*>(as_c->_objmap["what"]);
+    //////////////////////////////
+    // inspect "the" child
+    //////////////////////////////
 
-    assert(what!=nullptr);
+    auto child_the = root_as_c->_objmap["the"];
+    auto the_as_c = dynamic_cast<refl_test_1::C*>(child_the);
 
-    CHECK_EQUAL(what->_intmap["one"],1);
-    CHECK_EQUAL(what->_intmap["two"],2);
-    CHECK_EQUAL(what->_intmap["four"],4);
+    assert(the_as_c!=nullptr);
+
+    CHECK_EQUAL(6,the_as_c->_intmap["six"]);
+    CHECK_EQUAL(7,the_as_c->_intmap["seven"]);
+
+    //////////////////////////////
+    // clean up
+    //////////////////////////////
+
+    delete deser;
 }
 

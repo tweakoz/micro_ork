@@ -15,6 +15,17 @@ Class* FindClass( const std::string& name )
     return it->second;
 }
 
+static anno_t g_no_anno(nullptr);
+
+const anno_t& AnnoMap::find(const std::string& key) const
+{
+    auto it = _annomap.find(key);
+    if(it==_annomap.end())
+        return g_no_anno;
+    else
+        return it->second;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void init()

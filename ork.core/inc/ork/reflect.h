@@ -31,12 +31,20 @@ namespace ork { namespace reflect {
 
     //////////////////////////////////////////////////////////////
 
+    struct AnnoMap
+    {
+        std::map<std::string,anno_t> _annomap;
+        const anno_t& find(const std::string& key) const;
+    };
+
+    //////////////////////////////////////////////////////////////
+
     struct Property
     {
 
-        void annotate(const std::string& k, anno_t v) { _annotations[k]=v; }
+        void annotate(const std::string& k, anno_t v) { _annotations._annomap[k]=v; }
         virtual void set( Object* object, const propdec_t& inpdata ) = 0;
-        std::map<std::string,anno_t> _annotations;
+        AnnoMap _annotations;
     };
 
     //////////////////////////////////////////////////////////////
@@ -96,7 +104,7 @@ namespace ork { namespace reflect {
     void init();
     void exit();
 
-    reflect::Object* unpack(const decdict_t& dict );
+    reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos );
 
 }} // namespace ork::reflect
 

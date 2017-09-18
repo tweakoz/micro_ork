@@ -86,10 +86,8 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-reflect::Object* unpack(const decdict_t& dict )
+reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos )
 {
-    printf( "unpack dict size<%zu>\n", dict.size() );
-
     reflect::Object* rval = nullptr;
 
     /////////////////////////////
@@ -97,27 +95,44 @@ reflect::Object* unpack(const decdict_t& dict )
     std::string clazz_name;
     Class* clazz = nullptr;
 
+    auto createObject = [&](const std::string& classname){
+        assert(rval==nullptr);
+        assert(clazz_name=="");
+        clazz_name = classname;
+        clazz = FindClass(clazz_name);        
+        assert(clazz->isConcrete());      
+        rval = clazz->_factory();
+    };
+
+    /////////////////////////////
+    // first try map val objclass (if anno set)
+    /////////////////////////////
+
+    if( auto try_mvclass = annos.find("map.val.objclass").TryAs<std::string>() )
+        createObject(try_mvclass.value());
+
+    /////////////////////////////
+    // loop through dict items
+    /////////////////////////////
+
     for( const auto& item : dict )
     {   
         if( auto as_string = item.first.TryAs<std::string>() )
         {   
             const auto& name = as_string.value();
             
+            /////////////////////////////
+            // class in dict ?
+            /////////////////////////////
+
             if(name=="class")
-            {
-                clazz_name = item.second.Get<std::string>();
-                clazz = FindClass(clazz_name);
-                printf( "clazz<%s:%p>\n", clazz_name.c_str(), clazz );
-                assert(clazz->isConcrete());      
-                rval = clazz->_factory();
-                printf( "clazz<%s> object<%p>\n", clazz_name.c_str(), rval );        
-            }
+                createObject(item.second.Get<std::string>());
+
+            /////////////////////////////
+
             else if( rval and clazz )
             {
                 const auto& value = item.second;
-                //auto val_t = val.GetType();
-
-                printf( "clazz<%p:%s> prop<%s>\n", clazz, clazz_name.c_str(), name.c_str() );
 
                 auto it_prop = clazz->_properties.find(name);
                 assert(it_prop != clazz->_properties.end());
@@ -129,8 +144,6 @@ reflect::Object* unpack(const decdict_t& dict )
             }
         }
     }
-
-    printf( "unpack rval<%p>\n", rval );
 
     return rval;
 }
@@ -146,7 +159,9 @@ reflect::Object* fromJson(const std::string& jsondata )
     propdec_t decoded;
     _decodeJson(document,decoded);
 
-    return unpack(decoded.Get<decdict_t>());
+    static AnnoMap g_no_annos;
+
+    return unpack(decoded.Get<decdict_t>(),g_no_annos);
 
 }
 
