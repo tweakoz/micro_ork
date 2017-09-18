@@ -10,7 +10,6 @@ template <typename clazz_t, typename map_type>
 MapProperty<clazz_t,map_type>::MapProperty(map_type clazz_t::* m)
     : _member(m)
 {
-
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -19,8 +18,7 @@ template <typename to_type> to_type refl_convert( const propdec_t& from );
 
 template<>
 std::string refl_convert<std::string>(const propdec_t& from)
-{
-    if(auto try_string = from.TryAs<std::string>() )
+{   if(auto try_string = from.TryAs<std::string>() )
         return try_string.value();
     assert(false); // from's value type not convertible to string
     return "";
@@ -30,8 +28,7 @@ std::string refl_convert<std::string>(const propdec_t& from)
 
 template<>
 int refl_convert<int>(const propdec_t& from)
-{
-    if(auto try_number = from.TryAs<double>() )
+{   if(auto try_number = from.TryAs<double>() )
         return (int) try_number.value();
     assert(false); // from's value type not convertible to int
     return 0;
@@ -41,16 +38,8 @@ int refl_convert<int>(const propdec_t& from)
 
 template<>
 Object* refl_convert<Object*>(const propdec_t& from)
-{
-    if(auto try_dict = from.TryAs<decdict_t>() )
-    {
-        const decdict_t& child_dict = try_dict.value();
-        
-        printf( "yoyoz\n");
-        Object* rval = unpack(child_dict);
-        printf( "yoyoz2\n");
-        return rval;
-    }
+{   if(auto try_dict = from.TryAs<decdict_t>() )
+        return unpack(try_dict.value());
     assert(false); // from's value type not convertible to Object*
     return nullptr;
 }

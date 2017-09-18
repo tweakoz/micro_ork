@@ -19,6 +19,8 @@ public:
     int GetFailedTestCount() const;
     int GetFailureCount() const;
 
+    bool failed() const { return m_currentTestFailed; }
+    
 private:
     TestReporter* m_testReporter;
     int m_totalTestCount;

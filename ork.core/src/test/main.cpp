@@ -1,6 +1,7 @@
 //
 
 #include <unittest++/UnitTest++.h>
+#include <unittest++/TestReporterStdout.h>
 #include <string.h>
 #include <ork/atomic.h>
 
@@ -42,7 +43,11 @@ int main( int argc, char** argv, char** argp )
 		const char *testname = argv[1];
 		const UnitTest::TestList & List = UnitTest::Test::GetTestList();
 		const UnitTest::Test* ptest = List.GetHead();
-		int itest = 0;
+
+        int itestran = 0;
+        int itestfailed = 0;
+
+        UnitTest::TestReporterStdout reporter;
 
 		while( ptest )
 		{	const UnitTest::TestDetails & Details = ptest->m_details;
@@ -50,12 +55,18 @@ int main( int argc, char** argv, char** argp )
 			if( all_tests or (0 == strcmp( testname, Details.testName )) )
 			{	printf( "Running Test<%s>\n", Details.testName );
 
-				UnitTest::TestResults res;
+				UnitTest::TestResults res(&reporter);
 				ptest->Run(res);
+                if(res.failed())
+                    itestfailed++;
+
+                itestran++;
 			}
 			ptest = ptest->next;
-			itest++;
 		}
+
+        printf( "NumTestsRan<%d>\n", itestran);
+        printf( "NumTestsFailed<%d>\n", itestfailed);
 	}
 	return rval;
 }
