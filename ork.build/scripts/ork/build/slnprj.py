@@ -21,6 +21,9 @@ HostIsIrix = common.IsIrix
 HostIsLinux = common.IsLinux
 HostIsIx = common.IsIx
 SYSTEM = platform.system()
+
+SLN_ROOT =os.environ["ORKDOTBUILD_SLN_ROOT"]
+
 #print SYSTEM
 ###############################################################################
 if HostIsIx!=True:
@@ -113,7 +116,7 @@ def GetProcessor(args):
 	PROCESSOR = "cpu"
 	PLAT = sys.platform.lower().replace( " ", "_" )
 	TARGETPLAT = args['PLATFORM']
-	print "%s<%s> %s<%s>" % (deco.magenta("PLAT"),deco.key(PLAT),deco.cyan("TARGETPLAT"),deco.val(TARGETPLAT))
+	#print "%s<%s> %s<%s>" % (deco.magenta("PLAT"),deco.key(PLAT),deco.cyan("TARGETPLAT"),deco.val(TARGETPLAT))
 	if PLAT == 'irix6':
 		PROCESSOR='mips4'
 		TARGETPLAT='sgi'
@@ -155,7 +158,7 @@ class Project:
 	def __init__(self,ARGUMENTS,Environment,name):
 		
 		self.PrjDir=os.getcwd()
-
+		self.name = name
 		self.LogConfig = False
 		self.PLATFORM = GetPlat()
 		self.BUILD = ARGUMENTS['BUILD']
@@ -200,6 +203,7 @@ class Project:
 		self.LibraryPaths = list()
 		self.PostLibraryPaths = list()
 		##############
+		self.IncludePaths = list()
 
 		#if os.environ.has_key("PRJ_LIBDIRS"):
 		#	self.LibraryPaths += string.split(os.environ["PRJ_LIBDIRS"])			
@@ -226,7 +230,7 @@ class Project:
 		self.XCXXFLG = ''
 		
 
-		print "XDEFS<%s>" % self.XDEFS
+		#print "XDEFS<%s>" % self.XDEFS
 
 		############################
 		# Build Tools/Env Selection
@@ -258,7 +262,7 @@ class Project:
 
 		do_opt = (name in optset)
 
-		print "%s<%s> %s<%s>" % (deco.magenta("name"),deco.key(name),deco.cyan("do_opt"),deco.val(do_opt))
+		#print "%s<%s> %s<%s>" % (deco.magenta("name"),deco.key(name),deco.cyan("do_opt"),deco.val(do_opt))
 
 		if do_opt:
 			self.XCCFLG += '-O3 '
@@ -310,8 +314,19 @@ class Project:
 		if self.MatchPlatform(platform):
 			self.LibraryPaths += project.LibraryPaths
 			self.Libraries += project.Libraries
+			path =  "%s/%s/inc " % (SLN_ROOT,project.name)
+			#print( "(%s) import dep path<%s>\n" % (self.name,path) )
+			self.IncludePaths += string.split(path)
 			if project.IsLibrary:
 				self.Libraries.append(project.TargetName)
+
+	def AddExternalProjectDep(self,project_name,platform="any"):
+		if self.MatchPlatform(platform):
+			#self.LibraryPaths += project.LibraryPaths
+			#self.Libraries += project.Libraries
+			path =  "%s/%s/inc " % (SLN_ROOT,project_name)
+			#print( "(%s) import extdep path<%s>\n" % (self.name,path))
+			self.IncludePaths += string.split(path)
 
 	def AddDefines( self, defs, platform="any" ):
 		if self.MatchPlatform(platform):

@@ -1,4 +1,5 @@
 #include <ork/thread.h>
+#include <sys/prctl.h>
 
 namespace ork {
 

@@ -235,6 +235,12 @@ fixedstring<kmaxlen>::fixedstring()
 	setempty();
 }
 
+template <size_t kmaxlen>
+fixedstring<kmaxlen>::fixedstring(const std::string& str)
+	: fixedstring(str.c_str())
+{
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 template <size_t kmaxlen>

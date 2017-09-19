@@ -31,6 +31,7 @@ print "%s<%s>" % (deco.key("ROOTDIR"),deco.path(root_dir))
 stg_dir = "%s/stage"%curwd
 os.system( "mkdir -p %s" % stg_dir)
 
+
 if os.path.exists(stg_dir):
 	print "%s<%s>" % (deco.key("ORKDOTBUILD_STAGE_DIR"),deco.path(stg_dir))
 	os.environ["ORKDOTBUILD_STAGE_DIR"]=stg_dir
@@ -58,6 +59,7 @@ def append_env(key,val):
 ###########################################
 
 set_env("color_prompt","yes")
+set_env("ORKDOTBUILD_SLN_ROOT",par3_dir)
 set_env("ORKDOTBUILD_ROOT",root_dir)
 prepend_env("PYTHONPATH",scripts_dir)
 prepend_env("PATH",bin_dir)

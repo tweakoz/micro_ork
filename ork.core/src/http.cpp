@@ -9,6 +9,7 @@
 #include <mutex>
 #include <curl/curl.h>
 #include <cstdlib>
+#include <memory>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace ork {
@@ -178,9 +179,7 @@ bool HttpRequest::get(on_datacb_t ondata)
             printf( "_knownlength<%zu>\n", _knownlength );
             printf( "_httpstatus<%d>\n", _httpStatus );
 
-            assert(_knownlength==_payload.size());
-            rval = true;
-
+            rval = (_knownlength==_payload.size());
 
         }
         else
@@ -199,8 +198,8 @@ void HttpRequest::getAsync(oncomplete_t onc)
 
         auto hold_thread = thr;
         bool ok = this->get();
-        assert(ok);
-        onc();
+        if( ok )
+            onc();
         hold_thread = nullptr;
     });
 

@@ -73,7 +73,7 @@ public:
 	};
 
 	struct iterator 
-	{const
+	{
 		typedef std::random_access_iterator_tag iterator_category;
 		typedef char		value_type;
 		typedef char*		pointer;
@@ -138,7 +138,7 @@ public:
 	const char* c_str() const final { return buffer; } // virtual
 	void SetChar( size_t index, char val );
 	//////////////////////////////////////////////////////////
-	void set(const char* pstr) override;
+	void set(const char* pstr) final;
 	void set( const char* pstr, size_t len );
 
 	void format( const char*fmt, ... );
@@ -169,6 +169,7 @@ public:
 	void recalclen();
 	//////////////////////////////////////////////////////////
 	fixedstring();
+	fixedstring(const std::string& str);
 	fixedstring(const char*pstr);
 	fixedstring(const char*pstr, size_t len);
 	iterator begin();

@@ -7,9 +7,10 @@
 #pragma once
 
 #include "reflect.h"
-#include <ork/CVector2.h>
-#include <ork/CVector3.h>
-#include <ork/CVector4.h>
+#include <ork/cvector2.h>
+#include <ork/cvector3.h>
+#include <ork/cvector4.h>
+#include <memory>
 
 ///////////////////////////////////////////////////////////////////////////////
 namespace ork { namespace reflect {
@@ -31,20 +32,24 @@ DirectProperty<clazz_t,val_type>::DirectProperty(val_type clazz_t::* m)
 
 struct TypeConverterBase
 {
-    TypeConverterBase(const Property* prop) : _prop(prop) {}
-    const Property* _prop;
+    TypeConverterBase(UnpackContext& ctx) : _context(ctx) {}
+
+    UnpackContext& _context;
 };
 
 template<typename T,typename SFINAE = void> struct TypeConverter : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter( UnpackContext& ctx) 
+        : TypeConverterBase(ctx)
+    {
+    }
 };
 
 ///////////////////////////////////////////////////////////////////////////////
 
 template<> struct TypeConverter<std::string> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     std::string convert(const propdec_t& from)
     {   if(auto try_string = from.TryAs<std::string>() )
@@ -57,7 +62,7 @@ template<> struct TypeConverter<std::string> : public TypeConverterBase
 ///////////////////////////////////////////////////////////////////////////////
 template<> struct TypeConverter<int32_t> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     int32_t convert(const propdec_t& from)
     {   if(auto try_number = from.TryAs<double>() )
@@ -73,7 +78,7 @@ template<> struct TypeConverter<int32_t> : public TypeConverterBase
 
 template<> struct TypeConverter<uint32_t> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     uint32_t convert(const propdec_t& from)
     {   if(auto try_number = from.TryAs<double>() )
@@ -87,7 +92,7 @@ template<> struct TypeConverter<uint32_t> : public TypeConverterBase
 
 template<> struct TypeConverter<int64_t> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     int64_t convert(const propdec_t& from)
     {   if(auto try_number = from.TryAs<double>() )
@@ -101,7 +106,7 @@ template<> struct TypeConverter<int64_t> : public TypeConverterBase
 
 template<> struct TypeConverter<uint64_t> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     uint64_t convert(const propdec_t& from)
     {   if(auto try_number = from.TryAs<double>() )
@@ -115,7 +120,7 @@ template<> struct TypeConverter<uint64_t> : public TypeConverterBase
 
 template<> struct TypeConverter<float> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     float convert(const propdec_t& from)
     {   if(auto try_number = from.TryAs<double>() )
@@ -129,7 +134,7 @@ template<> struct TypeConverter<float> : public TypeConverterBase
 
 template<> struct TypeConverter<double> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     double convert(const propdec_t& from)
     {   
@@ -145,7 +150,7 @@ template<> struct TypeConverter<double> : public TypeConverterBase
 template<typename T>
 struct TypeConverter<T*> : public TypeConverterBase {
 
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     T* convert(const propdec_t& from)
     {   
@@ -153,7 +158,7 @@ struct TypeConverter<T*> : public TypeConverterBase {
 
         if(auto try_dict = from.TryAs<decdict_t>() )
         {
-            auto obj = unpack(try_dict.value(),_prop->_annotations);
+            auto obj = unpack(_context,try_dict.value());
             auto as_t = dynamic_cast<T*>(obj);
             return as_t;
         }
@@ -167,7 +172,7 @@ struct TypeConverter<T*> : public TypeConverterBase {
 template<typename T>
 struct TypeConverter<std::shared_ptr<T>> : public TypeConverterBase {
 
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     std::shared_ptr<T> convert(const propdec_t& from)
     {   
@@ -175,7 +180,7 @@ struct TypeConverter<std::shared_ptr<T>> : public TypeConverterBase {
 
         if(auto try_dict = from.TryAs<decdict_t>() )
         {
-            auto obj = unpack(try_dict.value(),_prop->_annotations);
+            auto obj = unpack(_context,try_dict.value());
             auto as_t = dynamic_cast<T*>(obj);
             return std::shared_ptr<T>(as_t);
         }
@@ -188,7 +193,7 @@ struct TypeConverter<std::shared_ptr<T>> : public TypeConverterBase {
 
 template<> struct TypeConverter<fvec2> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     fvec2 convert(const propdec_t& from)
     {   if(auto try_array = from.TryAs<decarray_t>() )
@@ -207,7 +212,7 @@ template<> struct TypeConverter<fvec2> : public TypeConverterBase
 
 template<> struct TypeConverter<fvec3> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     fvec3 convert(const propdec_t& from)
     {   if(auto try_array = from.TryAs<decarray_t>() )
@@ -227,7 +232,7 @@ template<> struct TypeConverter<fvec3> : public TypeConverterBase
 
 template<> struct TypeConverter<fvec4> : public TypeConverterBase
 {
-    TypeConverter(const Property* prop) : TypeConverterBase(prop) {}
+    TypeConverter(UnpackContext& ctx) : TypeConverterBase(ctx) {}
 
     fvec4 convert(const propdec_t& from)
     {   if(auto try_array = from.TryAs<decarray_t>() )
@@ -247,19 +252,31 @@ template<> struct TypeConverter<fvec4> : public TypeConverterBase
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename clazz_t, typename map_type>
-void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdata ) const //final 
+void MapProperty<clazz_t,map_type>::doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const //final 
 {   if( auto try_as_dict = inpdata.TryAs<decdict_t>() )
     {   auto& as_dict = try_as_dict.value();
+        
+        bool use_keyclass = _annotations.find("map.val.keyclass").template IsA<bool>();
+
         for( const auto& item : as_dict )
         {   const auto& K = item.first;
+
+            if( use_keyclass && K.IsA<std::string>() )
+                ctx.pushVar("cur_keyclass", FindClass(K.Get<std::string>()) ); 
+            else
+                ctx.pushVar("cur_keyclass", nullptr ); 
+
             const auto& V = item.second;
-            TypeConverter<key_t> keycon(this);
-            TypeConverter<val_t> valcon(this);
+            TypeConverter<key_t> keycon(ctx);
+            TypeConverter<val_t> valcon(ctx);
             key_t out_k = keycon.convert(K);
             val_t out_v = valcon.convert(V);
             auto instance = (clazz_t*) object;
             map_type& out_map = instance->*(this->_member);
             out_map[out_k] = out_v;
+
+            ctx.popVar("cur_keyclass"); 
+
         }        
     }
     else
@@ -271,27 +288,24 @@ void MapProperty<clazz_t,map_type>::set( Object* object, const propdec_t& inpdat
 ///////////////////////////////////////////////////////////////////////////////
 
 template <typename clazz_t, typename val_type>
-void DirectProperty<clazz_t,val_type>::set( Object* object, const propdec_t& inpdata ) const //final 
+void DirectProperty<clazz_t,val_type>::doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const //final 
 {   auto instance = (clazz_t*) object;
     val_type& destination = instance->*(this->_member);    
+    TypeConverter<val_type> typecon(ctx);
     if( auto try_as_dict = inpdata.TryAs<decdict_t>() )
-    {   TypeConverter<val_type> typecon(this);
-        val_type value = typecon.convert(try_as_dict.value());
+    {   val_type value = typecon.convert(try_as_dict.value());
         destination = value;
     }
     else if( auto try_as_ary = inpdata.TryAs<decarray_t>() )
-    {   TypeConverter<val_type> typecon(this);
-        val_type value = typecon.convert(try_as_ary.value());
+    {   val_type value = typecon.convert(try_as_ary.value());
         destination = value;
     }
     else if( auto try_as_number = inpdata.TryAs<double>() )
-    {   TypeConverter<val_type> typecon(this);
-        val_type value = typecon.convert(try_as_number.value());
+    {   val_type value = typecon.convert(try_as_number.value());
         destination = value;
     }
     else if( auto try_as_string = inpdata.TryAs<std::string>() )
-    {   TypeConverter<val_type> typecon(this);
-        val_type value = typecon.convert(try_as_string.value());
+    {   val_type value = typecon.convert(try_as_string.value());
         destination = value;
     }
     else
