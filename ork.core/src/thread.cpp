@@ -1,5 +1,7 @@
 #include <ork/thread.h>
+#if !defined(ORK_OSX)
 #include <sys/prctl.h>
+#endif
 
 namespace ork {
 
