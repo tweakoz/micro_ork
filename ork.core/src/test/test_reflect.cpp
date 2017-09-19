@@ -44,7 +44,8 @@ BEGIN_REFLECTED_CLASS( C, B )
     }
 
     std::map<std::string,A*> _objmap;
-    std::shared_ptr<Object> _shobj;
+    std::map<std::string,A*> _komap;
+    std::shared_ptr<C> _shobj;
     std::map<int,fvec2> _vmap;
 
     int _directInt;
@@ -71,6 +72,7 @@ void B::Describe( reflect::Description& desc )
 void C::Describe( reflect::Description& desc )
 {
     auto omapprop = AddMapProperty(C,"objmap",_objmap);
+    auto komapprop = AddMapProperty(C,"komap",_komap);
     auto vmapprop = AddMapProperty(C,"vmap",_vmap);
     auto shobjprop = AddDirectProperty(C,"shobj",_shobj);
     auto dintprop = AddDirectProperty(C,"dint",_directInt);
@@ -82,6 +84,7 @@ void C::Describe( reflect::Description& desc )
     auto dvec4prop = AddDirectProperty(C,"dvec4",_directVec4);
 
     omapprop->annotate("map.val.objclass",C::getClassStatic());
+    komapprop->annotate("map.val.keyclass",true);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,8 +97,8 @@ TEST(Reflect1)
     //////////////////////////////
 
     ImplementAbstractClass(refl_test_1::A);
-    ImplementConcreteClass(refl_test_1::B);
-    ImplementConcreteClass(refl_test_1::C);
+    ImplementNamedConcreteClass("B",refl_test_1::B);
+    ImplementNamedConcreteClass("C".refl_test_1::C);
 
     reflect::init();
 
@@ -111,6 +114,11 @@ TEST(Reflect1)
             "yo": 1,
             "what": 2,
             "up": 7
+        },
+        "komap": {
+            "refl_test_1::A": {},
+            "refl_test_1::B": {},
+            "refl_test_1::C": {}
         },
         "objmap": {
             "what": {
