@@ -7,6 +7,8 @@
 #include <unittest++/UnitTest++.h>
 #include <ork/http.h>
 #include <ork/thread.h>
+#if defined(ORK_OSX)
+
 #include <Wt/WApplication>
 #include <Wt/WServer>
 #include <Wt/WResource>
@@ -111,3 +113,5 @@ TEST(HttpOne)
 
     CHECK_EQUAL(reponse,"what up");
 }
+
+#endif
