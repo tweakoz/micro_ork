@@ -17,6 +17,9 @@ std::map<std::string,Class*> _classes;
 Class* FindClass( const std::string& name )
 {
     auto it = _classes.find(name);
+    if( it == _classes.end() )
+        printf( "cannot find class<%s>\n", name.c_str() );
+
     assert(it!=_classes.end());
     return it->second;
 }
@@ -30,6 +33,17 @@ const anno_t& AnnoMap::find(const std::string& key) const
         return g_no_anno;
     else
         return it->second;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+void Property::set( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const
+{
+    ctx._propstack.push(this);
+    {
+        doSet(ctx,object,inpdata);
+    }
+    ctx._propstack.pop();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

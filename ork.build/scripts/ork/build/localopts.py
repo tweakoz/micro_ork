@@ -27,7 +27,7 @@ if IsWindows():
 def IsIx():
 	return common.IsIx
 
-print "os.name<%s>" % os.name
+#print "os.name<%s>" % os.name
 
 ################################################################
 __all__ = [ "XCODEDIR", "VST_SDK_DIR", "VST_INST_DIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
@@ -74,13 +74,13 @@ else:
  ConfigData.write(cfgfile)
  cfgfile.close()
 
-print ConfigData.sections()
+#print ConfigData.sections()
 
 ################################################################
 
 def GetEnv( sect, varname ):
-	print "/////////////////////"
-	print "sect<%s> varname<%s>" % (sect,varname)
+	#print "/////////////////////"
+	#print "sect<%s> varname<%s>" % (sect,varname)
 	ret = ""
 	if ConfigData.has_option( sect, varname ):
 		ret = ConfigData.get( sect, varname )
@@ -92,7 +92,7 @@ def GetEnv( sect, varname ):
 			ret = ret
 	#if False==os.path.isdir(ret):
 	#	print "<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret) 
-	print "/////////////////////"
+	#print "/////////////////////"
 	return os.path.normpath(ret)
 
 ################################################################
@@ -114,4 +114,5 @@ def STD():
 ################################################################
 
 def dump():
-        print "XCODEDIR<%s>" % XCODEDIR()
+    return None
+    #    print "XCODEDIR<%s>" % XCODEDIR()

@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <stack>
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -19,6 +20,7 @@ namespace ork { namespace reflect {
     struct Object;
     struct Description;
     struct Class;
+    struct UnpackContext;
 
     typedef std::function<Object*()> factory_t;
     typedef std::function<void(Description&)> describe_t;
@@ -49,7 +51,8 @@ namespace ork { namespace reflect {
     {
 
         void annotate(const std::string& k, anno_t v) { _annotations._annomap[k]=v; }
-        virtual void set( Object* object, const propdec_t& inpdata ) const = 0;
+        void set( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const;
+        virtual void doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const = 0;
         AnnoMap _annotations;
     };
 
@@ -63,7 +66,7 @@ namespace ork { namespace reflect {
        
         MapProperty( map_type clazz_t::* m);
 
-        void set( Object* object, const propdec_t& inpdata ) const final;
+        void doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const final;
 
         map_type clazz_t::* _member;
     };
@@ -75,7 +78,7 @@ namespace ork { namespace reflect {
     {       
         DirectProperty( value_type clazz_t::* m);
 
-        void set( Object* object, const propdec_t& inpdata ) const final;
+        void doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const final;
 
         value_type clazz_t::* _member;
     };
@@ -87,6 +90,7 @@ namespace ork { namespace reflect {
         virtual ~Object() {}
 
         static ::ork::reflect::Class* getClassStatic() { return nullptr; }
+        virtual ::ork::reflect::Class* getClassDynamic() const = 0;
     };
 
     //////////////////////////////////////////////////////////////
@@ -102,6 +106,7 @@ namespace ork { namespace reflect {
         factory_t _factory = nullptr;
         Class* _parent = nullptr;
         std::string _name;
+        AnnoMap _annotations;
     };
 
     //////////////////////////////////////////////////////////////
@@ -120,6 +125,8 @@ namespace ork { namespace reflect {
         template <typename classtype, typename val_type>
         Property* _addDirectProperty(const char* name, val_type classtype::* member);
 
+        void annotateClass(const std::string& k, anno_t v) { _c->_annotations._annomap[k]=v; }
+
         Class* _c;
     };
 
@@ -131,7 +138,61 @@ namespace ork { namespace reflect {
     void init();
     void exit();
 
-    reflect::Object* unpack(const decdict_t& dict, const AnnoMap& annos );
+    struct UnpackContext
+    {
+        UnpackContext() 
+        {
+
+        }
+
+        void pushVar(const std::string& key, anno_t v)
+        {
+            _ctxvarstack[key].push(v);
+        }
+        void popVar(const std::string& key)
+        {
+            auto itv = _ctxvarstack.find(key);
+
+            if(itv != _ctxvarstack.end() )
+            {
+                std::stack<anno_t>& varstack = itv->second;
+
+                if( ! varstack.empty() )
+                    varstack.pop();
+            }
+        }
+
+        const anno_t& findAnno(const std::string& key)
+        {
+            auto itv = _ctxvarstack.find(key);
+
+            if(itv != _ctxvarstack.end() )
+            {
+                std::stack<anno_t>& varstack = itv->second;
+
+                if( ! varstack.empty() )
+                    return varstack.top();
+            }
+
+            const Property* prop = _propstack.empty()
+                                 ? nullptr
+                                 : _propstack.top();
+
+            if( prop )
+            {
+                return prop->_annotations.find(key);
+            }
+
+            static const anno_t g_no_anno(nullptr);
+            return g_no_anno;
+
+        }
+
+        std::stack<const Property*> _propstack;
+        std::map<std::string,std::stack<anno_t>> _ctxvarstack;
+    };
+
+    reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict);
 
 }} // namespace ork::reflect
 
@@ -150,7 +211,8 @@ namespace ork { namespace reflect {
     public: \
     static void Describe(::ork::reflect::Description& desc);\
     static ::ork::reflect::Class* getClassStatic() { static reflect::Class _clazz; return & _clazz; }\
-    static ::ork::reflect::Class* getParentClassStatic() { return basename::getClassStatic(); }
+    static ::ork::reflect::Class* getParentClassStatic() { return basename::getClassStatic(); }\
+    ::ork::reflect::Class* getClassDynamic() const override { return getClassStatic(); }
 
 #define END_REFLECTED_CLASS };
 
@@ -171,6 +233,16 @@ namespace ork { namespace reflect {
     },\
     [](::ork::reflect::Description& desc){\
         cname::Describe(desc);\
+    });
+
+#define ImplementNamedConcreteClass(cname,ctype) ::ork::reflect::RegisterClass<ctype>( \
+    cname, \
+    "",\
+    []()->::ork::reflect::Object*{\
+        return new ctype;\
+    },\
+    [](::ork::reflect::Description& desc){\
+        ctype::Describe(desc);\
     });
 
 //#define ImplementChildClass(cname,pname) RegisterClass(#cname, #pname);

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <ork/atomic.h>
 #include <ork/reflect.inl>
-#include <ork/CVector3.h>
+#include <ork/cvector3.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 using namespace ork;
@@ -174,6 +174,7 @@ TEST(Reflect1)
     //////////////////////////////
 
     auto child_what = root_as_c->_objmap["what"];
+    assert(child_what!=nullptr);
     auto what_as_c = dynamic_cast<refl_test_1::C*>(child_what);
 
     assert(what_as_c!=nullptr);
@@ -187,6 +188,7 @@ TEST(Reflect1)
     //////////////////////////////
 
     auto child_the = root_as_c->_objmap["the"];
+    assert(child_the!=nullptr);
     auto the_as_c = dynamic_cast<refl_test_1::C*>(child_the);
 
     assert(the_as_c!=nullptr);

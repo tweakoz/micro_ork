@@ -101,8 +101,7 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
 //  into an actual object tree/graph
 ///////////////////////////////////////////////////////////////////////////////
 
-reflect::Object* unpack(const decdict_t& dict, 
-                        const AnnoMap& annos )
+reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
 {
     reflect::Object* rval = nullptr;
 
@@ -124,9 +123,10 @@ reflect::Object* unpack(const decdict_t& dict,
     // first try map val objclass (if annotation set)
     /////////////////////////////
 
-    if( auto try_mvclass = annos.find("map.val.objclass")
-                         . TryAs<Class*>() )
+    if( auto try_mvclass = ctx.findAnno("map.val.objclass").TryAs<Class*>() )
         createObject(try_mvclass.value()->_name);
+    else if( auto try_keyclass = ctx.findAnno("cur_keyclass").TryAs<Class*>() )
+        createObject(try_keyclass.value()->_name);
 
     /////////////////////////////
     // loop through dict items
@@ -151,7 +151,7 @@ reflect::Object* unpack(const decdict_t& dict,
             {   const auto& value = item.second;
                 auto prop = clazz->findProperty(name);
                 if( prop )
-                    prop->set(rval,value);
+                    prop->set(ctx,rval,value);
                 else
                     printf( "property<%s> not found, skipping...\n", name.c_str() );
             }
@@ -174,9 +174,9 @@ reflect::Object* fromJson(const std::string& jsondata )
     propdec_t decoded;
     _decodeJson(document,decoded);
 
-    static AnnoMap g_no_annos;
+    UnpackContext ctx;
 
-    return unpack(decoded.Get<decdict_t>(),g_no_annos);
+    return unpack(ctx,decoded.Get<decdict_t>());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
