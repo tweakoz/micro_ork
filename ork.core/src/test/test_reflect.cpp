@@ -96,9 +96,9 @@ TEST(Reflect1)
     // init reflection data
     //////////////////////////////
 
-    ImplementAbstractClass(refl_test_1::A);
+    ImplementNamedAbstractClass("A",refl_test_1::A);
     ImplementNamedConcreteClass("B",refl_test_1::B);
-    ImplementNamedConcreteClass("C".refl_test_1::C);
+    ImplementNamedConcreteClass("C",refl_test_1::C);
 
     reflect::init();
 
@@ -109,16 +109,15 @@ TEST(Reflect1)
     auto reflstream = R"JSON(
 
     {
-        "class": "refl_test_1::C",
+        "class": "C",
         "intmap": {
             "yo": 1,
             "what": 2,
             "up": 7
         },
         "komap": {
-            "refl_test_1::A": {},
-            "refl_test_1::B": {},
-            "refl_test_1::C": {}
+            "B": {},
+            "C": {}
         },
         "objmap": {
             "what": {
@@ -126,6 +125,14 @@ TEST(Reflect1)
                     "one": 1,
                     "two": 2,
                     "four": 4
+                },
+                "shobj": {
+                    "class": "C",
+                    "intmap": {
+                        "DM": 11,
+                        "SP": 22
+                    },
+                    "guid": "AB0CE8B1-1F86-44BB-B33A-24C718FB0D3E"
                 }
             },
             "the": {
@@ -135,11 +142,12 @@ TEST(Reflect1)
                 },
                 "dstr": "lulz",
                 "shobj": {
-                    "class": "refl_test_1::C",
+                    "class": "C",
                     "intmap": {
                         "nine": 9,
                         "ten": 10
                     },
+                    "shobj": "AB0CE8B1-1F86-44BB-B33A-24C718FB0D3E",
                     "dint": 99,
                     "dstr": "it_works",
                     "df32": 3.14,
@@ -168,6 +176,16 @@ TEST(Reflect1)
     assert(deser!=nullptr);
     auto root_as_c = dynamic_cast<refl_test_1::C*>(deser);
     assert(root_as_c!=nullptr);
+
+    //////////////////////////////
+    // inspect komap children
+    //////////////////////////////
+
+    auto child_B = root_as_c->_komap["B"];
+    auto child_C = root_as_c->_komap["C"];
+
+    assert(dynamic_cast<refl_test_1::B*>(child_B)!=nullptr);
+    assert(dynamic_cast<refl_test_1::C*>(child_C)!=nullptr);
 
     //////////////////////////////
     // inspect "what" child
@@ -238,6 +256,14 @@ TEST(Reflect1)
         CHECK_EQUAL(bit1,V.y);
     }
 
+    //////////////////////////////
+    // check GUID marked resolution
+    //////////////////////////////
+
+    auto sh1 = what_as_c->_shobj;
+    auto sh2 = the_as_c->_shobj->_shobj;
+    CHECK_EQUAL(sh1,sh2);
+    CHECK_EQUAL(sh1->_guid,"AB0CE8B1-1F86-44BB-B33A-24C718FB0D3E");
 
     //////////////////////////////
     // clean up

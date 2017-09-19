@@ -147,6 +147,11 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
 
             /////////////////////////////
 
+            else if(name=="guid")
+                rval->_guid = item.second.Get<std::string>();
+
+            /////////////////////////////
+
             else if( rval and clazz )
             {   const auto& value = item.second;
                 auto prop = clazz->findProperty(name);

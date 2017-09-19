@@ -182,7 +182,23 @@ struct TypeConverter<std::shared_ptr<T>> : public TypeConverterBase {
         {
             auto obj = unpack(_context,try_dict.value());
             auto as_t = dynamic_cast<T*>(obj);
-            return std::shared_ptr<T>(as_t);
+            auto shptr = std::shared_ptr<T>(as_t);
+
+            if(shptr->_guid.length()==36)
+                _context._refmap[shptr->_guid] = shptr;
+
+            return shptr;
+
+        }
+        else if(auto try_string = from.TryAs<std::string>() )
+        {
+            const auto& uid = try_string.value();
+            auto it = _context._refmap.find(uid);
+            assert(it!=_context._refmap.end());
+            auto obj = it->second;
+            auto as_t = std::dynamic_pointer_cast<T>(obj);
+            assert(as_t!=nullptr);
+            return as_t;
         }
         assert(false); // from's value type not convertible to Object*
         return nullptr;

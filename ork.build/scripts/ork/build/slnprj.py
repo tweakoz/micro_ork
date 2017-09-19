@@ -260,7 +260,7 @@ class Project:
 
 		############################
 
-		do_opt = (name in optset)
+		do_opt = False #(name in optset)
 
 		#print "%s<%s> %s<%s>" % (deco.magenta("name"),deco.key(name),deco.cyan("do_opt"),deco.val(do_opt))
 
@@ -268,8 +268,8 @@ class Project:
 			self.XCCFLG += '-O3 '
 			self.XCXXFLG += '-O3 '
 		else:
-			self.XCCFLG += '-O3 '
-			self.XCXXFLG += '-O3 '
+			self.XCCFLG += '-g '
+			self.XCXXFLG += '-g '
 				
 	############################################
 

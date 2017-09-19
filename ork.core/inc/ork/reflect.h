@@ -91,6 +91,8 @@ namespace ork { namespace reflect {
 
         static ::ork::reflect::Class* getClassStatic() { return nullptr; }
         virtual ::ork::reflect::Class* getClassDynamic() const = 0;
+
+        std::string _guid;
     };
 
     //////////////////////////////////////////////////////////////
@@ -190,6 +192,7 @@ namespace ork { namespace reflect {
 
         std::stack<const Property*> _propstack;
         std::map<std::string,std::stack<anno_t>> _ctxvarstack;
+        std::map<std::string,std::shared_ptr<Object>> _refmap;
     };
 
     reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict);
@@ -224,6 +227,13 @@ namespace ork { namespace reflect {
         cname::Describe(desc);\
     });
     
+#define ImplementNamedAbstractClass(cname,ctype) ::ork::reflect::RegisterClass<ctype>( \
+    cname, \
+    "",\
+    nullptr,\
+    [](::ork::reflect::Description& desc){\
+        ctype::Describe(desc);\
+    });
 
 #define ImplementConcreteClass(cname) ::ork::reflect::RegisterClass<cname>( \
     #cname, \
