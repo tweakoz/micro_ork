@@ -16,21 +16,26 @@ using namespace ork;
 namespace refl_test_1 {
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_REFLECTED_CLASS( A, reflect::Object )
-
-END_REFLECTED_CLASS; 
+struct A : public reflect::Object
+{
+    DeclareClass(A,reflect::Object);
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_REFLECTED_CLASS( B, A )
+struct B : public A {
+
+    DeclareClass(B,A);
 
     std::map<std::string,int>     _intmap;
 
-END_REFLECTED_CLASS;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BEGIN_REFLECTED_CLASS( C, B ) 
+struct C: public B {
+
+    DeclareClass(C,B);
 
     C() : _directInt(0)
     {
@@ -56,7 +61,7 @@ BEGIN_REFLECTED_CLASS( C, B )
     fvec3 _directVec3;
     fvec4 _directVec4;
 
-END_REFLECTED_CLASS;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 

@@ -210,13 +210,16 @@ namespace ork { namespace reflect {
 #define AddDirectProperty(clasnam,propname,the_val)\
     desc._addDirectProperty<clasnam>(propname,&clasnam::the_val);
 
-#define BEGIN_REFLECTED_CLASS(name,basename) \
-    struct name : public basename {\
+#define DeclareClass(name,basename)\
     public: \
     static void Describe(::ork::reflect::Description& desc);\
     static ::ork::reflect::Class* getClassStatic() { static reflect::Class _clazz; return & _clazz; }\
     static ::ork::reflect::Class* getParentClassStatic() { return basename::getClassStatic(); }\
     ::ork::reflect::Class* getClassDynamic() const override { return getClassStatic(); }
+
+#define BEGIN_REFLECTED_CLASS(name,basename) \
+    struct name : public basename {\
+    DeclareClass(name,basename);
 
 #define END_REFLECTED_CLASS };
 

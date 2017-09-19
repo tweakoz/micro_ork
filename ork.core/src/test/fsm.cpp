@@ -8,7 +8,7 @@ using namespace ork;
 
 static void logstate(const char* pstr)
 {
-
+	printf( "%s", pstr );
 }
 
 struct S1 : public State 
@@ -106,7 +106,7 @@ TEST(hfsm_probalistic_1)
 		{
 			int i = rand()&0xff;
 			bool bprob = i<0x7f;
-			//printf( "bprob<%d>\n", int(bprob) );
+			printf( "bprob<%d>\n", int(bprob) );
 			return bprob;
 		};
 
