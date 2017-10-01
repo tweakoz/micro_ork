@@ -39,7 +39,7 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
             decoded.Set<double>(jsonvalue.GetDouble());
         else if( jsonvalue.IsFloat() )
             decoded.Set<double>(jsonvalue.GetFloat());
-        else {
+	    else {
             assert(false);
         }
     }
@@ -116,7 +116,8 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
         clazz_name = classname;
         clazz = FindClass(clazz_name);        
         assert(clazz->isConcrete());      
-        rval = clazz->_factory();
+        rval = clazz->_factory(classname);
+        printf( "created<%s:%p>\n", classname.c_str(),rval);
     };
 
     /////////////////////////////
@@ -124,9 +125,25 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
     /////////////////////////////
 
     if( auto try_mvclass = ctx.findAnno("map.val.objclass").TryAs<Class*>() )
+    {
         createObject(try_mvclass.value()->_name);
-    else if( auto try_keyclass = ctx.findAnno("cur_keyclass").TryAs<Class*>() )
-        createObject(try_keyclass.value()->_name);
+    }
+    else if( auto try_keyclass = ctx.findAnno("cur_keyclass").TryAs<std::string>() )
+    {
+        const auto& cur_keyclass = try_keyclass.value();
+
+        auto clazz = FindClass(cur_keyclass);
+        if( clazz )
+            createObject(clazz->_name);
+
+        else if( auto try_classhandler = ctx.findAnno("classhandler").TryAs<classhandler_t>() )
+        {
+            auto classhandler = try_classhandler.value();
+            assert(classhandler!=nullptr);
+            auto factory = classhandler(cur_keyclass);
+            rval = factory(cur_keyclass);
+        }
+    }
 
     /////////////////////////////
     // loop through dict items
@@ -137,13 +154,25 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
         if( auto as_string = item.first.TryAs<std::string>() )
         {   
             const auto& name = as_string.value();
+
+            //printf( "*** begin property<%s>>\n", name.c_str() );
             
             /////////////////////////////
             // class in dict ?
             /////////////////////////////
 
             if(name=="class")
+            {
                 createObject(item.second.Get<std::string>());
+                continue;
+            }
+
+            //printf( "try property<%s> rval<%p> clazz<%p>\n", name.c_str(), rval, clazz );
+
+            /////////////////////////////
+
+            if( nullptr == rval )
+                continue;
 
             /////////////////////////////
 
@@ -152,7 +181,7 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
 
             /////////////////////////////
 
-            else if( rval and clazz )
+            else if( clazz )
             {   const auto& value = item.second;
                 auto prop = clazz->findProperty(name);
                 if( prop )
@@ -160,6 +189,24 @@ reflect::Object* unpack(UnpackContext& ctx,const decdict_t& dict)
                 else
                     printf( "property<%s> not found, skipping...\n", name.c_str() );
             }
+
+            /////////////////////////////
+
+            else 
+            {
+                clazz = rval->getClassDynamic();
+                assert(clazz!=nullptr);
+                if( auto try_prophandler = clazz->_annotations.find("prophandler").TryAs<prophandler_t>() )
+                {
+                    auto prophandler = try_prophandler.value();
+                    const auto& value = item.second;
+                    prophandler( rval, name, value );
+                }
+            }
+
+            //printf( "*** end property<%s>>\n", name.c_str() );
+
+            /////////////////////////////
         }
     }
 

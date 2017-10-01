@@ -18,7 +18,10 @@ Class* FindClass( const std::string& name )
 {
     auto it = _classes.find(name);
     if( it == _classes.end() )
-        printf( "cannot find class<%s>\n", name.c_str() );
+    {
+        //printf( "cannot find class<%s>\n", name.c_str() );
+        return nullptr;
+    }
 
     assert(it!=_classes.end());
     return it->second;

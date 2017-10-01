@@ -23,14 +23,16 @@ namespace ork { namespace reflect {
     struct Class;
     struct UnpackContext;
 
-    typedef std::function<Object*()> factory_t;
-    typedef std::function<void(Description&)> describe_t;
-    typedef ork::svar64_t anno_t;
-
     typedef ork::svar64_t propdec_t;
     typedef std::pair<propdec_t,propdec_t> propkvpair_t;
     typedef std::vector<propdec_t> decarray_t;
     typedef std::vector<propkvpair_t> decdict_t;
+
+    typedef std::function<Object*(const std::string& clazzname)> factory_t;
+    typedef std::function<void(Description&)> describe_t;
+    typedef ork::svar64_t anno_t;
+    typedef std::function<factory_t(const std::string&)> classhandler_t; 
+    typedef std::function<bool(Object*,const std::string& propname,propdec_t)> prophandler_t;
 
     template <typename class_type>
     Class* RegisterClass(const std::string& cname, 
@@ -242,7 +244,7 @@ namespace ork { namespace reflect {
 #define ImplementConcreteClass(cname) ::ork::reflect::RegisterClass<cname>( \
     #cname, \
     "",\
-    []()->::ork::reflect::Object*{\
+    [](const std::string& classname)->::ork::reflect::Object*{\
         return new cname;\
     },\
     [](::ork::reflect::Description& desc){\
@@ -252,7 +254,7 @@ namespace ork { namespace reflect {
 #define ImplementNamedConcreteClass(cname,ctype) ::ork::reflect::RegisterClass<ctype>( \
     cname, \
     "",\
-    []()->::ork::reflect::Object*{\
+    [](const std::string& classname)->::ork::reflect::Object*{\
         return new ctype;\
     },\
     [](::ork::reflect::Description& desc){\

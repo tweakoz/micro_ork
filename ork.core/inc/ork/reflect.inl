@@ -219,7 +219,7 @@ template<> struct TypeConverter<fvec2> : public TypeConverterBase
             float y = array[1].Get<double>();
             return fvec2(x,y);
         }
-        assert(false); // from's value type not convertible to Object*
+        assert(false); // from's value type not convertible to fvec2
         return fvec2();
     }
 };
@@ -239,7 +239,7 @@ template<> struct TypeConverter<fvec3> : public TypeConverterBase
             float z = array[2].Get<double>();
             return fvec3(x,y,z);
         }
-        assert(false); // from's value type not convertible to Object*
+        assert(false); // from's value type not convertible to fvec3
         return fvec3();
     }
 };
@@ -260,7 +260,7 @@ template<> struct TypeConverter<fvec4> : public TypeConverterBase
             float w = array[3].Get<double>();
             return fvec4(x,y,z,w);
         }
-        assert(false); // from's value type not convertible to Object*
+        assert(false); // from's value type not convertible to fvec4
         return fvec4();
     }
 };
@@ -271,16 +271,32 @@ template <typename clazz_t, typename map_type>
 void MapProperty<clazz_t,map_type>::doSet( UnpackContext& ctx, Object* object, const propdec_t& inpdata ) const //final 
 {   if( auto try_as_dict = inpdata.TryAs<decdict_t>() )
     {   auto& as_dict = try_as_dict.value();
-        
+    
         bool use_keyclass = _annotations.find("map.val.keyclass").template IsA<bool>();
+        auto classhandler = _annotations.find("classhandler");
 
         for( const auto& item : as_dict )
         {   const auto& K = item.first;
 
             if( use_keyclass && K.IsA<std::string>() )
-                ctx.pushVar("cur_keyclass", FindClass(K.Get<std::string>()) ); 
+            {
+                ctx.pushVar("cur_keyclass", K.Get<std::string>() ); 
+
+                auto try_classh = classhandler.template TryAs<classhandler_t>();
+
+                if( try_classh )
+                {
+                    //printf( "have classhandler K<%s>\n", K.Get<std::string>().c_str() );
+                    ctx.pushVar("classhandler", (classhandler_t) try_classh.value() ); 
+                }
+                else
+                {
+                    //printf( "dont have classhandler K<%s>\n", K.Get<std::string>().c_str());
+                    ctx.pushVar("classhandler", (void*)nullptr );
+                }
+            }
             else
-                ctx.pushVar("cur_keyclass", nullptr ); 
+                ctx.pushVar("cur_keyclass", std::string("") ); 
 
             const auto& V = item.second;
             TypeConverter<key_t> keycon(ctx);
@@ -291,6 +307,9 @@ void MapProperty<clazz_t,map_type>::doSet( UnpackContext& ctx, Object* object, c
             map_type& out_map = instance->*(this->_member);
             out_map[out_k] = out_v;
 
+            if( use_keyclass && K.IsA<std::string>() )
+                ctx.popVar("classhandler"); 
+    
             ctx.popVar("cur_keyclass"); 
 
         }        

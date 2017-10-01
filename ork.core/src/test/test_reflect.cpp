@@ -64,6 +64,15 @@ struct C: public B {
 };
 
 ///////////////////////////////////////////////////////////////////////////////
+struct D: public A {
+
+    DeclareClass(D,A);
+
+    std::map<std::string,D*> _classhandlermap;
+
+};
+
+///////////////////////////////////////////////////////////////////////////////
 
 void A::Describe( reflect::Description& desc )
 {
@@ -92,6 +101,26 @@ void C::Describe( reflect::Description& desc )
     komapprop->annotate("map.val.keyclass",true);
 }
 
+void D::Describe( reflect::Description& desc )
+{
+    auto cmap = AddMapProperty(D,"chmap",_classhandlermap);
+    cmap->annotate("map.val.keyclass",true);
+
+    cmap->annotate("classhandler", (reflect::classhandler_t)
+                   [](const std::string& classname) -> reflect::factory_t
+    {
+        printf( "D::classhandler got classname<%s>\n", classname.c_str() );
+
+        return [](const std::string& classname) -> Object*
+        {
+            auto newd = new D;
+            printf( "classh new D<%p>\n", newd);
+            return newd;
+        };
+    });
+
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 } // namespace refl_test_1
 
@@ -104,6 +133,7 @@ TEST(Reflect1)
     ImplementNamedAbstractClass("A",refl_test_1::A);
     ImplementNamedConcreteClass("B",refl_test_1::B);
     ImplementNamedConcreteClass("C",refl_test_1::C);
+    ImplementNamedConcreteClass("D",refl_test_1::D);
 
     reflect::init();
 
@@ -122,7 +152,21 @@ TEST(Reflect1)
         },
         "komap": {
             "B": {},
-            "C": {}
+            "C": {},
+            "D": {
+                "chmap": {
+                    "blah": {
+                        "chmap": {
+                            "zay": {}
+                        }
+                    },
+                    "poke": {
+                        "chmap": {
+                            "mon": {}
+                        }
+                    }
+                }
+            }
         },
         "objmap": {
             "what": {
@@ -178,29 +222,40 @@ TEST(Reflect1)
     //////////////////////////////
 
     auto deser = reflect::fromJson(reflstream);    
-    assert(deser!=nullptr);
+    CHECK(deser!=nullptr);
     auto root_as_c = dynamic_cast<refl_test_1::C*>(deser);
-    assert(root_as_c!=nullptr);
+    CHECK(root_as_c!=nullptr);
 
     //////////////////////////////
     // inspect komap children
     //////////////////////////////
 
-    auto child_B = root_as_c->_komap["B"];
-    auto child_C = root_as_c->_komap["C"];
+    auto child_B = dynamic_cast<refl_test_1::B*>(root_as_c->_komap["B"]);
+    auto child_C = dynamic_cast<refl_test_1::C*>(root_as_c->_komap["C"]);
+    auto child_D = dynamic_cast<refl_test_1::D*>(root_as_c->_komap["D"]);
 
-    assert(dynamic_cast<refl_test_1::B*>(child_B)!=nullptr);
-    assert(dynamic_cast<refl_test_1::C*>(child_C)!=nullptr);
+    CHECK(child_B!=nullptr);
+    CHECK(child_C!=nullptr);
+    CHECK(child_D!=nullptr);
+
+    auto blah = child_D->_classhandlermap["blah"];
+    CHECK(blah!=nullptr);
+    auto zay = blah->_classhandlermap["zay"];
+    CHECK(zay!=nullptr); // fixme
+    auto poke = child_D->_classhandlermap["poke"];
+    CHECK(poke!=nullptr);
+    auto mon = poke->_classhandlermap["mon"];
+    CHECK(mon!=nullptr); // fixme
 
     //////////////////////////////
     // inspect "what" child
     //////////////////////////////
 
     auto child_what = root_as_c->_objmap["what"];
-    assert(child_what!=nullptr);
+    CHECK(child_what!=nullptr);
     auto what_as_c = dynamic_cast<refl_test_1::C*>(child_what);
 
-    assert(what_as_c!=nullptr);
+    CHECK(what_as_c!=nullptr);
 
     CHECK_EQUAL(1,what_as_c->_intmap["one"]);
     CHECK_EQUAL(2,what_as_c->_intmap["two"]);
@@ -211,10 +266,10 @@ TEST(Reflect1)
     //////////////////////////////
 
     auto child_the = root_as_c->_objmap["the"];
-    assert(child_the!=nullptr);
+    CHECK(child_the!=nullptr);
     auto the_as_c = dynamic_cast<refl_test_1::C*>(child_the);
 
-    assert(the_as_c!=nullptr);
+    CHECK(the_as_c!=nullptr);
 
     CHECK_EQUAL(6,the_as_c->_intmap["six"]);
     CHECK_EQUAL(7,the_as_c->_intmap["seven"]);
@@ -225,12 +280,11 @@ TEST(Reflect1)
     //////////////////////////////
 
     auto shobj = the_as_c->_shobj;
-
-    assert(shobj!=nullptr);
+    CHECK(shobj!=nullptr);
 
     auto sh_as_c = std::dynamic_pointer_cast<refl_test_1::C>(shobj);
 
-    assert(sh_as_c!=nullptr);
+    CHECK(sh_as_c!=nullptr);
 
     CHECK_EQUAL(9,sh_as_c->_intmap["nine"]);
     CHECK_EQUAL(10,sh_as_c->_intmap["ten"]);
