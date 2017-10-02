@@ -40,7 +40,7 @@ class swrast:
    the_test.SetSrcBase( "." )
    the_test.AddFolders( "test", files )
    libs = sln.explibnams("ork.swrast ork.core")
-   print "LIBS: %s" % libs
+   print("LIBS: %s" % libs)
    the_test.AddLibs( libs )
    if cmn.IsOsx:
      the_test.AddFrameworks( "GLUT OpenGL" )
