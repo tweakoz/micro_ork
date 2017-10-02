@@ -9,6 +9,7 @@
 #include <ork/atomic.h>
 #include <ork/reflect.inl>
 #include <ork/cvector3.h>
+#include <ork/crc.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 using namespace ork;
@@ -323,6 +324,13 @@ TEST(Reflect1)
     auto sh2 = the_as_c->_shobj->_shobj;
     CHECK_EQUAL(sh1,sh2);
     CHECK_EQUAL(sh1->_guid,"AB0CE8B1-1F86-44BB-B33A-24C718FB0D3E");
+
+    //////////////////////////////
+
+    auto a = "Hello"_crc32;
+    auto b = Crc32Ch<'H','e','l','l','o'>::value;
+
+    CHECK(a==b);
 
     //////////////////////////////
     // clean up
