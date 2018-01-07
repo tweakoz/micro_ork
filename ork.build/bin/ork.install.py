@@ -86,6 +86,8 @@ for item in incs_to_copy:
 for item in libs_to_copy:
     item_src = stglib/item
     item_dst = libdir/item
+    if obc.IsOsx:
+        item_dst = str(item_dst).replace(".so",".dylib")
     print(item_src,item_dst)    
     os.system("cp %s %s" % (item_src,item_dst))
 #print(incs_to_copy)
