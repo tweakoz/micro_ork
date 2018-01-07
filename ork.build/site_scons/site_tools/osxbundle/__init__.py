@@ -36,8 +36,8 @@ def generate(env):
         ###############################################################
         def ensureWritable(nodes):
             for node in nodes:
-                if os.path.exists(node.path) and not (os.stat(node.path)[0] & 0200):
-                   chmod(node.path, 0777)
+                if os.path.exists(node.path) and not (os.stat(node.path)[0] & 0o200):
+                   chmod(node.path, 0o777)
             return nodes
         ###############################################################
         def InstallBundle (env, target_dir, bundle):
@@ -46,7 +46,7 @@ def generate(env):
             # check parameters! 
 
             if os.path.exists(target_dir) and not os.path.isdir (target_dir):
-               raise SCons.Errors.UserError, "InstallBundle: %s needs to be a directory!"%(target_dir)
+               raise SCons.Errors.UserError("InstallBundle: %s needs to be a directory!"%(target_dir))
 
             outputs = []
             bundlefiles = env.arg2nodes (bundle, env.fs.File)
@@ -86,7 +86,7 @@ def generate(env):
             suffix=bundledir[bundledir.rfind('.'):]
             if (suffix=='.app' and typecode != 'APPL' or
                 suffix!='.app' and typecode == 'APPL'):
-                raise SCons.Errors.UserError, "MakeBundle: inconsistent dir suffix %s and type code %s: app bundles should end with .app and type code APPL."%(suffix, typecode)
+                raise SCons.Errors.UserError("MakeBundle: inconsistent dir suffix %s and type code %s: app bundles should end with .app and type code APPL."%(suffix, typecode))
             else:
                 env.SideEffect (bundledir, app)
             if subst_dict is None:
@@ -143,7 +143,7 @@ def TOOL_SUBST(env):
             contents = f.read()
             f.close()
         except:
-            raise SCons.Errors.UserError, "Can't read source file %s"%sourcefile
+            raise SCons.Errors.UserError("Can't read source file %s"%sourcefile)
         for (k,v) in dict.items():
             contents = re.sub(k, v, contents)
         try:
@@ -151,13 +151,13 @@ def TOOL_SUBST(env):
             f.write(contents)
             f.close()
         except:
-            raise SCons.Errors.UserError, "Can't write target file %s"%targetfile
+            raise SCons.Errors.UserError("Can't write target file %s"%targetfile)
         return 0 # success
 
     def subst_in_file(target, source, env):
-        print source, 'is now thought in folder', os.getcwd()
+        print(source, 'is now thought in folder', os.getcwd())
         if not env.has_key('SUBST_DICT'):
-            raise SCons.Errors.UserError, "SubstInFile requires SUBST_DICT to be set."
+            raise SCons.Errors.UserError("SubstInFile requires SUBST_DICT to be set.")
         d = dict(env['SUBST_DICT']) # copy it
         for (k,v) in d.items():
             if callable(v):
@@ -165,7 +165,7 @@ def TOOL_SUBST(env):
             elif SCons.Util.is_String(v):
                 d[k]=env.subst(v)
             else:
-                raise SCons.Errors.UserError, "SubstInFile: key %s: %s must be a string or callable"%(k, repr(v))
+                raise SCons.Errors.UserError("SubstInFile: key %s: %s must be a string or callable"%(k, repr(v)))
         for (t,s) in zip(target, source):
             return do_subst_in_file(str(t), str(s), d)
 

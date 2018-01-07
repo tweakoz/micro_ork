@@ -19,21 +19,21 @@ obu.install_files("src/Posix/*.h","include/unittest++/Posix")
 
 class upp:
   def __init__(self):
-	ARGS = cmn.BuildArgs
-	##########################################
+    ARGS = cmn.BuildArgs
+    ##########################################
 
-	SRC_FOLDERS  = " . Posix "
+    SRC_FOLDERS  = " . Posix "
 
-	LIBS = ''
+    LIBS = ''
 
-	##########################################
+    ##########################################
 
-	prj_lib = sln.Project(ARGS,BasicEnv,"ork.unittestpp")
-	prj_lib.SetSrcBase( "src" )
-	prj_lib.AddFolders( SRC_FOLDERS, "*.cpp" )
-	prj_lib.AddLibs( LIBS )
-	prj_lib.Configure()
-	self.lib = prj_lib.SharedLibrary( )
+    prj_lib = sln.Project(ARGS,BasicEnv,"ork.unittestpp")
+    prj_lib.SetSrcBase( "src" )
+    prj_lib.AddFolders( SRC_FOLDERS, "*.cpp" )
+    prj_lib.AddLibs( LIBS )
+    prj_lib.Configure()
+    self.lib = prj_lib.SharedLibrary( )
 
 ###########################
 

@@ -12,7 +12,7 @@
 
 import os
 import imp
-import ConfigParser
+import configparser
 import ork.build.common as common
 
 def IsOsx():
@@ -40,7 +40,7 @@ def GetDefault( varname, default ):
 	if varname in os.environ:
 		ret = os.environ[varname]
 	if False==os.path.isdir(ret):
-		print "<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret) 
+		print("<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret))
 	if os.path.isdir(ret):
 		if IsWindows():
 			ret = win32api.GetShortPathName(ret)
@@ -51,14 +51,14 @@ def GetDefault( varname, default ):
 def ConfigFileName():
 	return "%s/../ork.build.ini"%os.environ["ORKDOTBUILD_ROOT"]
 
-ConfigData = ConfigParser.ConfigParser()
+ConfigData = configparser.ConfigParser()
 
 if os.path.isfile( ConfigFileName() ):
-	print "LOCALOPTS: Found %s" % ConfigFileName()
+	print("LOCALOPTS: Found %s" % ConfigFileName())
 	ConfigData.read( ConfigFileName() )
-	print ConfigData
+	print(ConfigData)
 else:
- print "LOCALOPTS: Cannot find %s : using default options" % ConfigFileName()
+ print("LOCALOPTS: Cannot find %s : using default options" % ConfigFileName())
  ConfigData.add_section( "PATHS" )
  ConfigData.add_section( "CONFIG" )
  if IsOsx():
@@ -84,7 +84,7 @@ def GetEnv( sect, varname ):
 	ret = ""
 	if ConfigData.has_option( sect, varname ):
 		ret = ConfigData.get( sect, varname )
-	print ret
+	print(ret)
 	if os.path.isdir(ret):
 		if IsWindows():
 			ret = win32api.GetShortPathName(ret)

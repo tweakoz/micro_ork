@@ -61,11 +61,11 @@ class SourceEnumerator:
     def __init__(self,basefolder,BUILD_DIR):
         self.basefolder = basefolder
         self.BUILD_DIR = BUILD_DIR
-        self.sourceobjs = string.split('')
+        self.sourceobjs = []
 
     def AddFoldersExc(self,folders, excludes, pattern):
-        srclist = string.split(folders)
-        exclist = string.split(excludes)
+        srclist = folders.split(" ")
+        exclist = excludes.split(" ")
         sourcefiles = common.globber( self.basefolder, pattern, srclist , exclist)
         #if "" in sourcefiles:
         #   print folders
@@ -73,21 +73,32 @@ class SourceEnumerator:
         #   print excludes
             
         self.sourceobjs  += common.builddir_replace( sourcefiles, self.basefolder, self.BUILD_DIR )
+        self.fixx()
 
     def AddFolders(self,folders, pattern):
-        srclist = string.split(folders)
-        exclist = string.split('')
+        srclist = folders.split(" ")
+        exclist = []
         sourcefiles = common.globber( self.basefolder, pattern, srclist , exclist)
         #if "" in sourcefiles:
         #   print("yo1" , folders
         #   print("yo1" , pattern
         #   print("yo1" , excludes
         self.sourceobjs  += common.builddir_replace( sourcefiles, self.basefolder, self.BUILD_DIR )
+        self.fixx()
 
     def AddFoldersNoRep(self,folders, pattern):
-        srclist = string.split(folders)
-        exclist = string.split('')
+        srclist = folders.split(" ")
+        exclist = []
         self.sourceobjs  += common.globber( self.basefolder, pattern, srclist , exclist)
+        self.fixx()
+        
+    def fixx(self):
+        aset = set()
+        for item in self.sourceobjs:
+            aset.add(item)
+        self.sourceobjs = []
+        for item in aset:
+            self.sourceobjs += [item]
 
     def dump(self):
         print("yo")
@@ -194,11 +205,11 @@ class Project:
         self.IsOpt = (self.BUILD=='opt')
         self.IsRel = (self.BUILD=='rel')
         ##############
-        self.PreIncludePaths = list(string.split("%s/include"%stage_dir))
+        self.PreIncludePaths = ["%s/include"%stage_dir]
         self.IncludePaths = list()
         self.PostIncludePaths = list()
         ##############
-        self.PreLibraryPaths = string.split("%s/lib"%stage_dir)
+        self.PreLibraryPaths = ["%s/lib"%stage_dir]
         self.LibraryPaths = list()
         self.PostLibraryPaths = list()
         ##############
@@ -207,8 +218,8 @@ class Project:
         #if os.environ.has_key("PRJ_LIBDIRS"):
         #   self.LibraryPaths += string.split(os.environ["PRJ_LIBDIRS"])            
 
-        self.Libraries = string.split('')
-        self.Frameworks = string.split('')
+        self.Libraries = []
+        self.Frameworks = []
         self.sourcebase = ''
         self.IsLibrary = False
         self.IsExe = False
@@ -220,7 +231,7 @@ class Project:
 
         self.XDEFS = 'PLAT_%s HOST_%s PROC_%s ' %(self.PLATFORM,self.HOSTPLAT,self.PROCESSOR)
         self.XDEFS += '_PLATFORM=%s_%s_%s ' %(self.PLATFORM,self.HOSTPLAT,self.PROCESSOR)
-        if os.environ.has_key("ORK_OPT_BUILD"):
+        if "ORK_OPT_BUILD" in os.environ:
             self.XDEFS += 'NDEBUG '
         else:
             self.XDEFS += '_DEBUG '
@@ -286,23 +297,23 @@ class Project:
 
     def AddIncludePaths(self,paths,platform="any"):
         if self.MatchPlatform(platform):
-            self.IncludePaths += string.split(paths)
+            self.IncludePaths += paths.split(" ")
 
     def AddLibPaths(self,paths,platform="any"):
         if self.MatchPlatform(platform):
-            self.LibraryPaths += string.split(paths)
+            self.LibraryPaths += paths.split(" ")
 
     def AddLibs(self,libs,platform="any"):
         if self.MatchPlatform(platform):
-            self.Libraries += string.split(libs)
+            self.Libraries += libs.split(" ")
 
     def AddFrameworks(self,libs,platform="any"):
         if self.IsOsx:
-            self.Frameworks += string.split(libs)
+            self.Frameworks += libs.split(" ")
 
     def AddCustomObjs(self,objs,platform="any"):
         if self.MatchPlatform(platform):
-            self.enumerator.sourceobjs += string.split(objs)
+            self.enumerator.sourceobjs += objs.split(" ")
 
     def AddProjectDep(self,project,platform="any"):
         if self.MatchPlatform(platform):
@@ -310,7 +321,7 @@ class Project:
             self.Libraries += project.Libraries
             path =  "%s/%s/inc " % (SLN_ROOT,project.name)
             #print( "(%s) import dep path<%s>\n" % (self.name,path) )
-            self.IncludePaths += string.split(path)
+            self.IncludePaths += path.split(" ")
             if project.IsLibrary:
                 self.Libraries.append(project.TargetName)
 
@@ -393,15 +404,17 @@ class Project:
  
         self.SetCompilerOptions( self.XDEFS, self.XCCFLG, self.XCXXFLG, self.IncludePaths, self.LibraryPaths, self.XLINK, self.PLATFORM, self.BUILD )
         self.CompileEnv = self.BaseEnv.Clone()
+        sources = self.GetSources()
+        for s in sources:
+           print(s)
 
         if self.LogConfig:
             print("///////////////////////////////////////////////////////")
             print("Project: OutputName<%s>" % self.OutputName)
             print()
-            sources = self.GetSources()
+            #sources = self.GetSources()
             #for s in sources:
-            #   if s.find("string")>=0:
-            #       print s
+            #   print(s)
             #print("Sources<%s>" % self.GetSources()
             print("///////////////")
             print("PATH<%s>" % self.CompileEnv['ENV'][ 'PATH' ])
@@ -434,16 +447,16 @@ class Project:
     ############################################
 
     def SetCompilerOptions( self, XDEFS, XCCFLAGS, XCXXFLAGS, INCPATHS, XLIBPATH, XLINK, PLATFORM, BUILD ):
-        Defines = string.split(XDEFS)
-        CCFlags = string.split(XCCFLAGS)
-        CXXFlags = string.split(XCXXFLAGS)
+        Defines = XDEFS.split(" ")
+        CCFlags = XCCFLAGS.split(" ")
+        CXXFlags = XCXXFLAGS.split(" ")
         self.BaseEnv.Append( CFLAGS = CCFlags )
         self.BaseEnv.Append( CXXFLAGS = CXXFlags )
         self.BaseEnv.Append( CPPDEFINES = Defines )
         self.BaseEnv.Append( CPPDEFINES = self.CustomDefines )
         self.BaseEnv.Append( CPPPATH=INCPATHS )
         self.BaseEnv.Append( LIBS=self.Libraries, LIBPATH=self.LibraryPaths )
-        self.BaseEnv.Append( LINK=string.split(XLINK) )
+        self.BaseEnv.Append( LINK=XLINK.split(" ") )
         self.BaseEnv['FRAMEWORKS'] = self.Frameworks
 
     ############################################
@@ -513,8 +526,8 @@ def explibnam(bas):
   suffix = BuildSuffix(ARGS)
   return "%s.%s"%(bas,suffix) 
 
-def explibnams(str):
+def explibnams(instr):
   ret = ""
-  for item in string.split(str):
+  for item in instr.split(" "):
     ret += "%s " % explibnam(item)
   return ret

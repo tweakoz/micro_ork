@@ -16,7 +16,7 @@ import ork.build.localopts as localopts
 
 from SCons.Script.SConscript import SConsEnvironment
 
-print "Using Osx Build Env"
+print("Using Osx Build Env")
 
 ###############################################################################
 # Python Module Export Declaration
@@ -31,8 +31,8 @@ XcodeDir = localopts.XCODEDIR()
 AqsisDir = localopts.AQSISDIR()
 Arch = localopts.ARCH()
 
-print "OSX: using arch<%s>" % Arch
-print "OSX: using xcode<%s>" % XcodeDir
+print("OSX: using arch<%s>" % Arch)
+print("OSX: using xcode<%s>" % XcodeDir)
 
 USE_DEBUG_CXX = False
 
@@ -82,13 +82,13 @@ def DefaultBuildEnv( env, prj ):
 	#toolchain = HpcToolChain(env,prj)
 	##########################
 	
-	env.Replace( CPPDEFINES = string.split(DEFS) )
-	env.Replace( CCFLAGS = string.split(CCFLG) )
-	env.Replace( CXXFLAGS = string.split(CXXFLG) )
+	env.Replace( CPPDEFINES = DEFS.split(" ") )
+	env.Replace( CCFLAGS = CCFLG.split(" ") )
+	env.Replace( CXXFLAGS = CXXFLG.split(" ") )
 #	env.Replace( CPPPATH  = [ ' /opt/local/include' ] )
-	env.Replace( LINKFLAGS=string.split(LINK) )
-	env.Replace( LIBS=string.split(LIBS) )
-	env.Replace( LIBPATH=string.split(LIBPATH) )
+	env.Replace( LINKFLAGS=LINK.split(" ") )
+	env.Replace( LIBS=LIBS.split(" ") )
+	env.Replace( LIBPATH=LIBPATH.split(" ") )
 	env.Replace( RANLIB = 'ranlib' )	
 	env.Append( FRAMEWORKS = [ 'QtGui', 'QtCore', 'OpenGL', 'CoreMIDI', 'CoreAudio', 'AudioUnit', 'AudioToolbox' ] )
 	env.Append( FRAMEWORKS = [ 'Carbon', 'Foundation', 'QuartzComposer' ] )
@@ -103,4 +103,4 @@ def DefaultBuildEnv( env, prj ):
 
 	prj.AddLibs( ' bz2' )
 
-	prj.PostIncludePaths += string.split('/opt/local/include')
+	prj.PostIncludePaths += ['/opt/local/include']
