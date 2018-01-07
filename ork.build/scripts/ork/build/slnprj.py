@@ -139,7 +139,7 @@ def GetProcessor(args):
     elif PLAT == 'win32':
         PROCESSOR='x86'
     else:
-        PROCESSOR = subprocess.check_output('uname -p')[1]
+        PROCESSOR = subprocess.check_output(['uname','-p'])[1]
     return PROCESSOR;
 
 ###############################################################################
