@@ -53,7 +53,7 @@ def LibBuilder( BuildEnv, library, sources, srcbase, dstbase ):
 def ExeBuilder( BuildEnvironment, Executable, Sources, SourceBase, DestBase ):
     BuildDir( DestBase, SourceBase, duplicate=0 )
     ObjectFiles = common.builddir_replace( Sources, SourceBase, DestBase )
-    print "Building executable : " + string.join( ObjectFiles )
+    print("Building executable : " + string.join( ObjectFiles ))
     return BuildEnvironment.Program( Executable, ObjectFiles )
 
 ###############################################################################
@@ -80,9 +80,9 @@ class SourceEnumerator:
 		exclist = string.split('')
 		sourcefiles = common.globber( self.basefolder, pattern, srclist , exclist)
 		#if "" in sourcefiles:
-		#	print "yo1" , folders
-		#	print "yo1" , pattern
-		#	print "yo1" , excludes
+		#	print("yo1" , folders
+		#	print("yo1" , pattern
+		#	print("yo1" , excludes
 		self.sourceobjs  += common.builddir_replace( sourcefiles, self.basefolder, self.BUILD_DIR )
 
 	def AddFoldersNoRep(self,folders, pattern):
@@ -91,7 +91,7 @@ class SourceEnumerator:
 		self.sourceobjs  += common.globber( self.basefolder, pattern, srclist , exclist)
 
 	def dump(self):
-		print "yo"
+		print("yo")
 
 ###############################################################################
 
@@ -100,7 +100,7 @@ def DumpBuildEnv( BuildEnv ):
 	keys = dict.keys()
 	keys.sort()
 	for key in keys:
-		print "construction variable = '%s', value = '%s'" % (key, dict[key])
+		print("construction variable = '%s', value = '%s'" % (key, dict[key]))
 
 ###############################################################################
 def GetPlat():
@@ -116,7 +116,7 @@ def GetProcessor(args):
 	PROCESSOR = "cpu"
 	PLAT = sys.platform.lower().replace( " ", "_" )
 	TARGETPLAT = args['PLATFORM']
-	#print "%s<%s> %s<%s>" % (deco.magenta("PLAT"),deco.key(PLAT),deco.cyan("TARGETPLAT"),deco.val(TARGETPLAT))
+	#print("%s<%s> %s<%s>" % (deco.magenta("PLAT"),deco.key(PLAT),deco.cyan("TARGETPLAT"),deco.val(TARGETPLAT))
 	if PLAT == 'irix6':
 		PROCESSOR='mips4'
 		TARGETPLAT='sgi'
@@ -171,7 +171,7 @@ class Project:
 		self.SUFFIX = BuildSuffix(ARGUMENTS)
 		self.BUILD_DIR = '%s/%s.%s/' % (obj_dir,self.BUILDNAME,name)
 		self.OutputName = '%s.%s' % (name,self.BUILDNAME)
-		#print "\nBUILDDIR<%s>\n"%self.BUILD_DIR
+		#print("\nBUILDDIR<%s>\n"%self.BUILD_DIR
 		##################################
 		self.BaseEnv = Environment.Clone()
 		self.BaseEnv.Replace( CCCOMSTR = "\x1b[35m Compiling \x1b[33m $SOURCE \x1b[0m" ) #% (name,self.BUILD,self.PLATFORM) )
@@ -229,9 +229,6 @@ class Project:
 		self.XCCFLG = ''
 		self.XCXXFLG = ''
 		
-
-		#print "XDEFS<%s>" % self.XDEFS
-
 		############################
 		# Build Tools/Env Selection
 		############################
@@ -261,8 +258,6 @@ class Project:
 		############################
 
 		do_opt = False #(name in optset)
-
-		#print "%s<%s> %s<%s>" % (deco.magenta("name"),deco.key(name),deco.cyan("do_opt"),deco.val(do_opt))
 
 		if do_opt:
 			self.XCCFLG += '-O3 '
@@ -401,41 +396,41 @@ class Project:
 		self.CompileEnv = self.BaseEnv.Clone()
 
 		if self.LogConfig:
-			print "///////////////////////////////////////////////////////"
-			print "Project: OutputName<%s>" % self.OutputName
-			print
+			print("///////////////////////////////////////////////////////")
+			print("Project: OutputName<%s>" % self.OutputName)
+			print()
 			sources = self.GetSources()
 			#for s in sources:
 			#	if s.find("string")>=0:
 			#		print s
-			#print "Sources<%s>" % self.GetSources()
-			print "///////////////"
-			print "PATH<%s>" % self.CompileEnv['ENV'][ 'PATH' ]
-			print "///////////////"
-			print "CC<%s>" % self.CompileEnv['CC']
-			print "///////////////"
-			print "XDEFS<%s>" % self.XDEFS
-			print "///////////////"
-			print "XCCFLG<%s>" % self.XCCFLG
-			print "///////////////"
-			print "XCXXFLG<%s>" % self.XCXXFLG
-			print "///////////////"
-			print "XLINK<%s>" % self.XLINK
-			print "///////////////"
-			print "CPPDEFINES<%s>" % self.BaseEnv['CPPDEFINES']
-			print "///////////////"
-			print "INCLPATHS<%s>" % self.IncludePaths
-			print "///////////////"
-			print "LINKCOM<%s>" % self.CompileEnv['LINKCOM']
-			print "///////////////"
-			print "BUILDDIR<%s>" % self.BUILD_DIR
-			print "///////////////"
-			print "BASEDIR<%s>" % self.basefolder
+			#print("Sources<%s>" % self.GetSources()
+			print("///////////////")
+			print("PATH<%s>" % self.CompileEnv['ENV'][ 'PATH' ])
+			print("///////////////")
+			print("CC<%s>" % self.CompileEnv['CC'])
+			print("///////////////")
+			print("XDEFS<%s>" % self.XDEFS)
+			print("///////////////")
+			print("XCCFLG<%s>" % self.XCCFLG)
+			print("///////////////")
+			print("XCXXFLG<%s>" % self.XCXXFLG)
+			print("///////////////")
+			print("XLINK<%s>" % self.XLINK)
+			print("///////////////")
+			print("CPPDEFINES<%s>" % self.BaseEnv['CPPDEFINES'])
+			print("///////////////")
+			print("INCLPATHS<%s>" % self.IncludePaths)
+			print("///////////////")
+			print("LINKCOM<%s>" % self.CompileEnv['LINKCOM'])
+			print("///////////////")
+			print("BUILDDIR<%s>" % self.BUILD_DIR)
+			print("///////////////")
+			print("BASEDIR<%s>" % self.basefolder)
 			#print self.CompileEnv.Dump()
-			print "///////////////"
-			print "SOURCES<%s>" % self.GetSources()
-			print "///////////////////////////////////////////////////////"
-			print
+			print("///////////////")
+			print("SOURCES<%s>" % self.GetSources())
+			print("///////////////////////////////////////////////////////")
+			print()
 
 	############################################
 
@@ -502,7 +497,7 @@ class Project:
 		#exename = '%s/bin/%s' % (stage_dir,self.OutputName)
 		exename = '#stage/bin/%s'%self.OutputName
 		self.TargetName = self.OutputName
-		#print "exename<%s>" % exename
+		#print("exename<%s>" % exename
 		prg = self.CompileEnv.Program( exename , self.GetSources() )
 		env = self.CompileEnv
 		#env.Alias('install', env.Install(bin_dir, prg))
