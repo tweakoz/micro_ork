@@ -37,8 +37,8 @@ void _decodeJson(const rapidjson::Value& jsonvalue,propdec_t& decoded)
             decoded.Set<double>(jsonvalue.GetUint64());
         else if( jsonvalue.IsDouble() )
             decoded.Set<double>(jsonvalue.GetDouble());
-        else if( jsonvalue.IsFloat() )
-            decoded.Set<double>(jsonvalue.GetFloat());
+        //else if( jsonvalue.IsFloat() )
+        //    decoded.Set<double>(jsonvalue.GetFloat());
 	    else {
             assert(false);
         }
