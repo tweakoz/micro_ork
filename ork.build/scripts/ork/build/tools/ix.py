@@ -16,7 +16,7 @@ import ork.build.localopts as localopts
 
 from SCons.Script.SConscript import SConsEnvironment
 
-print "Using Ix Build Env"
+print("Using Ix Build Env")
 
 cxx_comp = localopts.CXX()
 cxx_std = localopts.STD()
@@ -51,13 +51,13 @@ def DefaultBuildEnv( env, prj ):
 	##
 	env.Replace( CXX = cxx_comp, CC = c_comp )
 	env.Replace( LINK = cxx_comp )
-	env.Replace( CPPDEFINES = string.split(DEFS) )
-	env.Replace( CCFLAGS = string.split(CCFLG) )
-	env.Replace( CXXFLAGS = string.split(CXXFLG) )
+	env.Replace( CPPDEFINES = DEFS.split(" ") )
+	env.Replace( CCFLAGS = CCFLG.split(" ") )
+	env.Replace( CXXFLAGS = CXXFLG.split(" ") )
 	env.Replace( CPPPATH  = [ '.' ] )
-	env.Replace( LINKFLAGS=string.split(LINK) )
-	env.Replace( LIBS=string.split(LIBS) )
-	env.Replace( LIBPATH=string.split(LIBPATH) )
+	env.Replace( LINKFLAGS=LINK.split(" ") )
+	env.Replace( LIBS=LIBS.split(" " ) )
+	env.Replace( LIBPATH=LIBPATH.split(" ") )
 
 	CxFLG = '-ffast-math -fPIC -fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-c++11-narrowing'
 	prj.XCCFLG += CxFLG
