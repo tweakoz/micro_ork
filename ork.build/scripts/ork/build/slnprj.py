@@ -8,7 +8,6 @@
 import glob, re, string
 import sys, os, subprocess
 import shutil, fnmatch, platform
-from sets import Set
 
 import ork.build.utils as utils
 import ork.build.common as common
@@ -379,18 +378,18 @@ class Project:
     def Configure(self):
 
 
-        libpaths = list(Set(self.PreLibraryPaths))
-        libpaths += list(Set(self.LibraryPaths))
-        libpaths += list(Set(self.PostLibraryPaths))
+        libpaths = list(set(self.PreLibraryPaths))
+        libpaths += list(set(self.LibraryPaths))
+        libpaths += list(set(self.PostLibraryPaths))
         self.LibraryPaths = libpaths
 
-        incpaths = list(Set(self.PreIncludePaths))
-        incpaths += list(Set(self.IncludePaths))
-        incpaths += list(Set(self.PostIncludePaths))
+        incpaths = list(set(self.PreIncludePaths))
+        incpaths += list(set(self.IncludePaths))
+        incpaths += list(set(self.PostIncludePaths))
         self.IncludePaths = incpaths
 
-        self.Libraries = list(Set(self.Libraries))
-        self.Frameworks = list(Set(self.Frameworks))
+        self.Libraries = list(set(self.Libraries))
+        self.Frameworks = list(set(self.Frameworks))
  
         self.SetCompilerOptions( self.XDEFS, self.XCCFLG, self.XCXXFLG, self.IncludePaths, self.LibraryPaths, self.XLINK, self.PLATFORM, self.BUILD )
         self.CompileEnv = self.BaseEnv.Clone()
