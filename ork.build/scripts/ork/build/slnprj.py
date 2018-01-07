@@ -6,7 +6,7 @@
 # see http://www.gnu.org/licenses/gpl-2.0.html
 ###############################################################################
 import glob, re, string
-import commands, sys, os
+import sys, os, subprocess
 import shutil, fnmatch, platform
 from sets import Set
 
@@ -125,11 +125,11 @@ def GetProcessor(args):
         if TARGETPLAT=='ios':
             PROCESSOR='arm'
     elif PLAT == 'cygwin':
-        PROCESSOR=commands.getstatusoutput('uname -m')[1]
+        PROCESSOR=subprocess.check_output('uname -m')[1]
     elif PLAT == 'win32':
         PROCESSOR='x86'
     else:
-        PROCESSOR = commands.getstatusoutput('uname -p')[1]
+        PROCESSOR = subprocess.check_output('uname -p')[1]
     return PROCESSOR;
 
 ###############################################################################
