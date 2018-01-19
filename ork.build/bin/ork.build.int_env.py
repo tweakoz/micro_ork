@@ -8,6 +8,7 @@ as_main = (__name__ == '__main__')
 
 parser = argparse.ArgumentParser(description='MicroOrk Environment')
 parser.add_argument('--exec', type=str, help='command to exec in environment')
+parser.add_argument('--prefix', type=str, help='external prefix')
 args = vars(parser.parse_args())
 print(args)
 
@@ -37,12 +38,13 @@ print("%s<%s>" % (deco.key("ROOTDIR"),deco.path(root_dir)))
 stg_dir = "%s/stage"%curwd
 os.system( "mkdir -p %s" % stg_dir)
 
+###############################################
 
 if os.path.exists(stg_dir):
 	print("%s<%s>" % (deco.key("ORKDOTBUILD_STAGE_DIR"),deco.path(stg_dir)))
 	os.environ["ORKDOTBUILD_STAGE_DIR"]=stg_dir
 
-###########################################
+###############################################
 
 def set_env(key,val):
   print(deco.orange("set")+" var<" + deco.key(key)+"> to <" + deco.path(val) + ">")
@@ -81,6 +83,11 @@ print("ork.build eviron initialized ORKDOTBUILD_ROOT<%s>"%deco.path(root_dir))
 print("scanning for projects...")
 obt.check_for_projects(par3_dir)
 print()
+
+if args["prefix"]!=None:
+    os.environ["ORKDOTBUILD_PREFIX"] = args["prefix"]
+else:
+    os.environ["ORKDOTBUILD_PREFIX"] = stg_dir
 
 ###########################################
 

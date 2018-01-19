@@ -13,6 +13,8 @@ import os
 import sys
 import ork.build.slnprj
 import ork.build.localopts as localopts
+import ork.build.spawntools
+import ork.build.common
 
 from SCons.Script.SConscript import SConsEnvironment
 
@@ -20,12 +22,14 @@ print("Using Osx Build Env")
 
 ###############################################################################
 # Python Module Export Declaration
+###############################################################################
 
 __all__ = [ "DefaultBuildEnv" ]
 __version__ = "1.0"
 
 ###############################################################################
 # Basic Build Environment
+###############################################################################
 
 XcodeDir = localopts.XCODEDIR()
 AqsisDir = localopts.AQSISDIR()
@@ -37,6 +41,21 @@ print("OSX: using xcode<%s>" % XcodeDir)
 USE_DEBUG_CXX = False
 
 #############################################
+
+def find_boost_system():
+	if "ORKDOTBUILD_PREFIX" in os.environ:
+		srch = os.path.join(os.environ["ORKDOTBUILD_PREFIX"],"lib")
+		files = ork.build.common.recursive_glob(srch,"libboost_system*.dylib")
+		if len(files)==1:
+			file = files[0]
+			beg = file.find("libboost_system")
+			file = file[beg+3:]
+			file = file.replace(".dylib","")
+			return file
+	return "boost_system"
+
+#############################################
+
 class ClangToolChain:
   def __init__(self,env, prj):
     bindir = "%s/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin" % XcodeDir
@@ -44,7 +63,12 @@ class ClangToolChain:
     cpp_compiler = "%s/clang++"%bindir
     env.Replace( CXX = cpp_compiler, CC = c_compiler )
     env.Replace( LINK = cpp_compiler )
-    prj.AddLibs( ' m c c++ curl wthttp wt wttest boost_system' )
+
+    boost_sys = find_boost_system()
+
+    prj.AddLibs( ' m c c++ curl wthttp wt wttest' )
+    prj.AddLibs( boost_sys )
+
     prj.CompilerType = 'gcc'
     prj.XCFLG += "-DOSX -arch %s " % Arch
     prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
@@ -94,6 +118,16 @@ def DefaultBuildEnv( env, prj ):
 	env.Append( FRAMEWORKS = [ 'Carbon', 'Foundation', 'QuartzComposer' ] )
 	env.Append( FRAMEWORKS = [ 'ApplicationServices', 'AppKit' ] )
 	env.Append( FRAMEWORKS = [ 'MultitouchSupport', 'Cg' ] )
+
+	if "ORKDOTBUILD_PREFIX" in os.environ:
+		pfx = os.environ["ORKDOTBUILD_PREFIX"]
+		inc = os.path.join(pfx,"include") 
+		lib = os.path.join(pfx,"lib")
+		if os.path.exists(inc):
+			prj.PostIncludePaths += [inc]
+		if os.path.exists(lib):
+			env.Append( LIBPATH=[lib] )
+
 	env.Replace( AR="libtool" )
 	env.Replace( ARFLAGS="-static -c -v -arch_only %s" % Arch )
 	env.Replace( ARCOM="$AR $ARFLAGS -o $TARGET $SOURCES" )
