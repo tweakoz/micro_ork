@@ -63,8 +63,8 @@ def DefaultBuildEnv( env, prj ):
         LIBPATH += ' /usr/lib/x86_64-linux-gnu/debug '
     LINK = ''
 
-	boost_sys = find_boost_system()
-	prj.AddLibs( boost_sys )
+    boost_sys = find_boost_system()
+    #prj.AddLibs( boost_sys )
 
     ##
     env.Replace( CXX = cxx_comp, CC = c_comp )
