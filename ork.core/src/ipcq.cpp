@@ -18,7 +18,7 @@ static const int kmaxmsgsiz = sizeof(ork::NetworkMessage);
 //static const uin32_t kmapaddrflags = MAP_SHARED|MAP_LOCKED;
 static const uint32_t kmapaddrflags = MAP_SHARED;
 
-//#define __MSGQ_DEBUG__
+#define __MSGQ_DEBUG__
 
 namespace ork {
 
@@ -261,19 +261,39 @@ void IpcMsgQReciever::Connect( const std::string& nam )
 	printf( "IpcMsgQReciever<%p> connecting to msgQ<%s>\n", this, nam.c_str() );
 #endif
 
+	size_t isize = sizeof(msq_impl_t);
+
+#if defined(OSX)
+	bool keep_waiting = true;
+        int shm_id = -1;
+        while( keep_waiting )
+        {
+            usleep(1<<18);
+            shm_id = shm_open(mName.c_str(),O_RDWR,S_IRUSR|S_IWUSR);
+            keep_waiting = (shm_id<0);
+        }
+#else
 	while( false==ork::Path(mPath).IsFile() )
 	{
 		usleep(1<<18);
 	}
-	size_t isize = sizeof(msq_impl_t);
 	int shm_id = shm_open(mName.c_str(),O_RDWR,S_IRUSR|S_IWUSR);
 	assert(shm_id>=0);
+#endif
 	mShmAddr =  mmap(0,isize,PROT_READ|PROT_WRITE,kmapaddrflags,shm_id,0);
 	mInbox = (msq_impl_t*) mShmAddr;
 	close(shm_id);
 #ifdef __MSGQ_DEBUG__ 	
 	printf( "IpcMsgQReciever<%p> detected msgQ<%s>\n", this, nam.c_str() );
 #endif
+
+	keep_waiting = true;
+	while(GetSenderState()!=ork::EMQEPS_RUNNING)
+	{
+		usleep(1<<19);
+		printf( "IpcMsgQReciever<%p> waiting for sender to go up\n", this );
+	}
+
 
 	WaitSyncStart();
 	SetRecieverState(EMQEPS_RUNNING);
