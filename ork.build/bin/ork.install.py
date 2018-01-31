@@ -10,30 +10,40 @@ from pathlib import Path
 parser = argparse.ArgumentParser(description='Install MicroOrk into location')
 
 parser.add_argument('--prefix', type=str, help='destination to install into')
+parser.add_argument('--verbose', action="store_true", help='log operations')
 
 args = vars(parser.parse_args())
 
-print(args)
-
 assert(args["prefix"]!=None)
 
+verbose = args["verbose"]
+
+if verbose:
+    print(args)
+
 prefix = Path(args["prefix"])
+bindir = prefix/"bin"
 libdir = prefix/"lib"
 incdir = prefix/"include"
 stagedir = Path(obu.stage_dir)
 stginc = stagedir/"include"
 stglib = stagedir/"lib"
+stgbin = stagedir/"bin"
 
-print(prefix)
-print(libdir)
-print(incdir)
-print(stagedir)
-print(stginc)
-print(stglib)
+if verbose:
+    print(prefix)
+    print(bindir)
+    print(libdir)
+    print(incdir)
+    print(stagedir)
+    print(stginc)
+    print(stglib)
+    print(stgbin)
 
 os.system("mkdir -p %s" % prefix)
 os.system("mkdir -p %s" % Path(incdir/"ork"))
 os.system("mkdir -p %s" % libdir)
+os.system("mkdir -p %s" % bindir)
 
 libs = obc.recursive_glob(str(stglib),"libork.*.so")
 dpars = set()
@@ -62,6 +72,18 @@ for item in incs:
         incs_to_copy.add(item_rela)
         #print(item_name, item_rela,item_dest,item_dpar)
 
+bins = obc.recursive_glob(str(stgbin),"*")
+bins_to_copy = set()
+for item in bins:
+    item_path = Path(item)
+    item_name = item_path.name
+    item_rela = item_path.relative_to(stgbin)
+    item_dest = bindir/item_name
+    item_dpar = item_dest.parent
+    dpars.add(item_dpar)
+    if item_path.is_file():
+        bins_to_copy.add(item_rela)
+
 ############################################
 # create dest folders first
 ############################################
@@ -80,7 +102,8 @@ for item in dpars:
 for item in incs_to_copy:
     item_src = stginc/"ork"/item
     item_dst = incdir/"ork"/item
-    print(item_src,item_dst)    
+    if verbose:
+        print(item_src,item_dst)    
     os.system("cp %s %s" % (item_src,item_dst))
 
 for item in libs_to_copy:
@@ -92,7 +115,21 @@ for item in libs_to_copy:
         os.system("install_name_tool %s -id @rpath/%s"%(item_dst,str(item).replace(".so",".dylib")))
 
     else:
-        print(item_src,item_dst)    
+        if verbose:
+            print(item_src,item_dst)    
+        os.system("cp %s %s" % (item_src,item_dst))
+
+for item in bins_to_copy:
+    item_src = stgbin/item
+    item_dst = bindir/item
+    if obc.IsOsx:
+        item_dst = str(item_dst)+".exe"
+        os.system("cp %s %s" % (item_src,item_dst))
+        #os.system("install_name_tool %s -id @rpath/%s"%(item_dst,str(item).replace(".so",".dylib")))
+
+    else:
+        if verbose:
+            print(item_src,item_dst)    
         os.system("cp %s %s" % (item_src,item_dst))
 #print(incs_to_copy)
 #print(libs_to_copy)

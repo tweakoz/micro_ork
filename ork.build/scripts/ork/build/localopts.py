@@ -27,6 +27,9 @@ if IsWindows():
 def IsIx():
 	return common.IsIx
 
+def is_verbose():
+    return ("ORKDOTBUILD_VERBOSE" in os.environ)
+
 #print "os.name<%s>" % os.name
 
 ################################################################
@@ -54,9 +57,10 @@ def ConfigFileName():
 ConfigData = configparser.ConfigParser()
 
 if os.path.isfile( ConfigFileName() ):
-	print("LOCALOPTS: Found %s" % ConfigFileName())
 	ConfigData.read( ConfigFileName() )
-	print(ConfigData)
+	if is_verbose():
+		print("LOCALOPTS: Found %s" % ConfigFileName())
+		print(ConfigData)
 else:
  print("LOCALOPTS: Cannot find %s : using default options" % ConfigFileName())
  ConfigData.add_section( "PATHS" )
@@ -84,7 +88,8 @@ def GetEnv( sect, varname ):
 	ret = ""
 	if ConfigData.has_option( sect, varname ):
 		ret = ConfigData.get( sect, varname )
-	print(ret)
+	if is_verbose():
+		print(ret)
 	if os.path.isdir(ret):
 		if IsWindows():
 			ret = win32api.GetShortPathName(ret)

@@ -16,7 +16,6 @@ import shutil
 import fnmatch
 import platform
 SYSTEM = platform.system()
-print("SYSTEM<%s>" % SYSTEM)
 ###############################################################################
 IsOsx = (SYSTEM=="Darwin")
 IsIrix = (SYSTEM=="IRIX64") 
@@ -41,6 +40,9 @@ BuildArgs["BUILD"] = "release"
 ###############################################################################
 # Python Module Export Declaration
 
+def is_verbose():
+    return ("ORKDOTBUILD_VERBOSE" in os.environ)
+
 __all__ =	[
 			"builddir_replace","globber", "DumpBuildEnv", "SetCompilerOptions",
 			"SourceEnumerator", "RunUnitTest", "Project", "orkpath", "posixpath",
@@ -48,6 +50,9 @@ __all__ =	[
 			]
 
 __version__ = "1.0"
+
+if is_verbose():
+	print("SYSTEM<%s>" % SYSTEM)
 
 ###############################################################################
 # INIT local options
@@ -269,7 +274,8 @@ class deco:
 
 adeco = deco()
 
-print("IsLinux<%s>" % adeco.val(IsLinux))
-print("IsIrix<%s>" % adeco.val(IsIrix))
-print("IsOsx<%s>" % adeco.val(IsOsx))
-print("IsIx<%s>" % adeco.val(IsIx))
+if is_verbose():
+	print("IsLinux<%s>" % adeco.val(IsLinux))
+	print("IsIrix<%s>" % adeco.val(IsIrix))
+	print("IsOsx<%s>" % adeco.val(IsOsx))
+	print("IsIx<%s>" % adeco.val(IsIx))

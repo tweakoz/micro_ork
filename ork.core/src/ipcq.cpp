@@ -13,14 +13,12 @@
 #include <ork/fixedstring.h>
 #include <errno.h>
 
-static const int kmaxmsgsiz = sizeof(ork::NetworkMessage);
-
-//static const uin32_t kmapaddrflags = MAP_SHARED|MAP_LOCKED;
-static const uint32_t kmapaddrflags = MAP_SHARED;
-
 #define __MSGQ_DEBUG__
 
 namespace ork {
+
+//static const uin32_t kmapaddrflags = MAP_SHARED|MAP_LOCKED;
+static const uint32_t kmapaddrflags = MAP_SHARED;
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -118,9 +116,9 @@ void IpcMsgQSender::Connect( const std::string& nam )
 void IpcMsgQSender::SendSyncStart()
 {
 #ifdef __MSGQ_DEBUG__ 	
-	printf( "IpcMsgQSender<%p> sending  start/sync\n", this );
+	printf( "IpcMsgQSender<%p> sending start/sync\n", this );
 #endif
-    ork::NetworkMessage msg;
+    ork::IpcPacket_t msg;
     msg.WriteString("start/sync");
 	uint32_t msg_priority = 0;
 	mOutbox->mMsgQ.push(msg);
@@ -129,18 +127,28 @@ void IpcMsgQSender::SendSyncStart()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IpcMsgQSender::send( const NetworkMessage& inc_msg )
+size_t IpcMsgQSender::GetAndResetCounter()
+{
+	return mBytesSent.exchange(0);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+void IpcMsgQSender::send( const IpcPacket_t& inc_msg )
 {
 	assert(mOutbox!=nullptr);
 	assert(GetRecieverState()!=EMQEPS_TERMINATED);
 	mOutbox->mMsgQ.push(inc_msg);
+	mBytesSent.fetch_add(inc_msg.GetLength());
 }
 
-void IpcMsgQSender::send_debug( const NetworkMessage& inc_msg )
+void IpcMsgQSender::send_debug( const IpcPacket_t& inc_msg )
 {
 	assert(mOutbox!=nullptr);
 	assert(GetRecieverState()!=EMQEPS_TERMINATED);
 	mOutbox->mDbgQ.push(inc_msg);
+	mBytesSent.fetch_add(inc_msg.GetLength());
 }
 
 void IpcMsgQSender::SetSenderState(msgq_ep_state est)
@@ -332,14 +340,14 @@ void IpcMsgQReciever::WaitSyncStart()
 {
 	SetRecieverState(EMQEPS_WAIT);
     // wait for sender to send start/sync message
-    ork::NetworkMessage msg;
+    ork::IpcPacket_t msg;
 
 	bool bpopped = false;
 	while(false==bpopped)
 	{
 		bpopped = mInbox->mMsgQ.try_pop(msg);
 	}	
-    ork::NetworkMessageIterator syncit(msg);
+    ork::IpcPacketIter_t syncit(msg);
     std::string sync_content = msg.ReadString(syncit);
     assert(sync_content=="start/sync");
 }
@@ -357,7 +365,7 @@ msgq_ep_state IpcMsgQReciever::GetSenderState() const
 
 ///////////////////////////////////////////////////////////////////////////////
 
-bool IpcMsgQReciever::try_recv( NetworkMessage& out_msg )
+bool IpcMsgQReciever::try_recv( IpcPacket_t& out_msg )
 {
 	assert(mInbox!=nullptr);
 	bool bpopped = mInbox->mMsgQ.try_pop(out_msg);
@@ -368,7 +376,7 @@ bool IpcMsgQReciever::try_recv( NetworkMessage& out_msg )
 	return bpopped;
 }
 
-bool IpcMsgQReciever::try_recv_debug( NetworkMessage& out_msg )
+bool IpcMsgQReciever::try_recv_debug( IpcPacket_t& out_msg )
 {
 	assert(mInbox!=nullptr);
 	bool bpopped = mInbox->mDbgQ.try_pop(out_msg);

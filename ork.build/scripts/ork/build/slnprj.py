@@ -41,6 +41,9 @@ optset = set()
 
 stage_dir = os.environ["ORKDOTBUILD_STAGE_DIR"]
 
+def is_verbose():
+    return ("ORKDOTBUILD_VERBOSE" in os.environ)
+
 ###############################################################################
 
 def LibBuilder( BuildEnv, library, sources, srcbase, dstbase ):
@@ -188,7 +191,7 @@ class Project:
         self.BaseEnv.Replace( CXXCOMSTR = self.BaseEnv['CCCOMSTR'])
         self.BaseEnv.Replace( SHCXXCOMSTR = self.BaseEnv['CCCOMSTR'])
         self.BaseEnv.Replace( ARCOMSTR = '\x1b[36m Archiving \x1b[37m $TARGET \x1b[0m' )
-        self.BaseEnv.Replace( LINKCOMSTR = '\x1b[36m Linking \x1b[37m $TARGET \x1b[0m' )
+        self.BaseEnv.Replace( LINKCOMSTR = '\x1b[36m Linking EXE \x1b[37m $TARGET \x1b[0m' )
         self.BaseEnv.Replace( SHLINKCOMSTR = "\x1b[35m Linking LIB \x1b[33m $TARGET \x1b[32m" )
         #self.BaseEnv['PRINT_CMD_LINE_FUNC'] = CommandPrinter
         ##################################
@@ -405,8 +408,10 @@ class Project:
         self.SetCompilerOptions( self.XDEFS, self.XCCFLG, self.XCXXFLG, self.IncludePaths, self.LibraryPaths, self.XLINK, self.PLATFORM, self.BUILD )
         self.CompileEnv = self.BaseEnv.Clone()
         sources = self.GetSources()
-        for s in sources:
-           print(s)
+
+        if is_verbose():
+            for s in sources:
+               print(s)
 
         if self.LogConfig:
             print("///////////////////////////////////////////////////////")

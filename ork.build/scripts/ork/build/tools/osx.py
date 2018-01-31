@@ -18,7 +18,11 @@ import ork.build.common
 
 from SCons.Script.SConscript import SConsEnvironment
 
-print("Using Osx Build Env")
+def is_verbose():
+    return ("ORKDOTBUILD_VERBOSE" in os.environ)
+
+if is_verbose():
+	print("Using Osx Build Env")
 
 ###############################################################################
 # Python Module Export Declaration
@@ -35,8 +39,9 @@ XcodeDir = localopts.XCODEDIR()
 AqsisDir = localopts.AQSISDIR()
 Arch = localopts.ARCH()
 
-print("OSX: using arch<%s>" % Arch)
-print("OSX: using xcode<%s>" % XcodeDir)
+if is_verbose():
+	print("OSX: using arch<%s>" % Arch)
+	print("OSX: using xcode<%s>" % XcodeDir)
 
 USE_DEBUG_CXX = False
 
@@ -80,6 +85,9 @@ class ClangToolChain:
     # https://stackoverflow.com/questions/35242099/stdterminate-linker-error-on-a-small-clang-project
     #######################
     prj.XLINK = '-L/usr/lib '
+    prj.XLINK = '-rpath @executable_path/../lib '
+    # todo injectable rpaths
+    #prj.XLINK = '-rpath /usr/local/lib ' # homebrew
     #######################
     prj.XLINK += '-std=c++11 -stdlib=libc++ -v -g -F/Library/Frameworks -arch %s '%Arch
     prj.XLINK += '-F/System/Library/Frameworks/Quartz.framework/Frameworks '
