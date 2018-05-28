@@ -12,7 +12,6 @@
 
 import os
 import imp
-import configparser
 import ork.build.common as common
 
 def IsOsx():
@@ -36,65 +35,22 @@ def is_verbose():
 __all__ = [ "XCODEDIR", "VST_SDK_DIR", "VST_INST_DIR", "CXX", "AQSISDIR", "ARCH", "ConfigFileName", "ConfigData", "dump" ]
 ################################################################
 
-################################################################
-
-def GetDefault( varname, default ):
-	ret = default
-	if varname in os.environ:
-		ret = os.environ[varname]
-	if False==os.path.isdir(ret):
-		print("<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret))
-	if os.path.isdir(ret):
-		if IsWindows():
-			ret = win32api.GetShortPathName(ret)
-	return os.path.normpath(ret)
-
-################################################################
-
-def ConfigFileName():
-	return "%s/../ork.build.ini"%os.environ["ORKDOTBUILD_ROOT"]
-
-ConfigData = configparser.ConfigParser()
-
-if os.path.isfile( ConfigFileName() ):
-	ConfigData.read( ConfigFileName() )
-	if is_verbose():
-		print("LOCALOPTS: Found %s" % ConfigFileName())
-		print(ConfigData)
-else:
- print("LOCALOPTS: Cannot find %s : using default options" % ConfigFileName())
- ConfigData.add_section( "PATHS" )
- ConfigData.add_section( "CONFIG" )
- if IsOsx():
-   ConfigData.set( "PATHS", "VST_INST_DIR", GetDefault("VST_INST_DIR", "~/.vst") )
-   ConfigData.set( "PATHS", "XCODEDIR", GetDefault("XCODEDIR", "/Applications/Xcode.app") )
-   ConfigData.set( "CONFIG", "ARCH", GetDefault("ARCH", "x86_64") )
-   ConfigData.set( "CONFIG", "CXX", GetDefault("CXX", "clang++") )
- elif IsIx():
-   ConfigData.set( "CONFIG", "CXX", "clang++" )
-   ConfigData.set( "CONFIG", "STD", "c++11" )
- ConfigData.set( "PATHS", "VST_SDK_DIR", GetDefault("VST_SDK_DIR", "/sdk/vstsdk2.4") )
- cfgfile = open(ConfigFileName(),'w')
- ConfigData.write(cfgfile)
- cfgfile.close()
-
-#print ConfigData.sections()
+if IsOsx():
+   os.environ["VST_INST_DIR"]="~/.vst"
+   os.environ["XCODEDIR"]="/Applications/Xcode.app"
+   os.environ["ARCH"]="x86_64"
+   os.environ["CXX"]="clang++"
+elif IsIx():
+   os.environ["CXX"]="clang++"
+   os.environ["STD"]="c++11"
+   os.environ["VST_SDK_DIR"]="/sdk/vstsdk2.4"
 
 ################################################################
 
 def GetEnv( sect, varname ):
 	#print "/////////////////////"
 	#print "sect<%s> varname<%s>" % (sect,varname)
-	ret = ""
-	if ConfigData.has_option( sect, varname ):
-		ret = ConfigData.get( sect, varname )
-	if is_verbose():
-		print(ret)
-	if os.path.isdir(ret):
-		if IsWindows():
-			ret = win32api.GetShortPathName(ret)
-		else:
-			ret = ret
+	ret = os.environ[varname]
 	#if False==os.path.isdir(ret):
 	#	print "<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret) 
 	#print "/////////////////////"
