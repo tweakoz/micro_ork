@@ -270,9 +270,8 @@ void IpcMsgQReciever::Connect( const std::string& nam )
 #endif
 
 	size_t isize = sizeof(msq_impl_t);
-
+bool keep_waiting = true;
 #if defined(OSX)
-	bool keep_waiting = true;
         int shm_id = -1;
         while( keep_waiting )
         {
