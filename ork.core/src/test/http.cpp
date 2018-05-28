@@ -7,7 +7,7 @@
 #include <unittest++/UnitTest++.h>
 #include <ork/http.h>
 #include <ork/thread.h>
-#if defined(ORK_OSX)
+#if 0 //defined(ORK_OSX)
 
 #include <Wt/WApplication>
 #include <Wt/WServer>

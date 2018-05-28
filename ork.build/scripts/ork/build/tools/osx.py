@@ -70,7 +70,7 @@ class ClangToolChain:
 
     boost_sys = find_boost_system()
 
-    prj.AddLibs( ' m c c++ curl wthttp wt wttest' )
+    prj.AddLibs( ' m c c++ curl' )
     prj.AddLibs( boost_sys )
 
     prj.CompilerType = 'gcc'
