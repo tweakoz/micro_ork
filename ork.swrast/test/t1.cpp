@@ -33,14 +33,14 @@ struct window
 	{
 		mopg = omq.CreateOpGroup("l0");
 
-		glutInit(&argc, argv);
-		glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-		glutInitWindowSize(width, height);
-		glutInitWindowPosition(300, 200);
-		glutCreateWindow("OrkRender");
-		glutDisplayFunc(Redraw);
-		glutReshapeFunc(Resize);
-		glutIdleFunc(Update);
+		//glutInit(&argc, argv);
+		//glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+		//glutInitWindowSize(width, height);
+		//glutInitWindowPosition(300, 200);
+		//glutCreateWindow("OrkRender");
+		//glutDisplayFunc(Redraw);
+		//glutReshapeFunc(Resize);
+		//glutIdleFunc(Update);
 
 		t.Start();
 
@@ -48,7 +48,8 @@ struct window
 
   	void run_loop()
   	{
-  		 glutMainLoop();
+	while(1)	Redraw();
+  	//	 glutMainLoop();
   	}
 
 	~window()
@@ -80,7 +81,7 @@ void Resize(int w, int h)
 
 void Update()
 {
-	glutPostRedisplay();
+	//glutPostRedisplay();
 }
 
 void Redraw()
@@ -90,18 +91,18 @@ void Redraw()
 	//printf( "frame<%d>\n", iframe );
 	//iframe++;
 
-	glClearColor(1.0f,0.0f,0.0f,1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-2.0, 2.0, -2.0, 2.0, -2.0, 500.0);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	Blit(gwin->mRG);
+	//glClearColor(1.0f,0.0f,0.0f,1.0f);
+//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//	glEnable(GL_DEPTH_TEST);
+//	glMatrixMode(GL_PROJECTION);
+//	glLoadIdentity();
+//	glOrtho(-2.0, 2.0, -2.0, 2.0, -2.0, 500.0);
+//	glMatrixMode(GL_MODELVIEW);
+//	glLoadIdentity();
+//
+//	Blit(gwin->mRG);
 	    
-	glutSwapBuffers();
+//	glutSwapBuffers();
 
 	float ft = timer.SecsSinceStart();
 	printf( "FPS<%f>\n", 1.0f/ft );
