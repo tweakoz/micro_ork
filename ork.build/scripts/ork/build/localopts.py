@@ -64,8 +64,6 @@ def VST_INST_DIR():
  return GetEnv( "PATHS", "VST_INST_DIR" )
 def VST_SDK_DIR(): 
  return GetEnv( "PATHS", "VST_SDK_DIR" )
-def AQSISDIR():
- return GetEnv( "PATHS", "AQSISDIR" )
 def ARCH():
  return GetEnv( "CONFIG", "ARCH" )
 def CXX():

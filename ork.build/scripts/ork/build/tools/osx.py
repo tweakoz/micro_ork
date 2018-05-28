@@ -36,7 +36,6 @@ __version__ = "1.0"
 ###############################################################################
 
 XcodeDir = localopts.XCODEDIR()
-AqsisDir = localopts.AQSISDIR()
 Arch = localopts.ARCH()
 
 if is_verbose():
@@ -79,7 +78,7 @@ class ClangToolChain:
     prj.XCFLG += '-fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-deprecated-declarations '
     prj.XCFLG += '-ffast-math '
     prj.XCXXFLG += '-std=c++11 -stdlib=libc++ ' + prj.XCFLG
-    prj.XCXXFLG += '-F%s/Contents/Resources/include -Wno-c++11-narrowing ' % AqsisDir
+    prj.XCXXFLG += '-Wno-c++11-narrowing ' 
     #######################
     # see answer to:
     # https://stackoverflow.com/questions/35242099/stdterminate-linker-error-on-a-small-clang-project
