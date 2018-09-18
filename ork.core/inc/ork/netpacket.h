@@ -22,14 +22,39 @@ namespace ork {
 template <size_t ksize> struct MessagePacket;
 typedef MessagePacket<4096> NetworkMessage;
 
+#if defined(OSX)
+inline void avxFastMemcpy(char* dest, const char* src, size_t size)
+{
+    __builtin_memcpy(dest,src,size);
+}
+#else
 
 inline void avxFastMemcpy(char* dest, const char* src, size_t size)
 {
     while(size>0)
     {
-        if(size<128)
-        {   memcpy(dest,src,size);
+        if( size<64 )
+        {   __builtin_memcpy(dest,src,size);
             size = 0;
+        }
+        else if( size<128 ) {
+            __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+
+            _mm_prefetch(src + 128, _MM_HINT_NTA);
+
+            xmm0 = _mm_load_si128((__m128i*)&src[   0]);
+            xmm1 = _mm_load_si128((__m128i*)&src[  16]);
+            xmm2 = _mm_load_si128((__m128i*)&src[  32]);
+            xmm3 = _mm_load_si128((__m128i*)&src[  48]);
+
+            _mm_stream_si128((__m128i*)&dest[   0], xmm0);
+            _mm_stream_si128((__m128i*)&dest[  16], xmm1);
+            _mm_stream_si128((__m128i*)&dest[  32], xmm2);
+            _mm_stream_si128((__m128i*)&dest[  48], xmm3);
+
+            src  += 64;
+            dest += 64;
+            size -= 64;
         }
         else {
             __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
@@ -61,6 +86,8 @@ inline void avxFastMemcpy(char* dest, const char* src, size_t size)
         }
     }
 }
+
+#endif
 
 //! data read marker/iterator for a NetworkMessage
 template <size_t ksize> struct MessagePacketIterator

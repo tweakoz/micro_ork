@@ -145,6 +145,8 @@ template<typename T,size_t max_items> struct MpMcRingBuf
 	MpMcRingBuf(const MpMcRingBuf&oth);
 
 	void push(const T& data);
+	void pop(T& data_out);
+	
 	bool try_push(const T& data);
 	bool try_pop(T& data);
 
@@ -332,6 +334,31 @@ bool MpMcRingBuf<T,max_items>::try_pop(T& data)
 	cell->mSequence.template store<MemRelease>(1+pos+kBufferMask);
 	return true;
 
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<typename T,size_t max_items>
+void MpMcRingBuf<T,max_items>::pop(T& data)
+{
+	bool bpopped = try_pop(data);
+	int icount = 0;
+	while(false==bpopped)
+	{
+		static const int kquantausec = 150;
+		static const int ktabsize = 16;
+		static const int ktab[ktabsize] = 
+		{
+			1, 3, 5, 7, 
+			17, 19, 21, 23,
+			35, 37, 39, 41,
+			53, 55, 57, 59,
+		};
+		usleep(ktab[icount&0xf]*kquantausec);
+		//printf( "trying push again<%d>\n", icount );
+		icount++;
+		bpopped = try_pop(data);
+	}
 }
 
 } // namespace ork

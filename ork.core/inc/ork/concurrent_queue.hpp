@@ -32,6 +32,10 @@ struct spsc_bounded_queue
 	{
 		mImpl.push(item);
 	}
+	void pop(T& item) // blocking
+	{
+		mImpl.pop(item);
+	}
 	bool try_push(const T& item) // non-blocking
 	{
 		return mImpl.try_push(item);
@@ -66,6 +70,10 @@ struct mpmc_bounded_queue
 	void push(const T& item) // blocking
 	{
 		mImpl.push(item);
+	}
+	void pop(T& item) // blocking
+	{
+		mImpl.pop(item);
 	}
 	bool try_push(const T& item) // non-blocking
 	{

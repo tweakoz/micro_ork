@@ -72,13 +72,24 @@ struct IpcMsgQSender
 	void Create( const std::string& nam );
 	void Connect( const std::string& nam );
 	void SendSyncStart();
-	void send( const IpcPacket_t& msg );
 	void send_debug( const IpcPacket_t& msg );
 	void SetName(const std::string& nam);
 	void SetSenderState(msgq_ep_state est);
 	msgq_ep_state GetRecieverState() const;
 
 	IpcMsgQProfileFrame profile();
+
+
+	inline void send( const IpcPacket_t& inc_msg )
+	{
+		assert(mOutbox!=nullptr);
+		assert(GetRecieverState()!=EMQEPS_TERMINATED);
+		mOutbox->mMsgQ.push(inc_msg);
+		_bytesSent.fetch_add(inc_msg.GetLength());
+		_messagesSent.fetch_add(1);
+
+	}
+
 
 	std::string mName;
 	std::string mPath;
@@ -108,10 +119,27 @@ struct IpcMsgQReciever
 	void Create( const std::string& nam );
 	void Connect( const std::string& nam );
 	void WaitSyncStart();
-	bool try_recv( IpcPacket_t& msg_out );
 	bool try_recv_debug( IpcPacket_t& msg_out );
 	void SetRecieverState(msgq_ep_state est);
 	msgq_ep_state GetSenderState() const;
+
+	//////////////////////////////////////////
+
+	inline bool try_recv( IpcPacket_t& out_msg )
+	{
+		assert(mInbox!=nullptr);
+		bool bpopped = mInbox->mMsgQ.try_pop(out_msg);
+		if( bpopped )
+		{
+			//out_msg.dump("try_recv");
+		}
+		return bpopped;
+	}
+
+	inline void recv( IpcPacket_t& out_msg )
+	{
+		mInbox->mMsgQ.pop(out_msg);
+	}
 
 	//////////////////////////////////////////
 	// future based RPC support

@@ -141,15 +141,6 @@ IpcMsgQProfileFrame IpcMsgQSender::profile()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IpcMsgQSender::send( const IpcPacket_t& inc_msg )
-{
-	assert(mOutbox!=nullptr);
-	assert(GetRecieverState()!=EMQEPS_TERMINATED);
-	mOutbox->mMsgQ.push(inc_msg);
-	_bytesSent.fetch_add(inc_msg.GetLength());
-	_messagesSent.fetch_add(1);
-}
-
 void IpcMsgQSender::send_debug( const IpcPacket_t& inc_msg )
 {
 	assert(mOutbox!=nullptr);
@@ -302,12 +293,15 @@ bool keep_waiting = true;
 	printf( "IpcMsgQReciever<%p> detected msgQ<%s>\n", this, nam.c_str() );
 #endif
 
-	keep_waiting = true;
 	while(GetSenderState()!=ork::EMQEPS_RUNNING)
 	{
 		usleep(1<<19);
 		printf( "IpcMsgQReciever<%p> waiting for sender to go up\n", this );
 	}
+
+#ifdef __MSGQ_DEBUG__ 	
+	printf( "IpcMsgQReciever<%p> detected sender running...\n", this );
+#endif
 
 
 	WaitSyncStart();
@@ -322,6 +316,8 @@ bool keep_waiting = true;
 
 void IpcMsgQReciever::Create( const std::string& nam )
 {
+	assert(false);
+
 	SetName(nam);
 #ifdef __MSGQ_DEBUG__ 	
 	printf( "IpcMsgQReciever<%p> creating msgQ<%s>\n", this, nam.c_str() );
@@ -345,15 +341,13 @@ void IpcMsgQReciever::Create( const std::string& nam )
 
 void IpcMsgQReciever::WaitSyncStart()
 {
+	usleep(1<<20);
 	SetRecieverState(EMQEPS_WAIT);
     // wait for sender to send start/sync message
     ork::IpcPacket_t msg;
 
-	bool bpopped = false;
-	while(false==bpopped)
-	{
-		bpopped = mInbox->mMsgQ.try_pop(msg);
-	}	
+	mInbox->mMsgQ.pop(msg);
+
     ork::IpcPacketIter_t syncit(msg);
     std::string sync_content = msg.ReadString(syncit);
     assert(sync_content=="start/sync");
@@ -371,17 +365,6 @@ msgq_ep_state IpcMsgQReciever::GetSenderState() const
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-bool IpcMsgQReciever::try_recv( IpcPacket_t& out_msg )
-{
-	assert(mInbox!=nullptr);
-	bool bpopped = mInbox->mMsgQ.try_pop(out_msg);
-	if( bpopped )
-	{
-		//out_msg.dump("try_recv");
-	}
-	return bpopped;
-}
 
 bool IpcMsgQReciever::try_recv_debug( IpcPacket_t& out_msg )
 {
