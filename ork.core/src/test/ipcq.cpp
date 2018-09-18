@@ -10,12 +10,14 @@ typedef ork::IpcPacket_t msg_t;
 static const int begin_message = 0;
 static const int continue_message = 1;
 static const int end_message = 2;
-static const int max_payload_size = ork::ipcq_msglen;
+static const int max_payload_size = ork::ipcq_msglen-32;
 static const int xact_size = 262144;
 
 ork::IpcMsgQSender ipcqs;
 ork::IpcMsgQReciever ipcqr;
      
+std::atomic<int> msgcounter;
+
 void send_loop(const std::string& ipc_name)
 {   printf( "IpcMsgQSender creating @ ipc_name<%s>...\n", ipc_name.c_str() );
     ipcqs.Create(ipc_name);
@@ -132,9 +134,10 @@ TEST(ipcq1)
 
     while(false==ok_to_exit)
     {
-        size_t num_sent = ipcqs.GetAndResetCounter();
-
-        printf( "MiB/Sec<%4.2f>       \r", double(num_sent)/1048576.0 );
+        auto prof_frame = ipcqs.profile();
+        double mbps = double(prof_frame._bytesSent)/1048576.0;
+        double msgps = prof_frame._messagesSent;
+        printf( "Msg/Sec<%4.2f> MiB/Sec<%4.2f>       \r", msgps, mbps );
         fflush(stdout);
     	usleep(1000000);
     }

@@ -127,9 +127,12 @@ void IpcMsgQSender::SendSyncStart()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-size_t IpcMsgQSender::GetAndResetCounter()
+IpcMsgQProfileFrame IpcMsgQSender::profile()
 {
-	return mBytesSent.exchange(0);
+	IpcMsgQProfileFrame rval;
+	rval._bytesSent = _bytesSent.exchange(0);
+	rval._messagesSent = _messagesSent.exchange(0);
+	return rval;
 }
 
 
@@ -140,7 +143,8 @@ void IpcMsgQSender::send( const IpcPacket_t& inc_msg )
 	assert(mOutbox!=nullptr);
 	assert(GetRecieverState()!=EMQEPS_TERMINATED);
 	mOutbox->mMsgQ.push(inc_msg);
-	mBytesSent.fetch_add(inc_msg.GetLength());
+	_bytesSent.fetch_add(inc_msg.GetLength());
+	_messagesSent.fetch_add(1);
 }
 
 void IpcMsgQSender::send_debug( const IpcPacket_t& inc_msg )
@@ -148,7 +152,8 @@ void IpcMsgQSender::send_debug( const IpcPacket_t& inc_msg )
 	assert(mOutbox!=nullptr);
 	assert(GetRecieverState()!=EMQEPS_TERMINATED);
 	mOutbox->mDbgQ.push(inc_msg);
-	mBytesSent.fetch_add(inc_msg.GetLength());
+	_bytesSent.fetch_add(inc_msg.GetLength());
+	_messagesSent.fetch_add(1);
 }
 
 void IpcMsgQSender::SetSenderState(msgq_ep_state est)

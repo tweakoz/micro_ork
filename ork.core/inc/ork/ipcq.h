@@ -56,6 +56,14 @@ typedef msgq_image msq_impl_t;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+struct IpcMsgQProfileFrame
+{
+	size_t _bytesSent = 0;
+	size_t _messagesSent = 0;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
 struct IpcMsgQSender
 {
 	IpcMsgQSender();
@@ -70,7 +78,7 @@ struct IpcMsgQSender
 	void SetSenderState(msgq_ep_state est);
 	msgq_ep_state GetRecieverState() const;
 
-	size_t GetAndResetCounter();
+	IpcMsgQProfileFrame profile();
 
 	std::string mName;
 	std::string mPath;
@@ -79,7 +87,8 @@ struct IpcMsgQSender
 	msq_impl_t* mOutbox;
 	void* mShmAddr;
 
-	std::atomic<size_t> mBytesSent;
+	std::atomic<size_t> _bytesSent;
+	std::atomic<size_t> _messagesSent;
 
 
 };
