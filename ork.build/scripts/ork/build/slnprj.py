@@ -270,7 +270,7 @@ class Project:
 
         ############################
 
-        do_opt = False #(name in optset)
+        do_opt = True #(name in optset)
 
         if do_opt:
             self.XCCFLG += '-O3 '

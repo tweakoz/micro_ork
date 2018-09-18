@@ -14,11 +14,53 @@
 #include <string.h>
 #include <ork/fixedstring.h>
 #include <ork/atomic.h>
+#include <immintrin.h>
+#include <xmmintrin.h>
 
 namespace ork {
 
 template <size_t ksize> struct MessagePacket;
 typedef MessagePacket<4096> NetworkMessage;
+
+
+inline void avxFastMemcpy(char* dest, const char* src, size_t size)
+{
+    while(size>0)
+    {
+        if(size<128)
+        {   memcpy(dest,src,size);
+            size = 0;
+        }
+        else {
+            __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+            _mm_prefetch(src + 128, _MM_HINT_NTA);
+            _mm_prefetch(src + 160, _MM_HINT_NTA);
+            _mm_prefetch(src + 194, _MM_HINT_NTA);
+            _mm_prefetch(src + 224, _MM_HINT_NTA);
+
+            xmm0 = _mm_load_si128((__m128i*)&src[   0]);
+            xmm1 = _mm_load_si128((__m128i*)&src[  16]);
+            xmm2 = _mm_load_si128((__m128i*)&src[  32]);
+            xmm3 = _mm_load_si128((__m128i*)&src[  48]);
+            xmm4 = _mm_load_si128((__m128i*)&src[  64]);
+            xmm5 = _mm_load_si128((__m128i*)&src[  80]);
+            xmm6 = _mm_load_si128((__m128i*)&src[  96]);
+            xmm7 = _mm_load_si128((__m128i*)&src[ 112]);
+
+            _mm_stream_si128((__m128i*)&dest[   0], xmm0);
+            _mm_stream_si128((__m128i*)&dest[  16], xmm1);
+            _mm_stream_si128((__m128i*)&dest[  32], xmm2);
+            _mm_stream_si128((__m128i*)&dest[  48], xmm3);
+            _mm_stream_si128((__m128i*)&dest[  64], xmm4);
+            _mm_stream_si128((__m128i*)&dest[  80], xmm5);
+            _mm_stream_si128((__m128i*)&dest[  96], xmm6);
+            _mm_stream_si128((__m128i*)&dest[ 112], xmm7);
+            src  += 128;
+            dest += 128;
+            size -= 128;
+        }
+    }
+}
 
 //! data read marker/iterator for a NetworkMessage
 template <size_t ksize> struct MessagePacketIterator
@@ -122,7 +164,7 @@ template <size_t ksize> struct MessagePacket : public MessagePacketBase
         assert( (miSize+ilen)<=kmaxsize );
         const char* pch = (const char*) pdata;
         char* pdest = & mBuffer[miSize];
-        memcpy( pdest, (const char*) pdata, ilen );
+        avxFastMemcpy( pdest, (const char*) pdata, ilen );
         miSize += ilen;
     }
     ///////////////////////////////////////////////////////
@@ -164,7 +206,7 @@ template <size_t ksize> struct MessagePacket : public MessagePacketBase
     void ReadDataInternal( void* pdest, size_t ilen, iter_t& it ) const
     {
         const char* psrc = & mBuffer[it.miReadIndex];
-        memcpy( (char*) pdest, psrc, ilen );
+        avxFastMemcpy( (char*) pdest, psrc, ilen );
         it.miReadIndex += ilen;
     }
     ///////////////////////////////////////////////////////
@@ -175,7 +217,7 @@ template <size_t ksize> struct MessagePacket : public MessagePacketBase
         miTimeSent = rhs.miTimeSent;
 
         if( miSize )
-            memcpy(mBuffer,rhs.mBuffer,miSize);
+            avxFastMemcpy(mBuffer,rhs.mBuffer,miSize);
 
         return *this;
     }

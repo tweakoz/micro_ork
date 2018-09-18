@@ -15,6 +15,9 @@
 
 #define __MSGQ_DEBUG__
 
+#include <immintrin.h>
+#include <cstdint>
+
 namespace ork {
 
 //static const uin32_t kmapaddrflags = MAP_SHARED|MAP_LOCKED;

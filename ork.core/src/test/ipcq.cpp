@@ -109,7 +109,7 @@ void recv_loop(const std::string& ipc_name) {
              }
         }
         else
-            usleep(500);
+            usleep(100);
     }
     ////////////////////////////////////////////
     printf( "IpcMsgQReciever going down...\n");
@@ -125,6 +125,8 @@ TEST(ipcq1)
     sendthr.start([ipcname](){
     	send_loop(ipcname);
     });
+
+    usleep(1<<20);
 
     recvthr.start([ipcname](){
     	recv_loop(ipcname);
