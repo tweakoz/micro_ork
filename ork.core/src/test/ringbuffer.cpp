@@ -137,7 +137,7 @@ TEST(cringbuf1)
 	printf( "cringbuffer TEST\n");
 	printf("//////////////////////////////////////\n" );
 	static const int knumworkers = 2;
-	static const int krbsize = 16<<10;
+	static const int krbsize = 128<<20;
 	static const char MAGIC_BYTE = 0x5a;
 	static const int kwid0 = 0;
 	static const int kwid1 = 1;
@@ -177,7 +177,7 @@ TEST(cringbuf1)
 				if(off!=-1)
 				{
 					assert(off < krbsize);
-					memcpy(&rb_storage[off], &value, len);
+					//memcpy(&rb_storage[off], &value, len);
 					ringbuf_produce(rb, wkr);
 					did = true;
 				}
