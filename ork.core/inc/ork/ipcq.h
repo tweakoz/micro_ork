@@ -38,9 +38,13 @@ enum msgq_ep_state
 	EMQEPS_TERMINATED,
 };
 
+typedef cringbuf::ringbuf<1,ipcq_msgcnt*sizeof(IpcPacket_t)> ringbuf_t;
+typedef cringbuf::ringbuf_worker_t worker_t;
+
 struct msgq_image
 {
-	ork::mpmc_bounded_queue<IpcPacket_t,ipcq_msgcnt> 	mMsgQ;
+
+	ringbuf_t _ringbuf;
 
 	ork::atomic<uint64_t> mSenderState;
 	ork::atomic<uint64_t> mRecieverState;
@@ -63,6 +67,29 @@ struct IpcMsgQProfileFrame
 
 ///////////////////////////////////////////////////////////////////////////////
 
+inline void dump_segment(const char* label, const uint8_t* base_addr, size_t length)
+{
+    size_t icount = length;
+    size_t j = 0;
+    while(icount>0)
+    {
+        uint8_t* paddr = (uint8_t*)(base_addr+j);
+        printf( "msg<%s> [%02lx : ", label, j );
+        size_t thisc = (icount>=16) ? 16 : icount;
+        for( size_t i=0; i<thisc; i++ )
+        {
+            size_t idx = j+i;
+            printf( "%02x ", paddr[i] );
+        }
+        j+=thisc;
+        icount -= thisc;
+
+        printf("\n");
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 struct IpcMsgQSender
 {
 	IpcMsgQSender();
@@ -81,9 +108,28 @@ struct IpcMsgQSender
 
 	inline void send( const IpcPacket_t& inc_msg )
 	{
+		auto prefetch_addr = (const char*) inc_msg.GetData();
+	    _mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+    	_mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+
+
 		assert(mOutbox!=nullptr);
 		assert(GetRecieverState()!=EMQEPS_TERMINATED);
-		mOutbox->mMsgQ.push(inc_msg);
+
+		bool pushed = false;
+		while(false==pushed)
+		{
+			if( auto pdest = mOutbox->_ringbuf.tryEnqueue(_worker,sizeof(inc_msg)))
+			{	auto dest_as_msg = (IpcPacket_t*) pdest;
+				*dest_as_msg = inc_msg;
+				//dump_segment("\nsend_msgdat",(uint8_t*)dest_as_msg->GetData(),dest_as_msg->GetLength());
+				mOutbox->_ringbuf.enqueued(_worker);	
+				pushed = true;
+			}
+			else
+				usleep(100);
+		}
+
 		_bytesSent.fetch_add(inc_msg.GetLength());
 		_messagesSent.fetch_add(1);
 
@@ -93,7 +139,7 @@ struct IpcMsgQSender
 	std::string mName;
 	std::string mPath;
 	//bool mbShutdown;
-
+	worker_t* _worker;
 	msq_impl_t* mOutbox;
 	void* mShmAddr;
 
@@ -127,12 +173,29 @@ struct IpcMsgQReciever
 	inline bool try_recv( IpcPacket_t& out_msg )
 	{
 		assert(mInbox!=nullptr);
-		return mInbox->mMsgQ.try_pop(out_msg);
+
+		if( auto try_pkt = mInbox->_ringbuf.tryDequeue() )
+		{
+			if( try_pkt.len() >= sizeof(out_msg) )
+			{
+				const auto psrc = (IpcPacket_t*) try_pkt._readptr;
+				out_msg = *psrc;
+				//dump_segment("\nrecv_msgdat",(uint8_t*)out_msg.GetData(),out_msg.GetLength());
+				mInbox->_ringbuf.dequeued(sizeof(out_msg));
+				return true;
+			}
+			else
+				mInbox->_ringbuf.dequeued(0);
+
+		}
+
+		return false;
 	}
 
 	inline void recv( IpcPacket_t& out_msg )
 	{
-		mInbox->mMsgQ.pop(out_msg);
+		while(false==try_recv(out_msg))
+			usleep(100);
 	}
 
 	//////////////////////////////////////////

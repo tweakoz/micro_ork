@@ -369,6 +369,8 @@ template <const int kworkers,
 		size_t _length = 0;
 
 		operator bool() const { return bool(_readptr!=nullptr); }
+		size_t len() const { return _length; }
+
 	};
 
 	inline ConsumptionAttempt tryDequeue()
@@ -497,6 +499,11 @@ template <const int kworkers,
 		this->_written = (nwritten == this->_space) 
 		             ? 0 
 		             : nwritten;
+
+		auto prefetch_addr = _storage+_written;
+	    _mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+	    _mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+
 	}
 };
 

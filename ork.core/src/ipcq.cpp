@@ -84,6 +84,14 @@ void IpcMsgQSender::Create( const std::string& nam )
 
 	assert(mShmAddr!=(void*)0xffffffffffffffff);
 	new(mOutbox) msq_impl_t;
+
+	////////////////////////////
+
+	mOutbox->_ringbuf.init();
+	_worker = mOutbox->_ringbuf.getWorker(0);
+
+	////////////////////////////
+
 	SendSyncStart();
 	SetSenderState(ork::EMQEPS_RUNNING);
 }
@@ -123,9 +131,7 @@ void IpcMsgQSender::SendSyncStart()
 #endif
     ork::IpcPacket_t msg;
     msg.WriteString("start/sync");
-	uint32_t msg_priority = 0;
-	mOutbox->mMsgQ.push(msg);
-	//mOutgoingIpcQ->send(&msg,sizeof(msg),msg_priority);
+	this->send(msg);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -336,10 +342,11 @@ void IpcMsgQReciever::WaitSyncStart()
     // wait for sender to send start/sync message
     ork::IpcPacket_t msg;
 
-	mInbox->mMsgQ.pop(msg);
+	recv(msg);
 
     ork::IpcPacketIter_t syncit(msg);
     std::string sync_content = msg.ReadString(syncit);
+    printf("sync_content<%s>\n", sync_content.c_str() );
     assert(sync_content=="start/sync");
 }
 
