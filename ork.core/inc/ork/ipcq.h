@@ -105,14 +105,14 @@ struct IpcMsgQSender
 
 	IpcMsgQProfileFrame profile();
 
-	inline void send(const IpcPacket_t& inp)
+	inline void sendPacket(const IpcPacket_t& inp)
 	{
-		beginSend() = inp;
-		endSend();
+		beginSendPacket() = inp;
+		endSendPacket();
 	}
 
 
-	inline IpcPacket_t& beginSend()
+	inline IpcPacket_t& beginSendPacket()
 	{
 		assert(_begpkt==nullptr);
 		_begpkt = nullptr;
@@ -135,7 +135,7 @@ struct IpcMsgQSender
 
 		return *_begpkt;
 	}
-	inline void endSend()
+	inline void endSendPacket()
 	{
 		assert(_begpkt!=nullptr);
 
@@ -181,7 +181,7 @@ struct IpcMsgQReciever
 
 	//////////////////////////////////////////
 
-	inline const IpcPacket_t* beginRecv()
+	inline const IpcPacket_t* beginRecvPacket()
 	{
 		const IpcPacket_t* rval = nullptr;
 
@@ -198,20 +198,20 @@ struct IpcMsgQReciever
 
 		return nullptr;
 	}
-	inline void endRecv()
+	inline void endRecvPacket()
 	{
 		mInbox->_ringbuf.dequeued(sizeof(IpcPacket_t));
 	}
 
-	inline void recv( IpcPacket_t& out_msg )
+	inline void recvPacket( IpcPacket_t& out_msg )
 	{
 		bool done = false;
 		while(false==done)
 		{
-			if( auto r = beginRecv() )
+			if( auto r = beginRecvPacket() )
 			{
 				out_msg = *r;
-				endRecv();
+				endRecvPacket();
 			}
 			else			
 				usleep(100);

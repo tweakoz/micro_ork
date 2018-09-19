@@ -131,7 +131,7 @@ void IpcMsgQSender::SendSyncStart()
 #endif
     ork::IpcPacket_t msg;
     msg.WriteString("start/sync");
-	this->send(msg);
+	this->sendPacket(msg);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -342,7 +342,7 @@ void IpcMsgQReciever::WaitSyncStart()
     // wait for sender to send start/sync message
     ork::IpcPacket_t msg;
 
-	recv(msg);
+	recvPacket(msg);
 
     ork::IpcPacketIter_t syncit(msg);
     std::string sync_content = msg.ReadString(syncit);

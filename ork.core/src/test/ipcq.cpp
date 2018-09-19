@@ -57,29 +57,29 @@ void send_loop(const std::string& ipc_name)
         while(false==iter_done)
     	{   
 
-            auto& msg1 = ipcqs.beginSend();
+            auto& msg1 = ipcqs.beginSendPacket();
             msg1.Write<int>(begin_message);
             msg1.Write<int>(size_this_iter);
-            ipcqs.endSend(); 
+            ipcqs.endSendPacket(); 
 
             auto src_ptr = data;
             int index = 0;
             
             while( index < size_this_iter )
-            {   auto& msg2 = ipcqs.beginSend();
+            {   auto& msg2 = ipcqs.beginSendPacket();
                 msg2.Write<int>(continue_message);
                 int size_this_packet = (size_this_iter-index);
                 if( size_this_packet>max_payload_size )
                     size_this_packet = max_payload_size;
                 msg2.Write<int>(size_this_packet);
                 msg2.WriteData(src_ptr,size_this_packet);
-                ipcqs.endSend(); 
+                ipcqs.endSendPacket(); 
                 index += size_this_packet;
                 src_ptr += size_this_packet;
             }
-            auto& msg3 = ipcqs.beginSend();
+            auto& msg3 = ipcqs.beginSendPacket();
             msg3.Write<int>(end_message);
-            ipcqs.endSend(); 
+            ipcqs.endSendPacket(); 
 
             byte_counter += size_this_iter;
 
@@ -92,7 +92,7 @@ void send_loop(const std::string& ipc_name)
 
     msg_t msg;
     msg.Write<int>(kill_message);
-    ipcqs.send(msg); 
+    ipcqs.sendPacket(msg); 
 
     ////////////////////////////////////////////
     // cleanup
@@ -117,7 +117,7 @@ void recv_loop(const std::string& ipc_name) {
     ////////////////////////////////////////////
     int message_size = 0;
     while(false==ok_to_exit)
-    {   if( auto msg = ipcqr.beginRecv() )
+    {   if( auto msg = ipcqr.beginRecvPacket() )
         {   msg_t::iter_t recv_it(*msg);
             int icmd = -1;
             msg->Read<int>(icmd,recv_it);
@@ -146,7 +146,7 @@ void recv_loop(const std::string& ipc_name) {
                 default:
                     assert( false );
              }
-             ipcqr.endRecv();
+             ipcqr.endRecvPacket();
         }
         else
             usleep(100);
