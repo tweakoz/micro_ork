@@ -16,6 +16,7 @@
 #include <assert.h>
 #include <immintrin.h>
 #include <xmmintrin.h>
+#include "cringbuffer.inl"
 
 namespace ork {
 
@@ -138,7 +139,6 @@ size_t SpScRingBuf<Element, Size>::increment(size_t idx) const
 
 template<typename T,size_t max_items> struct MpMcRingBuf
 {
-
 	typedef T value_type;
 
 	MpMcRingBuf(); // buffer_size must be power of two

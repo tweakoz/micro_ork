@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include <ork/ringbuffer.hpp>
+#include <ork/cringbuffer.inl>
 #include <ork/svariant.h>
 #include <ork/timer.h>
 #include <ork/fixedstring.h>
@@ -123,6 +124,122 @@ TEST(OrkMpMcRingBuf)
 	delete the_yo;
 
 	printf("//////////////////////////////////////\n" );
+
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+TEST(cringbuf1)
+{
+	using namespace cringbuf;
+
+	printf("//////////////////////////////////////\n" );
+	printf( "cringbuffer TEST\n");
+	printf("//////////////////////////////////////\n" );
+	static const int knumworkers = 2;
+	static const int krbsize = 16<<10;
+	static const char MAGIC_BYTE = 0x5a;
+	static const int kwid0 = 0;
+	static const int kwid1 = 1;
+
+	auto rb_storage = new char[krbsize];
+
+	size_t ringbuf_obj_size = 0;
+	ringbuf_get_sizes(knumworkers,&ringbuf_obj_size,NULL);
+
+	auto rb = (ringbuf_t*) malloc(ringbuf_obj_size);
+
+	ringbuf_setup( rb, knumworkers, krbsize);
+	memset(rb_storage, MAGIC_BYTE, krbsize);
+	auto w0 = ringbuf_register(rb, kwid0);
+	auto w1 = ringbuf_register(rb, kwid1);
+
+	ork::thread thr_p1, thr_p2, thr_c;
+
+	std::atomic<int> pvalue;
+
+	////////////////////////////////////////////////////
+
+	static const size_t knummsg = 128<<20;
+
+	auto l_producer = [&](ringbuf_worker_t* wkr){
+
+		for( size_t i=0; i<knummsg; i++ )
+		{
+			//printf("producer<%p> count<%d>\n", wkr, i );
+			int value = pvalue.fetch_add(1);
+			const size_t len = sizeof(value);			
+			bool did = false;
+
+			while( false == did )
+			{
+				size_t off = ringbuf_acquire(rb, wkr, len);
+				if(off!=-1)
+				{
+					assert(off < krbsize);
+					memcpy(&rb_storage[off], &value, len);
+					ringbuf_produce(rb, wkr);
+					did = true;
+				}
+				else
+				{
+					usleep(100);
+				}
+
+			}
+		}
+		printf("producer<%p> done...\n", wkr );
+
+	};
+
+	////////////////////////////////////////////////////
+
+	auto l_consumer = [&](){
+
+		size_t byte_count = 0;
+		size_t msg_count = 0;
+		size_t expected = knummsg*knumworkers*sizeof(int);
+		ork::Timer t;
+		t.Start();
+
+		while(byte_count<expected)
+		{
+			size_t off = 0;
+			size_t len = ringbuf_consume(rb, &off);
+			if( len > 0) {
+				ringbuf_release(rb, len);
+				byte_count += len;
+
+				if( t.SecsSinceStart()>1.0f )
+				{
+					printf("consume msg_count<%zu> byte_count<%zu>\n", msg_count, byte_count );
+					t.Start();
+					msg_count = 0;
+				}
+
+				msg_count+=(len/sizeof(int));
+			}
+			else
+				usleep(100);
+		}
+		assert(byte_count==expected);
+		printf("consumer done msg_count<%zu> byte_count<%zu>\n", msg_count, byte_count );
+
+	};
+
+	////////////////////////////////////////////////////
+
+    thr_p1.start([=](){ l_producer(w0); });
+    thr_p2.start([=](){ l_producer(w1); });
+    thr_c.start([=](){ l_consumer(); });
+
+    thr_p1.join();
+    thr_p2.join();
+    thr_c.join();
+
+	printf("//////////////////////////////////////\n" );
+
+	free(rb);
 
 }
 
