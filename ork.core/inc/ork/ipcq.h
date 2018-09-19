@@ -41,7 +41,6 @@ enum msgq_ep_state
 struct msgq_image
 {
 	ork::mpmc_bounded_queue<IpcPacket_t,ipcq_msgcnt> 	mMsgQ;
-	ork::mpmc_bounded_queue<IpcPacket_t,ipcq_msgcnt/8> 	mDbgQ;
 
 	ork::atomic<uint64_t> mSenderState;
 	ork::atomic<uint64_t> mRecieverState;

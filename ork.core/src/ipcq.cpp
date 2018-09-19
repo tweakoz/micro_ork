@@ -141,18 +141,8 @@ IpcMsgQProfileFrame IpcMsgQSender::profile()
 
 ///////////////////////////////////////////////////////////////////////////////
 
-void IpcMsgQSender::send_debug( const IpcPacket_t& inc_msg )
-{
-	assert(mOutbox!=nullptr);
-	assert(GetRecieverState()!=EMQEPS_TERMINATED);
-	mOutbox->mDbgQ.push(inc_msg);
-	_bytesSent.fetch_add(inc_msg.GetLength());
-	_messagesSent.fetch_add(1);
-}
-
 void IpcMsgQSender::SetSenderState(msgq_ep_state est)
 {
-	assert(mOutbox!=nullptr);
 	assert(mOutbox!=nullptr);
 	mOutbox->mSenderState = (uint64_t) est;
 }
@@ -362,19 +352,6 @@ msgq_ep_state IpcMsgQReciever::GetSenderState() const
 {
 	assert(mInbox!=nullptr);
 	return (msgq_ep_state) mInbox->mSenderState.load();
-}
-
-///////////////////////////////////////////////////////////////////////////////
-
-bool IpcMsgQReciever::try_recv_debug( IpcPacket_t& out_msg )
-{
-	assert(mInbox!=nullptr);
-	bool bpopped = mInbox->mDbgQ.try_pop(out_msg);
-	if( bpopped )
-	{
-		//out_msg.dump("try_recv");
-	}
-	return bpopped;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

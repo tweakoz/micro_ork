@@ -142,17 +142,13 @@ TEST(cringbuf1)
 	static const int kwid0 = 0;
 	static const int kwid1 = 1;
 
-	auto rb_storage = new char[krbsize];
+	typedef ringbuf<2,krbsize> ringbuf_t;
 
-	size_t ringbuf_obj_size = 0;
-	ringbuf_get_sizes(knumworkers,&ringbuf_obj_size,NULL);
+	auto rb = new ringbuf_t;
+	rb->init();
 
-	auto rb = (ringbuf_t*) malloc(ringbuf_obj_size);
-
-	ringbuf_setup( rb, knumworkers, krbsize);
-	memset(rb_storage, MAGIC_BYTE, krbsize);
-	auto w0 = ringbuf_register(rb, kwid0);
-	auto w1 = ringbuf_register(rb, kwid1);
+	auto w0 = rb->getWorker(kwid0);
+	auto w1 = rb->getWorker(kwid1);
 
 	ork::thread thr_p1, thr_p2, thr_c;
 
@@ -173,12 +169,10 @@ TEST(cringbuf1)
 
 			while( false == did )
 			{
-				size_t off = ringbuf_acquire(rb, wkr, len);
-				if(off!=-1)
+				if(auto write_ptr = rb->tryEnqueue(wkr, len))
 				{
-					assert(off < krbsize);
 					//memcpy(&rb_storage[off], &value, len);
-					ringbuf_produce(rb, wkr);
+					rb->enqueued(wkr);
 					did = true;
 				}
 				else
@@ -204,11 +198,9 @@ TEST(cringbuf1)
 
 		while(byte_count<expected)
 		{
-			size_t off = 0;
-			size_t len = ringbuf_consume(rb, &off);
-			if( len > 0) {
-				ringbuf_release(rb, len);
-				byte_count += len;
+			if( auto try_pkt = rb->tryDequeue() ) {
+				rb->dequeued(try_pkt._length);
+				byte_count += try_pkt._length;
 
 				if( t.SecsSinceStart()>1.0f )
 				{
@@ -217,7 +209,7 @@ TEST(cringbuf1)
 					msg_count = 0;
 				}
 
-				msg_count+=(len/sizeof(int));
+				msg_count+=(try_pkt._length/sizeof(int));
 			}
 			else
 				usleep(100);
@@ -239,8 +231,7 @@ TEST(cringbuf1)
 
 	printf("//////////////////////////////////////\n" );
 
-	free(rb);
-
+	delete rb;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
