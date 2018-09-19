@@ -87,6 +87,7 @@
 #include <errno.h>
 
 #include <assert.h>
+#include <algorithm>
 
 namespace cringbuf {
 
@@ -424,7 +425,7 @@ retry:
 	 * and deduct the safe 'ready' offset.
 	 */
 	if (next < written) {
-		const ringbuf_off_t end = std::min(rbuf->space, rbuf->end);
+		const ringbuf_off_t end = std::min(ringbuf_off_t(rbuf->space), rbuf->end);
 
 		/*
 		 * Wrap-around case.  Check for the cut off first.
