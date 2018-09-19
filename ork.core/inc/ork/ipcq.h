@@ -105,37 +105,48 @@ struct IpcMsgQSender
 
 	IpcMsgQProfileFrame profile();
 
-
-	inline void send( const IpcPacket_t& inc_msg )
+	inline void send(const IpcPacket_t& inp)
 	{
-		auto prefetch_addr = (const char*) inc_msg.GetData();
-	    _mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
-    	_mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+		beginSend() = inp;
+		endSend();
+	}
 
+
+	inline IpcPacket_t& beginSend()
+	{
+		assert(_begpkt==nullptr);
+		_begpkt = nullptr;
 
 		assert(mOutbox!=nullptr);
 		assert(GetRecieverState()!=EMQEPS_TERMINATED);
 
-		bool pushed = false;
-		while(false==pushed)
+		bool acquired = false;
+		while(false==acquired)
 		{
-			if( auto pdest = mOutbox->_ringbuf.tryEnqueue(_worker,sizeof(inc_msg)))
-			{	auto dest_as_msg = (IpcPacket_t*) pdest;
-				*dest_as_msg = inc_msg;
-				//dump_segment("\nsend_msgdat",(uint8_t*)dest_as_msg->GetData(),dest_as_msg->GetLength());
-				mOutbox->_ringbuf.enqueued(_worker);	
-				pushed = true;
+			if( auto pdest = mOutbox->_ringbuf.tryEnqueue(_worker,sizeof(IpcPacket_t)))
+			{	_begpkt = (IpcPacket_t*) pdest;
+				_begpkt->clear();
+				acquired = true;
 			}
 			else
 				usleep(100);
 		}
 
-		_bytesSent.fetch_add(inc_msg.GetLength());
+
+		return *_begpkt;
+	}
+	inline void endSend()
+	{
+		assert(_begpkt!=nullptr);
+
+		_bytesSent.fetch_add(_begpkt->GetLength());
 		_messagesSent.fetch_add(1);
 
+		mOutbox->_ringbuf.enqueued(_worker);	
+		_begpkt = nullptr;
 	}
 
-
+	IpcPacket_t* _begpkt = nullptr;
 	std::string mName;
 	std::string mPath;
 	//bool mbShutdown;
@@ -170,32 +181,41 @@ struct IpcMsgQReciever
 
 	//////////////////////////////////////////
 
-	inline bool try_recv( IpcPacket_t& out_msg )
+	inline const IpcPacket_t* beginRecv()
 	{
+		const IpcPacket_t* rval = nullptr;
+
 		assert(mInbox!=nullptr);
 
 		if( auto try_pkt = mInbox->_ringbuf.tryDequeue() )
 		{
-			if( try_pkt.len() >= sizeof(out_msg) )
-			{
-				const auto psrc = (IpcPacket_t*) try_pkt._readptr;
-				out_msg = *psrc;
-				//dump_segment("\nrecv_msgdat",(uint8_t*)out_msg.GetData(),out_msg.GetLength());
-				mInbox->_ringbuf.dequeued(sizeof(out_msg));
-				return true;
-			}
+			if( try_pkt.len() >= sizeof(IpcPacket_t) )
+				return (const IpcPacket_t*) try_pkt._readptr;
 			else
 				mInbox->_ringbuf.dequeued(0);
 
 		}
 
-		return false;
+		return nullptr;
+	}
+	inline void endRecv()
+	{
+		mInbox->_ringbuf.dequeued(sizeof(IpcPacket_t));
 	}
 
 	inline void recv( IpcPacket_t& out_msg )
 	{
-		while(false==try_recv(out_msg))
-			usleep(100);
+		bool done = false;
+		while(false==done)
+		{
+			if( auto r = beginRecv() )
+			{
+				out_msg = *r;
+				endRecv();
+			}
+			else			
+				usleep(100);
+		}
 	}
 
 	//////////////////////////////////////////

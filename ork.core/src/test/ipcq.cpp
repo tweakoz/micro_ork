@@ -57,28 +57,29 @@ void send_loop(const std::string& ipc_name)
         while(false==iter_done)
     	{   
 
-            msg_t msg;
-            msg.Write<int>(begin_message);
-            msg.Write<int>(size_this_iter);
-            ipcqs.send(msg); 
+            auto& msg1 = ipcqs.beginSend();
+            msg1.Write<int>(begin_message);
+            msg1.Write<int>(size_this_iter);
+            ipcqs.endSend(); 
+
             auto src_ptr = data;
             int index = 0;
             
             while( index < size_this_iter )
-            {   msg.clear();
-                msg.Write<int>(continue_message);
+            {   auto& msg2 = ipcqs.beginSend();
+                msg2.Write<int>(continue_message);
                 int size_this_packet = (size_this_iter-index);
                 if( size_this_packet>max_payload_size )
                     size_this_packet = max_payload_size;
-                msg.Write<int>(size_this_packet);
-                msg.WriteData(src_ptr,size_this_packet);
-                ipcqs.send(msg); 
+                msg2.Write<int>(size_this_packet);
+                msg2.WriteData(src_ptr,size_this_packet);
+                ipcqs.endSend(); 
                 index += size_this_packet;
                 src_ptr += size_this_packet;
             }
-            msg.clear();
-            msg.Write<int>(end_message);
-            ipcqs.send(msg); 
+            auto& msg3 = ipcqs.beginSend();
+            msg3.Write<int>(end_message);
+            ipcqs.endSend(); 
 
             byte_counter += size_this_iter;
 
@@ -116,26 +117,24 @@ void recv_loop(const std::string& ipc_name) {
     ////////////////////////////////////////////
     int message_size = 0;
     while(false==ok_to_exit)
-    {   msg_t msg;
-        ipcqr.recv(msg);
-        //if( got )
-        {   msg_t::iter_t recv_it(msg);
+    {   if( auto msg = ipcqr.beginRecv() )
+        {   msg_t::iter_t recv_it(*msg);
             int icmd = -1;
-            msg.Read<int>(icmd,recv_it);
+            msg->Read<int>(icmd,recv_it);
             switch( icmd )
             {   case begin_message:
                 {   index = 0;
-                    msg.Read<int>(message_size,recv_it);
+                    msg->Read<int>(message_size,recv_it);
                     //assert(message_size<buflen);
                     //printf("recv message_size<%d>\n", message_size );
                     break;
                 }
                 case continue_message:
                 {   int thisiter = 0;
-                    msg.Read<int>(thisiter,recv_it);
+                    msg->Read<int>(thisiter,recv_it);
                     //printf("recv index<%d> thisiter<%d>\n", index, thisiter );
                     assert((index+thisiter)<=message_size);
-                    msg.ReadData(buffer+index,thisiter,recv_it);
+                    msg->ReadData(buffer+index,thisiter,recv_it);
                     index += thisiter;
                     break;
                 }
@@ -147,9 +146,10 @@ void recv_loop(const std::string& ipc_name) {
                 default:
                     assert( false );
              }
+             ipcqr.endRecv();
         }
-        //else
-        //    usleep(100);
+        else
+            usleep(100);
     }
     ////////////////////////////////////////////
     printf( "\nIpcMsgQReciever going down...\n");
