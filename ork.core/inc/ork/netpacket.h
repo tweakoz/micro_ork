@@ -33,14 +33,43 @@ inline void avxFastMemcpy(char* dest, const char* src, size_t size)
 {
     while(size>0)
     {
-        if( size<64 )
-        {   __builtin_memcpy(dest,src,size);
+        if( (size<16) or 
+            ((uint64_t(src)&0x1f)!=0) or 
+            ((uint64_t(dest)&0x1f)!=0) ) {
+            __builtin_memcpy(dest,src,size);
             size = 0;
         }
-        else if( size<128 ) {
-            __m128i xmm0, xmm1, xmm2, xmm3, xmm4, xmm5, xmm6, xmm7;
+        else if( size<32 ) {
+            __m128i xmm0;
 
-            _mm_prefetch(src + 128, _MM_HINT_NTA);
+            _mm_prefetch(src + 16, _MM_HINT_NTA);
+
+            xmm0 = _mm_load_si128((__m128i*)&src[   0]);
+            _mm_stream_si128((__m128i*)&dest[   0], xmm0);
+
+            src  += 16;
+            dest += 16;
+            size -= 16;
+        }
+        else if( size<64 ) {
+            __m128i xmm0, xmm1;
+
+            _mm_prefetch(src + 32, _MM_HINT_NTA);
+
+            xmm0 = _mm_load_si128((__m128i*)&src[   0]);
+            xmm1 = _mm_load_si128((__m128i*)&src[  16]);
+
+            _mm_stream_si128((__m128i*)&dest[   0], xmm0);
+            _mm_stream_si128((__m128i*)&dest[  16], xmm1);
+
+            src  += 32;
+            dest += 32;
+            size -= 32;
+        }
+        else if( size<128 ) {
+            __m128i xmm0, xmm1, xmm2, xmm3;
+
+            _mm_prefetch(src + 64, _MM_HINT_NTA);
 
             xmm0 = _mm_load_si128((__m128i*)&src[   0]);
             xmm1 = _mm_load_si128((__m128i*)&src[  16]);
@@ -138,11 +167,11 @@ struct MessagePacketBase
     virtual const void* GetData() const = 0;
     virtual void* GetData() = 0;
     virtual size_t GetMax() const = 0;
-    size_t GetLength() const { return miSize; }
+    inline size_t GetLength() const { return miSize; }
     ///////////////////////////////////////////////////////
 };
 
-template <size_t ksize> struct MessagePacket : public MessagePacketBase
+template <size_t ksize> struct MessagePacket final : public MessagePacketBase
 {   
     typedef MessagePacketIterator<ksize> iter_t;
 
@@ -237,7 +266,7 @@ template <size_t ksize> struct MessagePacket : public MessagePacketBase
         it.miReadIndex += ilen;
     }
     ///////////////////////////////////////////////////////
-    NetworkMessage& operator = ( const NetworkMessage& rhs )
+    inline NetworkMessage& operator = ( const NetworkMessage& rhs )
     {
         miSize = rhs.miSize;
         miSerial = rhs.miSerial;
@@ -269,10 +298,10 @@ template <size_t ksize> struct MessagePacket : public MessagePacketBase
             printf("\n");
         }
     }
-    const void* GetData() const override { return (const void*) mBuffer; }
-    void* GetData() override { return (void*) mBuffer; }
-    size_t GetMax() const override { return kmaxsize; }
-    size_t GetLength() const { return miSize; }
+    const void* GetData() const final { return (const void*) mBuffer; }
+    void* GetData() final { return (void*) mBuffer; }
+    size_t GetMax() const final { return kmaxsize; }
+    //inline size_t GetLength() const { return miSize; }
     
     ////////////////////////////////////////////////////
     // Constant: kmaxsize

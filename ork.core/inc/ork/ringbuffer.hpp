@@ -14,6 +14,8 @@
 #include <ork/atomic.h>
 #include "platutils.hpp"
 #include <assert.h>
+#include <immintrin.h>
+#include <xmmintrin.h>
 
 namespace ork {
 
@@ -144,11 +146,11 @@ template<typename T,size_t max_items> struct MpMcRingBuf
 
 	MpMcRingBuf(const MpMcRingBuf&oth);
 
-	void push(const T& data);
-	void pop(T& data_out);
+	inline void push(const T& data);
+	inline void pop(T& data_out);
 	
-	bool try_push(const T& data);
-	bool try_pop(T& data);
+	inline bool try_push(const T& data);
+	inline bool try_pop(T& data);
 
 private:
 
@@ -220,31 +222,6 @@ MpMcRingBuf<T,max_items>::~MpMcRingBuf()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-template<typename T,size_t max_items>
-void MpMcRingBuf<T,max_items>::push(const T& item)
-{
-	bool bpushed = try_push(item);
-	int icount = 0;
-	while(false==bpushed)
-	{
-		static const int kquantausec = 150;
-		static const int ktabsize = 16;
-		static const int ktab[ktabsize] = 
-		{
-			1, 3, 5, 7, 
-			17, 19, 21, 23,
-			35, 37, 39, 41,
-			53, 55, 57, 59,
-		};
-		usleep(ktab[icount&0xf]*kquantausec);
-		//printf( "trying push again<%d>\n", icount );
-		icount++;
-		bpushed = try_push(item);
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////
 /*
 pos<0>
 seq<0> dif<0> pos<0>
@@ -265,8 +242,21 @@ seq<0> dif<0> pos<0>
 template<typename T,size_t max_items>
 bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 {
-	cell_t* cell = nullptr;
 	size_t pos = mEnqueuePos.load<MemRelaxed>();
+
+	cell_t* cell = mCellBuffer + (pos & kBufferMask);
+
+	auto prefetch_addr = (const char*) & cell->mData;
+
+    //_mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+16, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+32, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+80, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+96, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+112, _MM_HINT_NTA);
+
+
 	//printf( "pos<%u>\n", pos );
 	for (;;)
 	{
@@ -294,7 +284,43 @@ bool MpMcRingBuf<T,max_items>::try_push(const T& data)
 
 	cell->mData = data;
 	cell->mSequence.template store<MemRelease>(pos + 1);
+
+	//prefetch_addr += sizeof(T);
+
+    //_mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+16, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+32, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+80, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+96, _MM_HINT_NTA);
+    //_mm_prefetch(prefetch_addr+112, _MM_HINT_NTA);
+
 	return true;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+template<typename T,size_t max_items>
+void MpMcRingBuf<T,max_items>::push(const T& item)
+{
+	bool bpushed = try_push(item);
+	int icount = 0;
+	while(false==bpushed)
+	{
+		static const int kquantausec = 50;
+		static const int ktabsize = 16;
+		static const int ktab[ktabsize] = 
+		{
+			1, 3, 5, 7, 
+			17, 19, 21, 23,
+			35, 37, 39, 41,
+			53, 55, 57, 59,
+		};
+		usleep(ktab[icount&0xf]*kquantausec);
+		//printf( "trying push again<%d>\n", icount );
+		icount++;
+		bpushed = try_push(item);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -305,6 +331,16 @@ bool MpMcRingBuf<T,max_items>::try_pop(T& data)
 	cell_t* cell;
 
 	size_t pos = mDequeuePos.load<MemRelaxed>();
+
+	auto prefetch_addr = (const char*) & data;
+
+    _mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+16, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+32, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+80, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+96, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+112, _MM_HINT_NTA);
 
 	for (;;)
 	{	cell = mCellBuffer + (pos & kBufferMask);
@@ -332,6 +368,17 @@ bool MpMcRingBuf<T,max_items>::try_pop(T& data)
 	//////////////////////
 	data = cell->mData;
 	cell->mSequence.template store<MemRelease>(1+pos+kBufferMask);
+
+	prefetch_addr += sizeof(T);
+
+    _mm_prefetch(prefetch_addr+0, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+16, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+32, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+64, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+80, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+96, _MM_HINT_NTA);
+    _mm_prefetch(prefetch_addr+112, _MM_HINT_NTA);
+
 	return true;
 
 }
@@ -345,7 +392,7 @@ void MpMcRingBuf<T,max_items>::pop(T& data)
 	int icount = 0;
 	while(false==bpopped)
 	{
-		static const int kquantausec = 150;
+		static const int kquantausec = 50;
 		static const int ktabsize = 16;
 		static const int ktab[ktabsize] = 
 		{

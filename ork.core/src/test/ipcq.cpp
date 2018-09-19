@@ -4,6 +4,7 @@
 #include <unittest++/UnitTest++.h>
 #include <string.h>
 #include <math.h>
+#include <set>
 
 typedef ork::IpcPacket_t msg_t;
 
@@ -34,17 +35,24 @@ void send_loop(const std::string& ipc_name)
     for( size_t i=0; i<length; i++ )
         data[i] = uint8_t(i&0xff);
 
+    ork::Timer t;
+    t.Start();
     ////////////////////////////////////////////
     // tight send loop
     ////////////////////////////////////////////
 
-    for( int i=1; i<16; i++ )
+    std::set<int> sizes = { 1,2,4,8,16,32,64,128,256,511 };
+
+    for( int i : sizes )
     {
         bool iter_done = false;
 
         size_t byte_counter = 0;
-        int size_this_iter = i*1024;
+        int size_this_iter = i*64;
         printf("\nsend iter message_size<%d>\n", size_this_iter );
+
+        t.Start();
+        int checkiter = 10000;
 
         while(false==iter_done)
     	{   
@@ -73,7 +81,11 @@ void send_loop(const std::string& ipc_name)
             ipcqs.send(msg); 
 
             byte_counter += size_this_iter;
-            iter_done = (byte_counter>(16L<<30));
+
+            if( checkiter-- == 0 ){
+                iter_done = t.SecsSinceStart()>5.0f;
+                checkiter = 10000;
+            }
         }
     }
 
@@ -85,7 +97,7 @@ void send_loop(const std::string& ipc_name)
     // cleanup
     ////////////////////////////////////////////
 
-    printf( "IpcMsgQSender going down...\n");
+    printf( "\nIpcMsgQSender going down...\n");
 }
 
 void recv_loop(const std::string& ipc_name) {
@@ -114,7 +126,7 @@ void recv_loop(const std::string& ipc_name) {
             {   case begin_message:
                 {   index = 0;
                     msg.Read<int>(message_size,recv_it);
-                    assert(message_size<buflen);
+                    //assert(message_size<buflen);
                     //printf("recv message_size<%d>\n", message_size );
                     break;
                 }
@@ -140,7 +152,7 @@ void recv_loop(const std::string& ipc_name) {
         //    usleep(100);
     }
     ////////////////////////////////////////////
-    printf( "IpcMsgQReciever going down...\n");
+    printf( "\nIpcMsgQReciever going down...\n");
 }
 
 TEST(ipcq1)
@@ -167,7 +179,7 @@ TEST(ipcq1)
         auto prof_frame = ipcqs.profile();
         double mbps = double(prof_frame._bytesSent)/1048576.0;
         double msgps = prof_frame._messagesSent;
-        printf( "Msg/Sec<%4.2f> MiB/Sec<%4.2f>       \r", msgps, mbps );
+        printf( "Msg/Sec<%d> MiB/Sec<%d>       \r", int(msgps), int(mbps) );
         fflush(stdout);
     	usleep(1000000);
     }

@@ -94,8 +94,8 @@ ssize_t UdpSocket::Send(    const MessagePacketBase& pkt,
                             int sendto_flags)
 {
     OrkAssert( IsOpen() );
-    if ( 0 == pkt.GetLength() )
-        return 0;
+    //if ( 0 == pkt.GetLength() )
+    //    return 0;
 
     sockaddr_storage oldsock;
     addrinfo *result, *result_check, hint;
@@ -117,10 +117,10 @@ ssize_t UdpSocket::Send(    const MessagePacketBase& pkt,
             result_check != NULL;
             result_check = result_check->ai_next ) // go through the linked list of struct addrinfo elements
     {
-		if ( -1 != (return_value = sendto(mSockFd,pkt.GetData(),pkt.GetLength(),sendto_flags,result_check->ai_addr,result_check->ai_addrlen))) // connected without error
-		{
-	    	break; // Exit loop if send operation was successful
-		}
+		//if ( -1 != (return_value = sendto(mSockFd,pkt.GetData(),pkt.GetLength(),sendto_flags,result_check->ai_addr,result_check->ai_addrlen))) // connected without error
+		//{
+	    //	break; // Exit loop if send operation was successful
+		//}
     }
 
     return return_value;
@@ -141,14 +141,14 @@ bool UdpSocket::Recv(MessagePacketBase&pkt, RecvContext& rcvctx)
     socklen_t stor_addrlen = sizeof(sockaddr_storage);
 
     sockaddr_storage client;
-    ssize_t num_bytes = recvfrom(   mSockFd,
-                                    pkt.GetData(),pkt.GetMax(),
-                                    rcvctx.mFromFlags,
-                                    (sockaddr*)&client,
-                                    &stor_addrlen );
+    //ssize_t num_bytes = recvfrom(   mSockFd,
+    //                                pkt.GetData(),pkt.GetMax(),
+    //                                rcvctx.mFromFlags,
+    //                                (sockaddr*)&client,
+    //                                &stor_addrlen );
     
-    if( num_bytes<0 )
-		return false;
+    //if( num_bytes<0 )
+	//	return false;
 
     ///////////////////////////////////////////
     # if defined(HAS_getnameinfo) 
@@ -193,7 +193,7 @@ bool UdpSocket::Recv(MessagePacketBase&pkt, RecvContext& rcvctx)
 	# endif
     ///////////////////////////////////////////
 
-    rcvctx.mNumBytesRecieved = num_bytes;
+    //rcvctx.mNumBytesRecieved = num_bytes;
 
     return true;
 }

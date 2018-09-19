@@ -86,7 +86,7 @@ def DefaultBuildEnv( env, prj ):
         if os.path.exists(lib):
             env.Append( LIBPATH=[lib] )
 
-    CxFLG = '-ffast-math -mavx -fPIC -fno-common -fomit-frame-pointer -fno-strict-aliasing -g -Wno-switch-enum -Wno-c++11-narrowing'
+    CxFLG = '-ffast-math -mavx2 -fPIC -fno-common -fno-strict-aliasing -g -Wno-switch-enum -Wno-c++11-narrowing'
     prj.XCCFLG += CxFLG
     prj.XCXXFLG += CxFLG + " --std=%s -fexceptions " % cxx_std
 

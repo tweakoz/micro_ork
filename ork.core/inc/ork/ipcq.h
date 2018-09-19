@@ -128,12 +128,7 @@ struct IpcMsgQReciever
 	inline bool try_recv( IpcPacket_t& out_msg )
 	{
 		assert(mInbox!=nullptr);
-		bool bpopped = mInbox->mMsgQ.try_pop(out_msg);
-		if( bpopped )
-		{
-			//out_msg.dump("try_recv");
-		}
-		return bpopped;
+		return mInbox->mMsgQ.try_pop(out_msg);
 	}
 
 	inline void recv( IpcPacket_t& out_msg )
