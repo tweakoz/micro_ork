@@ -58,6 +58,10 @@ def DefaultBuildEnv( env, prj ):
     CCFLG = ' '
     CXXFLG = ' '
     LIBS = "m rt pthread"
+
+    if "EMBEDDED" in os.environ:
+        LIBS += " atomic"
+
     LIBPATH = ' . '
     if USE_DEBUG_CXX:
         LIBPATH += ' /usr/lib/x86_64-linux-gnu/debug '
@@ -79,7 +83,7 @@ def DefaultBuildEnv( env, prj ):
 
     if "ORKDOTBUILD_PREFIX" in os.environ:
         pfx = os.environ["ORKDOTBUILD_PREFIX"]
-        inc = os.path.join(pfx,"include") 
+        inc = os.path.join(pfx,"include")
         lib = os.path.join(pfx,"lib")
         if os.path.exists(inc):
             prj.PostIncludePaths += [inc]
@@ -93,5 +97,3 @@ def DefaultBuildEnv( env, prj ):
     prj.CompilerType = 'gcc'
 
     prj.XLINK = '-v -g -Wl,-rpath,/projects/redux/stage/lib'
-
-

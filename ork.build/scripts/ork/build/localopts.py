@@ -80,10 +80,14 @@ else:
 
 def GetEnv( sect, varname ):
 	#print "/////////////////////"
-	#print "sect<%s> varname<%s>" % (sect,varname)
+	print os.environ
+	print "sect<%s> varname<%s>" % (sect,varname)
 	ret = ""
 	if ConfigData.has_option( sect, varname ):
 		ret = ConfigData.get( sect, varname )
+	if varname in os.environ:
+		ret = os.environ[varname]
+		print "env override<%s>" % ret
 	print(ret)
 	if os.path.isdir(ret):
 		if IsWindows():
@@ -91,7 +95,7 @@ def GetEnv( sect, varname ):
 		else:
 			ret = ret
 	#if False==os.path.isdir(ret):
-	#	print "<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret) 
+	#	print "<localopts.py> Warning: path<%s> <ret %s> does not exist" % (varname,ret)
 	#print "/////////////////////"
 	return os.path.normpath(ret)
 
@@ -99,9 +103,9 @@ def GetEnv( sect, varname ):
 
 def XCODEDIR():
  return GetEnv( "PATHS", "XCODEDIR" )
-def VST_INST_DIR(): 
+def VST_INST_DIR():
  return GetEnv( "PATHS", "VST_INST_DIR" )
-def VST_SDK_DIR(): 
+def VST_SDK_DIR():
  return GetEnv( "PATHS", "VST_SDK_DIR" )
 def AQSISDIR():
  return GetEnv( "PATHS", "AQSISDIR" )

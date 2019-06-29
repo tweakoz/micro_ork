@@ -8,7 +8,7 @@ import ork.build.slnprj as sln
 SetOption('implicit_cache',1)
 Decider('MD5-timestamp')
 VariantDir( 'obj', 'src',duplicate=0 )
-SetOption('num_jobs', obu.num_cores) 
+SetOption('num_jobs', obu.num_cores)
 sln.optset.add("ork.upp")
 BasicEnv = Environment( ENV=os.environ )
 
@@ -53,9 +53,9 @@ class swrast:
    Depends(the_test_prg,self.lib)
    return the_test_prg
 
-a = swrast()
-ret = list()
-ret += a.lib
-ret += a.t1
-Return("ret")
-
+if "EMBEDDED" not in os.environ:
+  a = swrast()
+  ret = list()
+  ret += a.lib
+  ret += a.t1
+  Return("ret")

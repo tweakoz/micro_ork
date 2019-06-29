@@ -9,8 +9,17 @@ as_main = (__name__ == '__main__')
 parser = argparse.ArgumentParser(description='MicroOrk Environment')
 parser.add_argument('--exec', type=str, help='command to exec in environment')
 parser.add_argument('--prefix', type=str, help='external prefix')
+parser.add_argument('--cxx', type=str, help='compiler')
+parser.add_argument('--embedded', action="store_true", help='embedded (minimal) build')
 args = vars(parser.parse_args())
 print(args)
+
+if args["cxx"]!=None:
+	os.environ["CXX"] = args["cxx"]
+	os.environ["LD"] = args["cxx"]
+
+if args["embedded"]!=None:
+	os.environ["EMBEDDED"] = "1"
 
 ###########################################
 
@@ -61,7 +70,7 @@ def append_env(key,val):
   if False==(key in os.environ):
     set_env(key,val)
   else:
-    os.environ[key] = os.environ[key] + ":" + val 
+    os.environ[key] = os.environ[key] + ":" + val
     print(deco.cyan("prepend")+" var<" + deco.key(key) + "> to<" + deco.val(os.environ[key]) + ">")
 
 ###########################################
@@ -88,6 +97,7 @@ if args["prefix"]!=None:
     os.environ["ORKDOTBUILD_PREFIX"] = args["prefix"]
 else:
     os.environ["ORKDOTBUILD_PREFIX"] = stg_dir
+
 
 ###########################################
 
