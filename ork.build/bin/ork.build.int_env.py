@@ -34,7 +34,7 @@ par5_dir = os.path.dirname(par4_dir)
 
 root_dir = par2_dir
 scripts_dir = "%s/scripts" % root_dir
-sys.path.append(scripts_dir)
+sys.path.insert(0,scripts_dir)
 
 import ork.build.common
 deco = ork.build.common.deco()
