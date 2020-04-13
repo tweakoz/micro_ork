@@ -1,4 +1,3 @@
-#!python
 ###############################################################################
 # Orkid SCONS Build System
 # Copyright 2010, Michael T. Mayers
@@ -80,14 +79,14 @@ else:
 
 def GetEnv( sect, varname ):
 	#print "/////////////////////"
-	print os.environ
-	print "sect<%s> varname<%s>" % (sect,varname)
+	print(os.environ)
+	print("sect<%s> varname<%s>" % (sect,varname))
 	ret = ""
 	if ConfigData.has_option( sect, varname ):
 		ret = ConfigData.get( sect, varname )
 	if varname in os.environ:
 		ret = os.environ[varname]
-		print "env override<%s>" % ret
+		print("env override<%s>" % ret)
 	print(ret)
 	if os.path.isdir(ret):
 		if IsWindows():
